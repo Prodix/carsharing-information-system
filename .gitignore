@@ -1,0 +1,23 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+carsharing-frontend/node_modules
+carsharing-frontend/.pnp
+carsharing-frontend/.pnp.js
+
+# testing
+carsharing-frontend/coverage
+
+# production
+carsharing-frontend/build
+
+# misc
+carsharing-frontend/.DS_Store
+carsharing-frontend/.env.local
+carsharing-frontend/.env.development.local
+carsharing-frontend/.env.test.local
+carsharing-frontend/.env.production.local
+
+carsharing-frontend/npm-debug.log*
+carsharing-frontend/yarn-debug.log*
+carsharing-frontend/yarn-error.log*
