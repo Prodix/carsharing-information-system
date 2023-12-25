@@ -1,0 +1,7 @@
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.csproj.AssemblyReference.cache
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.GeneratedMSBuildEditorConfig.editorconfig
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.AssemblyInfoInputs.cache
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.AssemblyInfo.cs
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.csproj.CoreCompileInputs.cache
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.MvcApplicationPartsAssemblyInfo.cs
+/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/Debug/net7.0/carsharing-api.MvcApplicationPartsAssemblyInfo.cache
