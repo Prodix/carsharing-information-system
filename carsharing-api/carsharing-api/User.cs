@@ -11,6 +11,8 @@ public class User
     public string Email { get; set; }
     [Column("password")]
     public string Password { get; set; }
+    [Column("token")]
+    public string Token { get; set; }
     [Column("passport")]
     public int Passport { get; set; }
     [Column("driver_license")]

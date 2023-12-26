@@ -1130,25 +1130,26 @@
     ]
   },
   "packageFolders": {
-    "/Users/studentrmp/.nuget/packages/": {}
+    "C:\\Users\\prodi\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj",
+      "projectUniqueName": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj",
       "projectName": "carsharing-api",
-      "projectPath": "/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj",
-      "packagesPath": "/Users/studentrmp/.nuget/packages/",
-      "outputPath": "/Users/studentrmp/Documents/1991/carsharing-information-system/carsharing-api/carsharing-api/obj/",
+      "projectPath": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj",
+      "packagesPath": "C:\\Users\\prodi\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/studentrmp/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\prodi\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net7.0"
       ],
       "sources": {
-        "/usr/local/share/dotnet/sdk/7.0.311/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
+        "C:\\Users\\prodi\\.nuget\\packages": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -1199,7 +1200,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.311/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
       }
     }
   }
