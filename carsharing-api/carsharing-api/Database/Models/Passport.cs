@@ -1,7 +1,6 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace carsharing_api
+namespace carsharing_api.Database.Models
 {
 	public class Passport
 	{
@@ -12,9 +11,9 @@ namespace carsharing_api
         [Column("number")]
         public int Number { get; set; }
         [Column("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
         [Column("surname")]
-        public string Surname { get; set; }
+        public string? Surname { get; set; }
         [Column("patronymic")]
         public string? Patronymic { get; set; }
         [Column("birth_date")]

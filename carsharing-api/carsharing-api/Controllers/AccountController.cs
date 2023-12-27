@@ -2,6 +2,8 @@
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
+using carsharing_api.Database;
+using carsharing_api.Database.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace carsharing_api.Controllers;
@@ -31,7 +33,7 @@ public class AccountController : ControllerBase
 
         var md5 = MD5.Create();
 
-        user.Password = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(user.Password))).ToLower();
+        user.Password = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(user.Password ?? string.Empty))).ToLower();
         user.Token = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(user.Password + user.Email + DateTime.Now))).ToLower();
         
         await _db.AddAsync(passport);
@@ -147,8 +149,10 @@ public class AccountController : ControllerBase
         if (!_db.codes.Any(x => x.Email == email && x.GeneratedCode == code))
             return new JsonResult(new { message = "Неверный код", status_code = 400 });
 
+        _db.codes.Remove(_db.codes.First(x => x.Email == email));
+
         await _db.SaveChangesAsync();
         
-        return new JsonResult(new { message = "Код отправлен", status_code = 200 });
+        return new JsonResult(new { message = "Код верный", status_code = 200 });
     }
 }

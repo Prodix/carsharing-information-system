@@ -1,7 +1,7 @@
-﻿using carsharing_api;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
+using carsharing_api.Database;
+
+namespace carsharing_api;
 
 internal class Program
 {

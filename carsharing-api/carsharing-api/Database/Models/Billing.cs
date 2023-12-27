@@ -1,7 +1,6 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace carsharing_api
+namespace carsharing_api.Database.Models
 {
 	public class Billing
 	{

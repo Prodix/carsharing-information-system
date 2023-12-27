@@ -1,7 +1,6 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace carsharing_api
+namespace carsharing_api.Database.Models
 {
 	public class DriverLicense
 	{
@@ -16,9 +15,9 @@ namespace carsharing_api
         [Column("end_date")]
         public DateTime EndDate { get; set; }
         [Column("city")]
-        public string City { get; set; }
+        public string? City { get; set; }
         [Column("categories")]
-        public string[] Categories { get; set; }
+        public string[]? Categories { get; set; }
 	}
 }
 

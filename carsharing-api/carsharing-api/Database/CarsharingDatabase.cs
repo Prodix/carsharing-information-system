@@ -1,7 +1,7 @@
-﻿using System;
+﻿using carsharing_api.Database.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace carsharing_api
+namespace carsharing_api.Database
 {
 	public class CarsharingDatabase : DbContext
 	{

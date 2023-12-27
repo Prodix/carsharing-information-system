@@ -1,18 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Formats.Asn1;
 
-namespace carsharing_api;
+namespace carsharing_api.Database.Models;
 
 public class User
 {
     [Column("id")]
     public int Id { get; set; }
     [Column("email")]
-    public string Email { get; set; }
+    public string? Email { get; set; }
     [Column("password")]
-    public string Password { get; set; }
+    public string? Password { get; set; }
     [Column("token")]
-    public string Token { get; set; }
+    public string? Token { get; set; }
     [Column("passport")]
     public int Passport { get; set; }
     [Column("driver_license")]
