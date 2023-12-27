@@ -14,6 +14,10 @@ namespace carsharing_api.Database
 		public CarsharingDatabase()
 		{ }
 
+		public CarsharingDatabase(DbContextOptions<CarsharingDatabase> options)
+			: base(options)
+		{ }
+
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
 			var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();

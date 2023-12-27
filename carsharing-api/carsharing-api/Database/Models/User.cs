@@ -19,3 +19,30 @@ public class User
     [Column("billing")]
     public int Billing { get; set; }
 }
+
+/*
+{
+  "license": {
+       "serie": 123,
+       "number": 123,
+       "start_date": "2023-12-23",
+       "end_date": "2023-12-23",
+       "city": "city",
+       "categories": [
+           "A"
+       ]
+   },
+   "passport": {
+       "serie": 123,
+       "number": 123,
+       "name": "123",
+       "surname": "123",
+       "patronymic": "123",
+       "birth_date": "2023-12-12"
+   },
+   "user": {
+       "email": "123",
+       "password": "123"
+   }
+}
+ */

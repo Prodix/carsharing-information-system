@@ -1,27 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj": {}
+    "/Users/student/Documents/AndroidStudioProjects/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj": {}
   },
   "projects": {
-    "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj": {
+    "/Users/student/Documents/AndroidStudioProjects/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj",
+        "projectUniqueName": "/Users/student/Documents/AndroidStudioProjects/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj",
         "projectName": "carsharing-api",
-        "projectPath": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj",
-        "packagesPath": "C:\\Users\\prodi\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\obj\\",
+        "projectPath": "/Users/student/Documents/AndroidStudioProjects/carsharing-information-system/carsharing-api/carsharing-api/carsharing-api.csproj",
+        "packagesPath": "/Users/student/.nuget/packages/",
+        "outputPath": "/Users/student/Documents/AndroidStudioProjects/carsharing-information-system/carsharing-api/carsharing-api/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\prodi\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/student/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
         ],
         "sources": {
-          "C:\\Program Files\\dotnet\\library-packs": {},
-          "C:\\Users\\prodi\\.nuget\\packages": {},
+          "/usr/local/share/dotnet/sdk/7.0.311/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -43,6 +42,10 @@
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[7.0.14, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
@@ -72,7 +75,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.311/RuntimeIdentifierGraph.json"
         }
       }
     }

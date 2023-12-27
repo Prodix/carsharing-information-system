@@ -5,6 +5,7 @@ using System.Text;
 using carsharing_api.Database;
 using carsharing_api.Database.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace carsharing_api.Controllers;
 
@@ -20,8 +21,21 @@ public class AccountController : ControllerBase
     
     [HttpPost]
     [Route("/api/account/signUp")]
-    public async Task<JsonResult> SignUp(Passport passport, DriverLicense license, User user)
+    public async Task<JsonResult> SignUp()
     {
+        string body;
+
+        using (StreamReader reader
+                  = new StreamReader(HttpContext.Request.Body, Encoding.UTF8, true, 2048, true))
+        {
+            body = await reader.ReadToEndAsync();
+        }
+
+
+        var passport = JObject.Parse(body)["passport"].ToObject<Passport>();
+        var license = JObject.Parse(body)["license"].ToObject<DriverLicense>();
+        var user = JObject.Parse(body)["user"].ToObject<User>();
+
         if (_db.user.Any(x => x.Email == user.Email))
             return new JsonResult(new { message = "Пользователь уже зарегистрирован", status_code = 400 });
         
@@ -42,9 +56,12 @@ public class AccountController : ControllerBase
         {
             Balance = 0
         });
+
+        await _db.SaveChangesAsync();
+
         user.Billing = _db.billing.ToList().Last().Id;
-        user.Passport = passport.Id;
-        user.DriverLicense = license.Id;
+        user.Passport = _db.passport.ToList().Last().Id;
+        user.DriverLicense = _db.driver_license.ToList().Last().Id;
         await _db.AddAsync(user);
 
         await _db.SaveChangesAsync();
@@ -58,13 +75,15 @@ public class AccountController : ControllerBase
     {
         if (!_db.user.Any(x => x.Email == email))
             return new JsonResult(new { message = "Пользователя не существует", status_code = 400 });
+
+        var md5 = MD5.Create();
         
-        if (!_db.user.Any(x => x.Email == email && x.Password == password))
+        if (!_db.user.Any(x => x.Email == email && x.Password == Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(password))).ToLower()))
             return new JsonResult(new { message = "Неверный пароль", status_code = 400 });
 
-        var user = _db.user.First(x => x.Email == email && x.Password == password);
+
+        var user = _db.user.First(x => x.Email == email && x.Password == Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(password))).ToLower());
         
-        var md5 = MD5.Create();
         
         user.Token = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(password + email + DateTime.Now))).ToLower();
         
