@@ -10,6 +10,7 @@ namespace carsharing_api.Database
 		public DbSet<DriverLicense> driver_license { get; set; }
 		public DbSet<Passport> passport { get; set; }
 		public DbSet<Code> codes { get; set; }
+		public DbSet<Car> car { get; set; }
 
 		public CarsharingDatabase()
 		{ }

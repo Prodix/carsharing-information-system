@@ -37,13 +37,13 @@ public class AccountController : ControllerBase
         var user = JObject.Parse(body)["user"].ToObject<User>();
 
         if (_db.user.Any(x => x.Email == user.Email))
-            return new JsonResult(new { message = "Пользователь уже зарегистрирован", status_code = 400 });
+            return new JsonResult(new { message = "Пользователь уже зарегистрирован", status_code = 401 });
         
         if (_db.passport.Any(x => x.Serie == passport.Serie && x.Number == passport.Number))
-            return new JsonResult(new { message = "Паспорт уже используется", status_code = 400 });
+            return new JsonResult(new { message = "Паспорт уже используется", status_code = 402 });
         
         if (_db.driver_license.Any(x => x.Serie == license.Serie && x.Number == license.Number))
-            return new JsonResult(new { message = "Удостоверение уже используется", status_code = 400 });
+            return new JsonResult(new { message = "Удостоверение уже используется", status_code = 403 });
 
         var md5 = MD5.Create();
 
