@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.views
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.managers.AccountManager
 import com.syndicate.carsharing.viewmodels.SignInViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +49,11 @@ fun SignIn(
     signInViewModel: SignInViewModel = viewModel()
 ) {
     val signInState by signInViewModel.uiState.collectAsState()
+
+    LaunchedEffect(key1 = signInState.requestState, block = {
+       if (signInState.requestState == "Пользователь авторизован")
+           navigation.navigate("main")
+    });
 
     Box(
         modifier = Modifier
@@ -104,7 +112,9 @@ fun SignIn(
             )
             OutlinedTextField(
                 value = signInState.email,
-                onValueChange = { value -> signInViewModel.changeEmail(value)},
+                onValueChange = { value ->
+                    signInViewModel.changeEmail(value)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp),
@@ -152,7 +162,13 @@ fun SignIn(
                 )
             }
             Button(
-                onClick = {},
+                onClick = {
+                          AccountManager.signIn(
+                              signInState.email,
+                              signInState.password,
+                              signInViewModel
+                          )
+                },
                 content = { Text(
                     text = "Войти",
                     fontSize = 16.sp,

@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
+import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
 import com.syndicate.carsharing.views.Start
@@ -20,7 +21,6 @@ import com.syndicate.carsharing.views.Start
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContent {
             App()
@@ -53,6 +53,11 @@ fun App() {
                 }
                 composable("signUp") {
                     SignUp(
+                        navigation = navController
+                    )
+                }
+                composable("main") {
+                    Main(
                         navigation = navController
                     )
                 }

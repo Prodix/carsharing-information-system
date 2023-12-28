@@ -2,6 +2,7 @@ package com.syndicate.carsharing.viewmodels
 
 import androidx.lifecycle.ViewModel
 import com.syndicate.carsharing.models.SignInModel
+import com.syndicate.carsharing.models.SignUpModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -11,11 +12,19 @@ class SignInViewModel : ViewModel() {
     val uiState = _uiState.asStateFlow()
 
     fun changeEmail(email: String) {
-        _uiState.value = SignInModel(email, _uiState.value.password)
+        if (listOf(' ', '"', '\'').contains(email.last()))
+            return
+        _uiState.value = SignInModel(email, _uiState.value.password, _uiState.value.isPasswordVisible)
+    }
+
+    fun changeRequestState(request: String) {
+        _uiState.value = SignInModel(_uiState.value.email, _uiState.value.password, _uiState.value.isPasswordVisible, request)
     }
 
     fun changePassword(password: String) {
-        _uiState.value = SignInModel(_uiState.value.email, password)
+        if (listOf(' ', '"', '\'').contains(password.last()))
+            return
+        _uiState.value = SignInModel(_uiState.value.email, password, _uiState.value.isPasswordVisible)
     }
 
     fun changePasswordVisibility(visibility: Boolean) {
