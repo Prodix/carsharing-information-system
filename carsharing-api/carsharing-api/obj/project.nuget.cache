@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "O6tSZVt4jrJI+REcKd8MJgBFl8a3mg2gZvrIRpBBf1U+Mlp6hSkq3wP0Z8ILLCY5F6Y6x+NO4nUKjByyJHRSGQ==",
+  "dgSpecHash": "V9hF81ZSv9UunRarbMnCXDeCfMbIHrtwpvU0xluUTP5hBHm5SDEDEUm4F9ddNMlsCeR9P4tbvJ6MdVs4ZB5Izw==",
   "success": true,
   "projectFilePath": "C:\\Users\\prodi\\AndroidStudioProjects\\carsharing-information-system\\carsharing-api\\carsharing-api\\carsharing-api.csproj",
   "expectedPackageFiles": [
@@ -26,7 +26,8 @@
     "C:\\Users\\prodi\\.nuget\\packages\\swashbuckle.aspnetcore\\6.5.0\\swashbuckle.aspnetcore.6.5.0.nupkg.sha512",
     "C:\\Users\\prodi\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.5.0\\swashbuckle.aspnetcore.swagger.6.5.0.nupkg.sha512",
     "C:\\Users\\prodi\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.5.0\\swashbuckle.aspnetcore.swaggergen.6.5.0.nupkg.sha512",
-    "C:\\Users\\prodi\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.5.0\\swashbuckle.aspnetcore.swaggerui.6.5.0.nupkg.sha512"
+    "C:\\Users\\prodi\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.5.0\\swashbuckle.aspnetcore.swaggerui.6.5.0.nupkg.sha512",
+    "C:\\Users\\prodi\\.nuget\\packages\\microsoft.netcore.app.host.linux-x64\\7.0.2\\microsoft.netcore.app.host.linux-x64.7.0.2.nupkg.sha512"
   ],
   "logs": []
 }
