@@ -1,6 +1,5 @@
 package com.syndicate.carsharing.views
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,7 +37,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.database.managers.AccountManager
 import com.syndicate.carsharing.viewmodels.SignUpViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,11 +48,6 @@ fun SignUp(
     val signUpState = signUpViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(key1 = signUpState.value.requestState, block = {
-        if (signUpState.value.requestState == "Пользователь зарегистрирован") {
-            navigation.navigate("start")
-        }
-    })
 
     Box(
         modifier = Modifier
@@ -161,24 +153,7 @@ fun SignUp(
             )
             Button(
                 onClick = {
-                    AccountManager.signUp(
-                        passportSerie = 4567,
-                        passportNumber = 4567,
-                        name = "sdf",
-                        surname = "sdf",
-                        patronymic = "sdf",
-                        birthDate = "2023-12-21",
-                        licenseSerie = 4675,
-                        licenseNumber = 4756,
-                        startDate = "2023-12-12",
-                        endDate = "2023-12-12",
-                        city = "city",
-                        categories = listOf("A"),
-                        email = signUpState.value.email,
-                        password = signUpState.value.password,
-                        toast = Toast.makeText(context, "", Toast.LENGTH_LONG),
-                        viewModel = signUpViewModel
-                    );
+
 
                 },
                 content = { Text(

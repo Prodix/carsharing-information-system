@@ -66,10 +66,3 @@ fun App() {
         }
     }
 }
-
-@Preview(showBackground = true,
-    showSystemUi = true)
-@Composable
-fun GreetingPreview() {
-    App()
-}

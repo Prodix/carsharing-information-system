@@ -17,10 +17,6 @@ class SignInViewModel : ViewModel() {
         _uiState.value = SignInModel(email, _uiState.value.password, _uiState.value.isPasswordVisible)
     }
 
-    fun changeRequestState(request: String) {
-        _uiState.value = SignInModel(_uiState.value.email, _uiState.value.password, _uiState.value.isPasswordVisible, request)
-    }
-
     fun changePassword(password: String) {
         if (listOf(' ', '"', '\'').contains(password.last()))
             return

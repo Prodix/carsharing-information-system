@@ -4,6 +4,5 @@ data class SignInModel(
     val email: String = "",
     val password: String = "",
     val isPasswordVisible: Boolean = false,
-    val requestState: String = "",
     val buttonText: String = "Войти с паролем"
 )

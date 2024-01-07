@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.database.managers.AccountManager
 import com.syndicate.carsharing.viewmodels.SignInViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,11 +48,6 @@ fun SignIn(
     signInViewModel: SignInViewModel = viewModel()
 ) {
     val signInState by signInViewModel.uiState.collectAsState()
-
-    LaunchedEffect(key1 = signInState.requestState, block = {
-       if (signInState.requestState == "Пользователь авторизован")
-           navigation.navigate("main")
-    });
 
     Box(
         modifier = Modifier
@@ -163,11 +157,7 @@ fun SignIn(
             }
             Button(
                 onClick = {
-                          AccountManager.signIn(
-                              signInState.email,
-                              signInState.password,
-                              signInViewModel
-                          )
+
                 },
                 content = { Text(
                     text = "Войти",
