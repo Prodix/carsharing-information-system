@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
+import com.syndicate.carsharing.views.CodeView
 import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
