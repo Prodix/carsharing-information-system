@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -30,7 +29,7 @@ import com.syndicate.carsharing.R
 
 
 @Composable
-fun PassportIntro(
+fun DriverLicenseIntro(
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -48,7 +47,7 @@ fun PassportIntro(
                     .weight(2f)
             ) {
                 Image(
-                    bitmap = ImageBitmap.imageResource(R.drawable.passport),
+                    bitmap = ImageBitmap.imageResource(R.drawable.driver_license),
                     contentDescription = null,
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -70,12 +69,12 @@ fun PassportIntro(
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
                 Text(
-                    text = "Фото паспорта",
+                    text = "Фото водительского удостоверения",
                     fontWeight = FontWeight.Bold,
                     fontSize = 26.sp
                 )
                 Text(
-                    text = "Для подтверждения личности вам нужно сделать фотографию паспорта в развёрнутом виде - страница с фотографией и регистрацией!",
+                    text = "Также для подтверждения права на управление транспортом вам нужно сфотографировать страницу с фотографией водительского удостоверения",
                     fontSize = 14.sp
                 )
                 Button(
@@ -105,6 +104,6 @@ fun PassportIntro(
     showBackground = true
 )
 @Composable
-fun PassportTest() {
-    PassportIntro()
+fun LicenseTest() {
+    DriverLicenseIntro()
 }
