@@ -17,43 +17,6 @@ fun Main(
 ) {
     val mainState by mainViewModel.uiState.collectAsState()
 }
-/*
-@Composable
-fun ToggleButton(
-    modifier: Modifier = Modifier,
-    text: String,
-    action: (String, Boolean) -> Unit
-) {
-    var isToggled by remember {
-        mutableStateOf(false)
-    }
-
-    val background = if (isToggled) Color(0xFFF0F5FA) else Color.White
-    val border = if (isToggled) Color.Transparent else Color.LightGray
-
-    Box(
-        modifier = Modifier
-            .width(90.dp)
-            .height(50.dp)
-            .border(2.dp, border, RoundedCornerShape(10.dp))
-            .background(background, RoundedCornerShape(10.dp))
-            .toggleable(
-                value = isToggled,
-                onValueChange = {
-                    isToggled = it
-                    action(text, it)
-                }
-            )
-    ) {
-        Text(
-            modifier = Modifier
-                .align(Alignment.Center),
-            text = text,
-            fontSize = 20.sp
-        )
-    }
-}
-*/
 
 @Preview(showBackground = true,
     showSystemUi = true)
