@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun CodeView(
+fun Code(
     email: String,
     modifier: Modifier = Modifier
 ) {
@@ -130,7 +130,7 @@ fun CodeView(
 )
 @Composable
 fun Test() {
-    CodeView(
+    Code(
         "f@gmail.com"
     )
 }

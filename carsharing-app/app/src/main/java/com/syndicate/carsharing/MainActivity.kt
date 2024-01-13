@@ -13,7 +13,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
-import com.syndicate.carsharing.views.CodeView
+import com.syndicate.carsharing.views.Camera
+import com.syndicate.carsharing.views.Code
 import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
@@ -40,7 +41,7 @@ fun App() {
 
             NavHost(
                 navController = navController,
-                startDestination = "start"
+                startDestination = "camera"
             ) {
                 composable("start") {
                     Start(
@@ -59,6 +60,11 @@ fun App() {
                 }
                 composable("main") {
                     Main(
+                        navigation = navController
+                    )
+                }
+                composable("camera") {
+                    Camera(
                         navigation = navController
                     )
                 }
