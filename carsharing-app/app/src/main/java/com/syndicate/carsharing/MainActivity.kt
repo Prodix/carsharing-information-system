@@ -16,6 +16,7 @@ import com.syndicate.carsharing.ui.theme.CarsharingTheme
 import com.syndicate.carsharing.views.Camera
 import com.syndicate.carsharing.views.Code
 import com.syndicate.carsharing.views.Main
+import com.syndicate.carsharing.views.Passport
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
 import com.syndicate.carsharing.views.Start
@@ -65,6 +66,11 @@ fun App() {
                 }
                 composable("camera") {
                     Camera(
+                        navigation = navController
+                    )
+                }
+                composable("passportScreen") {
+                    Passport(
                         navigation = navController
                     )
                 }

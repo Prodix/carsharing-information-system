@@ -108,7 +108,8 @@ fun Camera(
             ) {
                 Button(
                     onClick = {
-                              takePhoto("passport.jpeg", context, imageCapture)
+                        takePhoto("passport.jpeg", context, imageCapture)
+                        navigation.navigate("passportScreen")
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF6699CC)
@@ -154,6 +155,7 @@ private fun takePhoto(name: String, context: Context, imageCapture: ImageCapture
             ) {
                 val msg = "Photo capture succeeded"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+
                 Log.d("Camera", msg)
 
             }
