@@ -11,6 +11,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -31,7 +32,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,44 +61,53 @@ import kotlin.coroutines.suspendCoroutine
 
 @Composable
 fun Camera(
+    fileName: String,
     navigation: NavHostController,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-    val previewView = PreviewView(context)
+    val cameraProviderFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
+    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val imageCapture: ImageCapture = ImageCapture.Builder().build()
-
-    cameraProviderFuture.addListener({
-        val cameraProvider = cameraProviderFuture.get()
-        val preview = androidx.camera.core.Preview.Builder()
-            .build()
-            .also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-        try {
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                lifecycleOwner,
-                cameraSelector,
-                preview,
-                imageCapture
-            )
-        } catch (ex: Exception) {
-            Log.e("Camera", "Use case not bound", ex)
-        }
-    }, ContextCompat.getMainExecutor(context))
+    val executor = Executors.newSingleThreadExecutor()
 
     Box (
         modifier = Modifier
             .fillMaxSize()
     ){
         AndroidView(
-            factory = { previewView }
+            factory = {
+                val previewView = PreviewView(context)
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = androidx.camera.core.Preview.Builder()
+                        .build()
+                        .also {
+                            it.setSurfaceProvider(previewView.surfaceProvider)
+                        }
+
+                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                    imageCapture = ImageCapture.Builder()
+                        .setTargetRotation(previewView.display.rotation)
+                        .build()
+
+                    try {
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                            imageCapture
+                        )
+                    } catch (ex: Exception) {
+                        Log.e("Camera", "Use case not bound", ex)
+                    }
+                }, ContextCompat.getMainExecutor(context))
+
+                previewView
+
+            }
         )
         Box(
             modifier = Modifier
@@ -108,8 +122,11 @@ fun Camera(
             ) {
                 Button(
                     onClick = {
-                        takePhoto("passport.jpeg", context, imageCapture)
-                        navigation.navigate("passportScreen")
+
+                        if (fileName == "passport")
+                            imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/passport") }
+                        else
+                            imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/license") }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF6699CC)
@@ -124,8 +141,8 @@ fun Camera(
     }
 }
 
-private fun takePhoto(name: String, context: Context, imageCapture: ImageCapture) {
-    val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}.jpeg")
+private fun takePhoto(navigation: NavHostController, name: String, context: Context, imageCapture: ImageCapture, route: String) {
+    val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}")
     if (file.exists()) {
         file.delete()
     }
@@ -155,8 +172,8 @@ private fun takePhoto(name: String, context: Context, imageCapture: ImageCapture
             ) {
                 val msg = "Photo capture succeeded"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-
                 Log.d("Camera", msg)
+                navigation.navigate(route)
 
             }
 

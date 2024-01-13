@@ -3,17 +3,12 @@ package com.syndicate.carsharing.views
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.graphics.Picture
-import android.media.Image
-import android.media.ImageReader
 import android.os.Environment
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,28 +20,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageBitmapConfig
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import java.io.File
 
 @Composable
-fun Passport(
+fun Document(
+    fileName: String,
     navigation: NavHostController
 ) {
-    val image = BitmapFactory.decodeFile("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/passport.jpeg")
+    val image = BitmapFactory.decodeFile("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${fileName}.jpeg")
     val matrix = Matrix()
     matrix.postRotate(90f)
 
@@ -77,7 +65,9 @@ fun Passport(
             horizontalArrangement = Arrangement.spacedBy(15.dp)
         ) {
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    navigation.popBackStack()
+                },
                 modifier = Modifier
                     .height(50.dp)
                     .weight(1f),
@@ -94,7 +84,16 @@ fun Passport(
                 )
             }
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    if (fileName == "passport") {
+                        /* TODO: Отправка паспорта */
+                        navigation.navigate("documentIntro/false")
+                    } else {
+                        /* TODO: Отправка удостоверения */
+                        /* TODO: Показать предупреждение о длительности верификации аккаунта */
+                        navigation.navigate("main")
+                    }
+                },
                 modifier = Modifier
                     .height(50.dp)
                     .weight(1f),

@@ -8,15 +8,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
 import com.syndicate.carsharing.views.Camera
 import com.syndicate.carsharing.views.Code
 import com.syndicate.carsharing.views.Main
-import com.syndicate.carsharing.views.Passport
+import com.syndicate.carsharing.views.Document
+import com.syndicate.carsharing.views.DocumentIntro
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
 import com.syndicate.carsharing.views.Start
@@ -39,10 +41,9 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-
             NavHost(
                 navController = navController,
-                startDestination = "camera"
+                startDestination = "start"
             ) {
                 composable("start") {
                     Start(
@@ -64,13 +65,49 @@ fun App() {
                         navigation = navController
                     )
                 }
-                composable("camera") {
-                    Camera(
+                composable(
+                    "documentViewer/{fileName}",
+                    arguments = listOf(
+                        navArgument("fileName") { type = NavType.StringType }
+                    )
+                ) {
+                    Document(
+                        fileName = it.arguments?.getString("fileName") ?: "",
                         navigation = navController
                     )
                 }
-                composable("passportScreen") {
-                    Passport(
+                composable(
+                    "camera/{fileName}",
+                    arguments = listOf(
+                        navArgument("fileName") { type = NavType.StringType }
+                    )
+                ) {
+                    Camera(
+                        fileName = it.arguments?.getString("fileName") ?: "",
+                        navigation = navController
+                    )
+                }
+                composable(
+                    "documentIntro/{isPassport}",
+                    arguments = listOf(
+                        navArgument("isPassport") { type = NavType.BoolType }
+                    )
+                ) {
+                    DocumentIntro(
+                        isPassport = it.arguments?.getBoolean("isPassport") ?: false,
+                        navigation = navController
+                    )
+                }
+                composable(
+                    "code/{isRegister}/{email}",
+                    arguments = listOf(
+                        navArgument("isRegister") { type = NavType.BoolType },
+                        navArgument("email") { type = NavType.StringType }
+                    )
+                ) {
+                    Code(
+                        email = it.arguments?.getString("email") ?: "",
+                        isRegister = it.arguments?.getBoolean("isRegister") ?: false,
                         navigation = navController
                     )
                 }

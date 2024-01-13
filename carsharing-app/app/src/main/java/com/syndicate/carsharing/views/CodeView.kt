@@ -32,10 +32,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 
 @Composable
 fun Code(
     email: String,
+    isRegister: Boolean,
+    navigation: NavHostController,
     modifier: Modifier = Modifier
 ) {
     var value by remember {
@@ -106,7 +109,13 @@ fun Code(
         Spacer(modifier = Modifier
             .size(25.dp))
         Button(
-            onClick = { /*TODO*/ },
+            onClick = {
+                /* TODO: Проверка кода */
+                if (isRegister)
+                    navigation.navigate("documentIntro/true")
+                else
+                    navigation.navigate("main")
+            },
             modifier = Modifier
                 .width(265.dp)
                 .border(2.dp, Color(0xFFB5B5B5), RoundedCornerShape(10.dp)),
@@ -122,15 +131,4 @@ fun Code(
             )
         }
     }
-}
-
-@Preview(
-    showSystemUi = true,
-    showBackground = true
-)
-@Composable
-fun Test() {
-    Code(
-        "f@gmail.com"
-    )
 }

@@ -1,6 +1,5 @@
 package com.syndicate.carsharing.views
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -129,7 +127,7 @@ fun SignIn(
                 modifier = Modifier
                     .size(16.dp)
             )
-            if (signInState.isPasswordVisible) {
+            if (signInState.isByPassword) {
                 OutlinedTextField(
                     value = signInState.password,
                     onValueChange = { value -> signInViewModel.changePassword(value) },
@@ -157,7 +155,12 @@ fun SignIn(
             }
             Button(
                 onClick = {
-
+                    if (signInState.isByPassword) {
+                        /* TODO: Проверка пароля аккаунта */
+                        navigation.navigate("main")
+                    } else {
+                        navigation.navigate("code/false/${signInState.email}")
+                    }
                 },
                 content = { Text(
                     text = "Войти",
@@ -181,7 +184,7 @@ fun SignIn(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .clickable(indication = null, interactionSource = MutableInteractionSource()){
-                        signInViewModel.changePasswordVisibility(!signInState.isPasswordVisible)
+                        signInViewModel.changePasswordVisibility(!signInState.isByPassword)
                     }
             )
             Spacer(

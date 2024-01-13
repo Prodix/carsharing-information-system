@@ -153,8 +153,7 @@ fun SignUp(
             )
             Button(
                 onClick = {
-
-
+                    navigation.navigate("code/true/${signUpState.value.email}")
                 },
                 content = { Text(
                     text = "Зарегистрироваться",
