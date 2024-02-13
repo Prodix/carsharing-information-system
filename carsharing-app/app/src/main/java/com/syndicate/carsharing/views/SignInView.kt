@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.views
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,11 +50,20 @@ fun SignIn(
     signInViewModel: SignInViewModel = viewModel()
 ) {
     val signInState by signInViewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+    val imeState = rememberImeState()
+
+    LaunchedEffect(key1 = imeState.value) {
+        if (imeState.value){
+            scrollState.scrollTo(scrollState.maxValue)
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .verticalScroll(scrollState)
     ) {
         Image(
             imageVector = ImageVector.vectorResource(R.drawable.roadhorizontal),
@@ -104,24 +117,35 @@ fun SignIn(
             )
             OutlinedTextField(
                 value = signInState.email,
-                onValueChange = { value ->
-                    signInViewModel.changeEmail(value)
-                },
+                onValueChange = { value -> signInViewModel.changeEmail(value) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp),
-                shape = RoundedCornerShape(30.dp),
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
                 textStyle = TextStyle(
                     fontSize = 16.sp
                 ),
                 placeholder = { Text(text = "Email") },
                 singleLine = true,
                 colors = TextFieldDefaults.outlinedTextFieldColors(
-                    textColor = Color(0xFF6699CC),
+                    textColor = Color.Black,
                     placeholderColor = Color(0xFFB5B5B5),
                     unfocusedBorderColor = Color(0xFFB5B5B5),
                     focusedBorderColor = Color(0xFFB5B5B5),
-                )
+                    errorBorderColor = Color(0xFFBB3E3E),
+                    errorCursorColor = Color(0xFFBB3E3E),
+                    errorSupportingTextColor = Color(0xFFBB3E3E)
+                ),
+                isError = signInState.emailNote != "",
+                supportingText = {
+                    if (signInState.emailNote != "") {
+                        Text(
+                            text = signInState.emailNote,
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        )
+                    }
+                }
             )
             Spacer(
                 modifier = Modifier
@@ -132,9 +156,8 @@ fun SignIn(
                     value = signInState.password,
                     onValueChange = { value -> signInViewModel.changePassword(value) },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(30.dp),
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
                     textStyle = TextStyle(
                         fontSize = 16.sp
                     ),
@@ -142,11 +165,25 @@ fun SignIn(
                     placeholder = { Text(text = "Пароль") },
                     singleLine = true,
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = Color(0xFF6699CC),
+                        textColor = Color.Black,
                         placeholderColor = Color(0xFFB5B5B5),
                         unfocusedBorderColor = Color(0xFFB5B5B5),
                         focusedBorderColor = Color(0xFFB5B5B5),
-                    )
+                        errorBorderColor = Color(0xFFBB3E3E),
+                        errorCursorColor = Color(0xFFBB3E3E),
+                        errorSupportingTextColor = Color(0xFFBB3E3E)
+                    ),
+                    isError = signInState.passwordNote != "",
+                    supportingText = {
+                        if (signInState.passwordNote != "") {
+                            Text(
+                                text = signInState.passwordNote,
+                                fontSize = 12.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            )
+                        }
+                    }
                 )
                 Spacer(
                     modifier = Modifier
@@ -165,14 +202,21 @@ fun SignIn(
                 content = { Text(
                     text = "Войти",
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(vertical = 10.dp)
                 ) },
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                    .fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6699CC)
-                )
+                    containerColor = Color(0xFF6699CC),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.Transparent,
+                    disabledContentColor = Color(0xFFB5B5B5)
+                ),
+                border = if ((signInState.isByPassword && signInState.email.isNotEmpty() && signInState.password.isNotEmpty()) || (!signInState.isByPassword && signInState.email.isNotEmpty())) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
+                enabled = (signInState.isByPassword && signInState.email.isNotEmpty() && signInState.password.isNotEmpty()) || (!signInState.isByPassword && signInState.email.isNotEmpty())
             )
             Spacer(
                 modifier = Modifier

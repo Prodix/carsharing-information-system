@@ -1,7 +1,9 @@
 package com.syndicate.carsharing.views
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,34 +17,57 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.syndicate.carsharing.models.CodeModel
+import com.syndicate.carsharing.viewmodels.CodeViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun Code(
     email: String,
     isRegister: Boolean,
     navigation: NavHostController,
+    codeViewModel: CodeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    var value by remember {
-        mutableStateOf(TextFieldValue())
+    val codeState = codeViewModel.uiState.collectAsState()
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    
+    val timer = remember {
+        mutableStateOf(Timer())
+    }
+
+    DisposableEffect(context) {
+
+        scope.launch {
+            timer.value.start()
+        }
+
+        onDispose { timer.value.stop() }
     }
 
     Column(
@@ -63,72 +88,193 @@ fun Code(
         )
         Spacer(modifier = Modifier
             .size(25.dp))
-        BasicTextField(
-            value = value,
-            onValueChange = {
-                if (it.text.length <= 5)
-                    value = it
-            },
-            decorationBox = {
-                Row(
-                    modifier = Modifier
-                        .padding(15.dp)
-                ){
-                    repeat(5) {
-                        Spacer(
-                            modifier = Modifier
-                                .width(5.dp)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .background(Color(0xFFF0F5FA), RoundedCornerShape(10.dp))
-                                .size(50.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = value.text.getOrElse(it, {' '}).toString(),
-                                fontSize = 20.sp
-                            )
-                        }
-                        Spacer(
-                            modifier = Modifier
-                                .width(5.dp)
+        CodeComposable(
+            codeState,
+            codeViewModel,
+            timer,
+            isRegister,
+            navigation,
+            scope
+        )
+    }
+
+}
+
+@Composable
+fun SendCodeComposable(
+    timer: State<Timer>,
+    scope: CoroutineScope
+) {
+
+    Text(
+        text = if (timer.value.toString() == "0:00") "Отправить код повторно" else "Отправить код повторно через ${timer.value}",
+        fontSize = 12.sp,
+        color = if (timer.value.toString() == "0:00") Color(0xFF6699CC) else Color(0xFFB5B5B5),
+        modifier = Modifier
+            .clickable(
+                interactionSource = MutableInteractionSource(),
+                indication = null,
+                enabled = timer.value.toString() == "0:00"
+            ) {
+                /* TODO: Добавить отправку кода*/
+                timer.value.restart()
+                scope.launch {
+                    timer.value.start()
+                }
+            }
+    )
+    Spacer(modifier = Modifier
+        .size(25.dp))
+}
+
+@Composable
+fun CodeComposable(
+    codeState: State<CodeModel>,
+    codeViewModel: CodeViewModel,
+    timer: State<Timer>,
+    isRegister: Boolean,
+    navigation: NavHostController,
+    scope: CoroutineScope
+) {
+    BasicTextField(
+        value = codeState.value.code,
+        onValueChange = {
+            if (it.text.length <= 5)
+                codeViewModel.changeCode(it)
+        },
+        decorationBox = {
+            Row(
+                modifier = Modifier
+                    .padding(15.dp)
+            ){
+                repeat(5) {
+                    Spacer(
+                        modifier = Modifier
+                            .width(5.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFF0F5FA), RoundedCornerShape(10.dp))
+                            .size(50.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = codeState.value.code.text.getOrElse(it, {' '}).toString(),
+                            fontSize = 20.sp
                         )
                     }
+                    Spacer(
+                        modifier = Modifier
+                            .width(5.dp)
+                    )
                 }
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        Spacer(modifier = Modifier
-            .size(25.dp))
+            }
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+    SendCodeComposable(timer, scope)
+    Spacer(modifier = Modifier
+        .size(25.dp))
+    Button(
+        onClick = {
+            /* TODO: Проверка кода */
+            if (isRegister)
+                navigation.navigate("documentIntro/true")
+            else
+                navigation.navigate("main")
+        },
+        modifier = Modifier
+            .width(265.dp),
+        shape = RoundedCornerShape(10.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF6699CC),
+            contentColor = Color.White,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = Color(0xFFB5B5B5)
+        ),
+
+        border = if (codeState.value.code.text.isNotEmpty() || codeState.value.isValid == true) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
+        enabled = codeState.value.code.text.isNotEmpty()
+    ) {
         Text(
-            text = "Отправить код повторно через 5:00",
-            fontSize = 12.sp,
-            color = Color(0xFFB5B5B5)
-        )
-        Spacer(modifier = Modifier
-            .size(25.dp))
-        Button(
-            onClick = {
-                /* TODO: Проверка кода */
-                if (isRegister)
-                    navigation.navigate("documentIntro/true")
-                else
-                    navigation.navigate("main")
-            },
+            text = "Продолжить",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .width(265.dp)
-                .border(2.dp, Color(0xFFB5B5B5), RoundedCornerShape(10.dp)),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent
-            )
-        ) {
-            Text(
-                text = "Продолжить",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFB5B5B5)
-            )
+                .padding(vertical = 10.dp)
+        )
+    }
+}
+
+class Timer {
+
+    private val _minutes: MutableState<Int> = mutableIntStateOf(5)
+    private val _seconds: MutableState<Int> = mutableIntStateOf(0)
+    private var _isStarted: Boolean = false
+
+    private var _defaultMinutes: Int = 5
+    private var _defaultSeconds: Int = 0
+
+    var onTimerEnd: () -> Unit = { }
+
+    var minutes: Int
+        get() = _minutes.value
+        set(value) {
+            _minutes.value = value
+        }
+
+    var seconds: Int
+        get() = _seconds.value
+        set(value) {
+            _seconds.value = value
+        }
+
+    constructor () {
+        _minutes.value = 5
+        _seconds.value = 0
+    }
+
+    constructor (minutes: Int, seconds: Int) {
+        _defaultMinutes = minutes
+        _defaultSeconds = seconds
+        _minutes.value = minutes
+        _seconds.value = seconds
+    }
+
+    fun restart() {
+        _minutes.value = _defaultMinutes
+        _seconds.value = _defaultSeconds
+    }
+
+    fun changeStartTime(minutes: Int, seconds: Int) {
+        _defaultMinutes = minutes
+        _defaultSeconds = seconds
+    }
+
+    suspend fun start() {
+
+        _isStarted = true
+
+        while (_isStarted) {
+            if (_seconds.value == 0 && _minutes.value != 0) {
+                _minutes.value -= 1
+                _seconds.value = 59
+            } else if (_seconds.value == 0 && _minutes.value == 0) {
+                _isStarted = false
+                onTimerEnd()
+            } else {
+                _seconds.value -= 1
+            }
+            delay(1000L)
         }
     }
+
+    fun stop() {
+        _isStarted = false
+    }
+
+    override fun toString(): String {
+        return "${_minutes.value}:${if (_seconds.value.toString().length == 1) "0${_seconds.value}" else _seconds.value}"
+    }
+
 }

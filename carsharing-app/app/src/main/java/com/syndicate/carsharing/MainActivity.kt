@@ -1,6 +1,7 @@
 package com.syndicate.carsharing
 
 import android.os.Bundle
+import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,19 +40,15 @@ class MainActivity : ComponentActivity() {
 fun App() {
     CarsharingTheme {
         val navController = rememberNavController()
+
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "start"
+                startDestination = "signIn"
             ) {
-                composable("start") {
-                    Start(
-                        navigation = navController
-                    )
-                }
                 composable("signIn") {
                     SignIn(
                         navigation = navController
