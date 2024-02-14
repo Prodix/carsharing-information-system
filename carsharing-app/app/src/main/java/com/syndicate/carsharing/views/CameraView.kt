@@ -86,7 +86,8 @@ fun Camera(
                             it.setSurfaceProvider(previewView.surfaceProvider)
                         }
 
-                    val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                    val cameraSelector = if (fileName == "selfie") CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
 
                     imageCapture = ImageCapture.Builder()
                         .setTargetRotation(previewView.display.rotation)
@@ -122,11 +123,11 @@ fun Camera(
             ) {
                 Button(
                     onClick = {
-
-                        if (fileName == "passport")
-                            imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/passport") }
-                        else
-                            imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/license") }
+                        when (fileName) {
+                            "passport" -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/passport") }
+                            "selfie" -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/selfie") }
+                            else -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/license") }
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF6699CC)

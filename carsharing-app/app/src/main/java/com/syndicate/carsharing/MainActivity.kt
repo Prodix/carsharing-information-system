@@ -87,13 +87,15 @@ fun App() {
                     )
                 }
                 composable(
-                    "documentIntro/{isPassport}",
+                    "documentIntro/{isPassport}/{isSelfie}",
                     arguments = listOf(
-                        navArgument("isPassport") { type = NavType.BoolType }
+                        navArgument("isPassport") { type = NavType.BoolType },
+                        navArgument("isSelfie") { type = NavType.BoolType }
                     )
                 ) {
                     DocumentIntro(
                         isPassport = it.arguments?.getBoolean("isPassport") ?: false,
+                        isSelfie = it.arguments?.getBoolean("isSelfie") ?: false,
                         navigation = navController
                     )
                 }

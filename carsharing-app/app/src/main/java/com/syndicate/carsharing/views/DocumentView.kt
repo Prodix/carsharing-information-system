@@ -85,13 +85,20 @@ fun Document(
             }
             Button(
                 onClick = {
-                    if (fileName == "passport") {
-                        /* TODO: Отправка паспорта */
-                        navigation.navigate("documentIntro/false")
-                    } else {
-                        /* TODO: Отправка удостоверения */
-                        /* TODO: Показать предупреждение о длительности верификации аккаунта */
-                        navigation.navigate("main")
+                    when (fileName) {
+                        "passport" -> {
+                            /* TODO: Отправка паспорта */
+                            navigation.navigate("documentIntro/false/true")
+                        }
+                        "selfie" -> {
+                            /* TODO: Отправка селфи */
+                            navigation.navigate("documentIntro/false/false")
+                        }
+                        else -> {
+                            /* TODO: Отправка удостоверения */
+                            /* TODO: Показать предупреждение о длительности верификации аккаунта */
+                            navigation.navigate("main")
+                        }
                     }
                 },
                 modifier = Modifier

@@ -41,6 +41,7 @@ import com.syndicate.carsharing.R
 @Composable
 fun DocumentIntro(
     isPassport: Boolean,
+    isSelfie: Boolean,
     navigation: NavHostController,
     modifier: Modifier = Modifier
 ) {
@@ -94,7 +95,7 @@ fun DocumentIntro(
                     .weight(2f)
             ) {
                 Image(
-                    bitmap = ImageBitmap.imageResource(if (isPassport) R.drawable.passport else R.drawable.driver_license),
+                    bitmap = ImageBitmap.imageResource(if (isPassport) R.drawable.passport else if (isSelfie) R.drawable.selfie else R.drawable.driver_license),
                     contentDescription = null,
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -126,6 +127,16 @@ fun DocumentIntro(
                         text = "Для подтверждения личности вам нужно сделать фотографию паспорта в развёрнутом виде - страница с фотографией и регистрацией!",
                         fontSize = 14.sp
                     )
+                } else if (isSelfie) {
+                    Text(
+                        text = "Фото лица",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 26.sp
+                    )
+                    Text(
+                        text = "Это последнее фото, которое потребуется для верификации вашей личности и подтверждения того, что вы имеете право управлять транспортом",
+                        fontSize = 14.sp
+                    )
                 } else {
                     Text(
                         text = "Фото водительского удостоверения",
@@ -145,6 +156,8 @@ fun DocumentIntro(
 
                             if (isPassport)
                                 navigation.navigate("camera/passport")
+                            else if (isSelfie)
+                                navigation.navigate("camera/selfie")
                             else
                                 navigation.navigate("camera/license")
                         } else {

@@ -179,7 +179,7 @@ fun CodeComposable(
         onClick = {
             /* TODO: Проверка кода */
             if (isRegister)
-                navigation.navigate("documentIntro/true")
+                navigation.navigate("documentIntro/true/false")
             else
                 navigation.navigate("main")
         },
@@ -192,9 +192,8 @@ fun CodeComposable(
             disabledContainerColor = Color.Transparent,
             disabledContentColor = Color(0xFFB5B5B5)
         ),
-
-        border = if (codeState.value.code.text.isNotEmpty() || codeState.value.isValid == true) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
-        enabled = codeState.value.code.text.isNotEmpty()
+        border = if (codeState.value.code.text.length == 5 || codeState.value.isValid == true) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
+        enabled = codeState.value.code.text.length == 5
     ) {
         Text(
             text = "Продолжить",
