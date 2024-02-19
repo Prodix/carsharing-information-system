@@ -47,7 +47,7 @@ fun App() {
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "signIn"
+                startDestination = "main"
             ) {
                 composable("signIn") {
                     SignIn(

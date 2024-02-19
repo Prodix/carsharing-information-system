@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,6 +16,15 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+
+        val keystorePropertiesFile = rootProject.file("local.properties")
+
+        val keystoreProperties = Properties();
+
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+
+        buildConfigField("String", "MAPKIT_KEY", "\"${keystoreProperties.getProperty("MAPKIT_KEY")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -38,6 +50,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -51,12 +64,14 @@ android {
 
 dependencies {
 
+    implementation("com.google.android.gms:play-services-location:21.1.0")
     val camerax_version = "1.4.0-alpha03"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 
+    implementation("com.yandex.android:maps.mobile:4.4.0-full")
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("io.ktor:ktor-client-core:2.3.8")
