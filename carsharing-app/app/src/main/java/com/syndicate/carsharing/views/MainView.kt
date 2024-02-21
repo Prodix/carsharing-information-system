@@ -58,6 +58,7 @@ import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.layers.ObjectEvent
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
@@ -82,6 +83,9 @@ fun Main(
     val scope = rememberCoroutineScope()
     lateinit var userLocationLayer: UserLocationLayer
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+    lateinit var userPlacemark: PlacemarkMapObject
+
     // TODO: Добавить проверку интернета и геолокации
     fun enableLocation() {
         if (ActivityCompat.checkSelfPermission(
@@ -92,37 +96,21 @@ fun Main(
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            userLocationLayer = MapKitFactory.getInstance().createUserLocationLayer(map.mapWindow).apply {
-                this.isVisible = true
-                this.isAutoZoomEnabled = true
+            val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
+
+            userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
+            userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
+            userPlacemark.geometry = currentLocation
+
+            map.setNoninteractive(true)
+            map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+            { map.setNoninteractive(false) }
+
+            location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
+                currentLocation = Point(it.latitude, it.longitude)
+                userPlacemark.geometry = currentLocation
             }
-
-            userLocationLayer.setObjectListener(object : UserLocationObjectListener {
-                @SuppressLint("MissingPermission")
-                override fun onObjectAdded(p0: UserLocationView) {
-                    p0.arrow.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-                    p0.pin.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-                    p0.accuracyCircle.isVisible = false
-
-
-                    val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                    currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
-
-                    map.setNoninteractive(true)
-                    map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                    { map.setNoninteractive(false) }
-
-                }
-
-                override fun onObjectRemoved(p0: UserLocationView) {
-                    //TODO("Not yet implemented")
-                }
-
-                override fun onObjectUpdated(p0: UserLocationView, p1: ObjectEvent) {
-                    //TODO("Not yet implemented")
-                }
-
-            })
         }
     }
 
