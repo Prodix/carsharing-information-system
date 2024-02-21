@@ -1,6 +1,9 @@
 package com.syndicate.carsharing.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.syndicate.carsharing.R
 
+@SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun BottomMenu(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClickRadar: () -> Unit,
+    onClickFilter: () -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -28,6 +34,13 @@ fun BottomMenu(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .padding(horizontal = 15.dp, vertical = 5.dp)
+                .clickable(
+                    interactionSource = MutableInteractionSource(),
+                    indication = null,
+                    onClick = {
+                        onClickRadar()
+                    }
+                )
         ) {
             Image(imageVector = ImageVector.vectorResource(id = R.drawable.radar), contentDescription = null)
             Text(
@@ -40,6 +53,13 @@ fun BottomMenu(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .padding(horizontal = 15.dp, vertical = 5.dp)
+                .clickable(
+                    interactionSource = MutableInteractionSource(),
+                    indication = null,
+                    onClick = {
+                        onClickFilter()
+                    }
+                )
         ) {
             Image(imageVector = ImageVector.vectorResource(id = R.drawable.filter), contentDescription = null)
             Text(
