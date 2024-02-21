@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.views
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -100,6 +101,7 @@ fun Code(
 
 }
 
+@SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun SendCodeComposable(
     timer: State<Timer>,
