@@ -11,14 +11,17 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ExperimentalMaterialApi
@@ -26,25 +29,35 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.Slider
+import androidx.compose.material.SliderColors
+import androidx.compose.material.SliderDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.syndicate.carsharing.BuildConfig
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.components.BalanceMenu
 import com.syndicate.carsharing.components.BottomMenu
@@ -55,11 +68,18 @@ import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.layers.Layer
+import com.yandex.mapkit.layers.LayerOptions
 import com.yandex.mapkit.layers.ObjectEvent
+import com.yandex.mapkit.layers.TileFormat
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.CircleMapObject
+import com.yandex.mapkit.map.MapType
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
+import com.yandex.mapkit.tiles.TileProvider
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
@@ -69,7 +89,8 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 import kotlin.system.exitProcess
 
-@OptIn(ExperimentalMaterialApi::class)
+@SuppressLint("UnrememberedMutableInteractionSource")
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun Main(
     navigation: NavHostController,
@@ -78,12 +99,14 @@ fun Main(
     lateinit var map: MapView
     val mainState by mainViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    var sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     lateinit var currentLocation: Point
     val scope = rememberCoroutineScope()
+    var coef = 1f
     lateinit var userLocationLayer: UserLocationLayer
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
+    lateinit var circle: CircleMapObject
     lateinit var userPlacemark: PlacemarkMapObject
 
     // TODO: Добавить проверку интернета и геолокации
@@ -99,17 +122,35 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
 
+            circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 1000f))
+            circle.fillColor = Color(0x4A92D992).toArgb()
+            circle.strokeColor = Color(0xFF99CC99).toArgb()
+            circle.strokeWidth = 1.5f
+
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
             userPlacemark.geometry = currentLocation
+            if (currentLocation.latitude == 0.0 && currentLocation.longitude == 0.0) {
+                userPlacemark.isVisible = false
+            }
+            else {
+                map.setNoninteractive(true)
+                map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                { map.setNoninteractive(false) }
+            }
 
-            map.setNoninteractive(true)
-            map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-            { map.setNoninteractive(false) }
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 currentLocation = Point(it.latitude, it.longitude)
                 userPlacemark.geometry = currentLocation
+                circle.geometry = Circle(currentLocation, 1000f * coef)
+
+                if (!userPlacemark.isVisible) {
+                    userPlacemark.isVisible = true
+                    map.setNoninteractive(true)
+                    map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    { map.setNoninteractive(false) }
+                }
             }
         }
     }
@@ -150,7 +191,7 @@ fun Main(
         contentAlignment = Alignment.Center
     ) {
 
-        MapKitFactory.setApiKey(com.syndicate.carsharing.BuildConfig.MAPKIT_KEY)
+        MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
         AndroidView(factory = {
             MapView(it).apply {
                 map = this
@@ -245,6 +286,9 @@ fun Main(
             scrimColor = Color.Transparent,
             sheetGesturesEnabled = false,
             sheetContent = {
+                var mem by remember {
+                    mutableFloatStateOf(1f)
+                }
                 Column(
                     modifier = Modifier
                         .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -259,33 +303,59 @@ fun Main(
                         fontSize = 12.sp,
                         color = Color(0xFFC2C2C2)
                     )
-                    Slider(value = 0f, onValueChange = {})
-                    Row (
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ){
-                        Text(
-                            text = "5 мин",
-                            fontSize = 12.sp,
-                            color = Color(0xFFC2C2C2)
+                    Column {
+                        androidx.compose.material3.Slider(
+                            value = mem,
+                            steps = 2,
+                            valueRange = 1f..4f,
+                            onValueChange = {
+                                mem = it
+                                coef = it
+                                circle.geometry = Circle(currentLocation, 1000f * it)
+
+                            },
+                            colors = androidx.compose.material3.SliderDefaults.colors(
+                                activeTickColor = Color(0xFF6699CC),
+                                inactiveTickColor = Color.Transparent,
+                                inactiveTrackColor = Color(0x806699CC),
+                                activeTrackColor = Color(0xFF6699CC),
+                                thumbColor = Color(0xFF34699D)
+                            ),
+                            thumb = {
+                                androidx.compose.material3.SliderDefaults.Thumb(
+                                    interactionSource = MutableInteractionSource(),
+                                    thumbSize = DpSize(30.dp, 30.dp)
+                                    )
+                            }
                         )
-                        Text(
-                            text = "10 мин",
-                            fontSize = 12.sp,
-                            color = Color(0xFFC2C2C2)
-                        )
-                        Text(
-                            text = "15 мин",
-                            fontSize = 12.sp,
-                            color = Color(0xFFC2C2C2)
-                        )
-                        Text(
-                            text = "20 мин",
-                            fontSize = 12.sp,
-                            color = Color(0xFFC2C2C2)
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ){
+                            Text(
+                                text = "5 мин",
+                                fontSize = 12.sp,
+                                color = if (mem == 1f) Color.Black else Color(0xFFC2C2C2)
+                            )
+                            Text(
+                                text = "10 мин",
+                                fontSize = 12.sp,
+                                color = if (mem == 2f) Color.Black else Color(0xFFC2C2C2)
+                            )
+                            Text(
+                                text = "15 мин",
+                                fontSize = 12.sp,
+                                color = if (mem == 3f) Color.Black else Color(0xFFC2C2C2)
+                            )
+                            Text(
+                                text = "20 мин",
+                                fontSize = 12.sp,
+                                color = if (mem == 4f) Color.Black else Color(0xFFC2C2C2)
+                            )
+                        }
                     }
+                    Spacer(modifier = Modifier.size(5.dp))
                     androidx.compose.material3.Button(
                         onClick = { /*TODO*/ },
                         colors = ButtonDefaults.buttonColors(

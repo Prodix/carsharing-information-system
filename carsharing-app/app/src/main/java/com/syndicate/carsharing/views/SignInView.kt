@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.views
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,6 +44,7 @@ import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.viewmodels.SignInViewModel
 
+@SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignIn(
