@@ -9,11 +9,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,7 +33,7 @@ fun BalanceMenu(
     Box(
         modifier = modifier
             .then(
-                if (sheetState.isVisible) {
+                if (sheetState.targetValue == ModalBottomSheetValue.Expanded) {
                     Modifier.alpha(0f)
                 } else {
                     Modifier.alpha(1f)
@@ -50,7 +53,9 @@ fun BalanceMenu(
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(15.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(end = 5.dp)
         ) {
             Text(
                 text = "10000,94",
@@ -62,8 +67,12 @@ fun BalanceMenu(
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White,
                 modifier = Modifier
-                    .background(Color(0xFF6699CC), CircleShape)
-                    .padding(horizontal = 7.dp, vertical = 4.dp)
+                    .drawBehind {
+                        drawCircle(
+                            color = Color(0xFF6699CC),
+                            radius = this.size.maxDimension / 2f
+                        )
+                    }
             )
         }
     }

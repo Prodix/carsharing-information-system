@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.syndicate.carsharing.R
@@ -35,14 +38,14 @@ fun BottomMenu(
     onClickFilter: () -> Unit
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(25.dp),
         modifier = modifier
+            .padding(vertical = 10.dp, horizontal = 20.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .padding(horizontal = 15.dp, vertical = 5.dp)
                 .clickable(
                     interactionSource = MutableInteractionSource(),
                     indication = null,
@@ -54,14 +57,19 @@ fun BottomMenu(
             Image(imageVector = ImageVector.vectorResource(id = R.drawable.radar), contentDescription = null)
             Text(
                 text = "Радар",
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                style = TextStyle(
+                    lineHeightStyle = LineHeightStyle(
+                        trim = LineHeightStyle.Trim.Both,
+                        alignment = LineHeightStyle.Alignment.Center
+                    )
+                )
             )
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .padding(horizontal = 15.dp, vertical = 5.dp)
                 .clickable(
                     interactionSource = MutableInteractionSource(),
                     indication = null,
@@ -73,7 +81,13 @@ fun BottomMenu(
             Image(imageVector = ImageVector.vectorResource(id = R.drawable.filter), contentDescription = null)
             Text(
                 text = "Фильтр",
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                style = TextStyle(
+                    lineHeightStyle = LineHeightStyle(
+                        trim = LineHeightStyle.Trim.Both,
+                        alignment = LineHeightStyle.Alignment.Center
+                    )
+                )
             )
         }
     }

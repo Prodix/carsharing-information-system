@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -27,7 +28,7 @@ fun LeftMenu(
     Box(
         modifier = modifier
             .then(
-                if (sheetState.isVisible) {
+                if (sheetState.targetValue == ModalBottomSheetValue.Expanded) {
                     Modifier.alpha(0f)
                 } else {
                     Modifier.alpha(1f)

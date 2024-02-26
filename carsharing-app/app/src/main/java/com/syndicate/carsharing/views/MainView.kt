@@ -105,7 +105,6 @@ fun Main(
     lateinit var currentLocation: Point
     val scope = rememberCoroutineScope()
     var coef = 1f
-    lateinit var userLocationLayer: UserLocationLayer
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     var circle: CircleMapObject? = null
@@ -118,11 +117,6 @@ fun Main(
                 if (circle != null)
                     map.mapWindow.map.mapObjects.remove(circle!!)
                 circle = null
-            } else {
-                circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 400f * coef))
-                circle?.fillColor = Color(0x4A92D992).toArgb()
-                circle?.strokeColor = Color(0xFF99CC99).toArgb()
-                circle?.strokeWidth = 1.5f
             }
 
             true
@@ -142,8 +136,6 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
 
-
-
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
             userPlacemark.geometry = currentLocation
@@ -155,7 +147,6 @@ fun Main(
                 map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                 { map.setNoninteractive(false) }
             }
-
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 currentLocation = Point(it.latitude, it.longitude)
@@ -201,7 +192,6 @@ fun Main(
         activityResultLauncher.launch(locationPermissions)
     }
 
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -219,6 +209,7 @@ fun Main(
         }, modifier = Modifier) {
 
         }
+
         BottomMenu(
             modifier = Modifier
                 .padding(25.dp)
@@ -235,6 +226,12 @@ fun Main(
                 .align(Alignment.BottomCenter),
             onClickRadar = {
                 scope.launch {
+                    map.mapWindow.map.move(CameraPosition(Point(currentLocation.latitude, currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    { }
+                    circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 400f * coef))
+                    circle?.fillColor = Color(0x4A92D992).toArgb()
+                    circle?.strokeColor = Color(0xFF99CC99).toArgb()
+                    circle?.strokeWidth = 1.5f
                     sheetState.show()
                 }
             },
@@ -242,8 +239,6 @@ fun Main(
 
             }
         )
-
-
 
         LeftMenu(
             modifier = Modifier
