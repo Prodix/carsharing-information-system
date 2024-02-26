@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.views
 
+import android.annotation.SuppressLint
 import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.compose.animation.core.tween
@@ -70,6 +71,7 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.viewmodels.SignUpViewModel
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SignUp(

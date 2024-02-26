@@ -46,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -84,6 +85,7 @@ import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
 import com.yandex.runtime.image.ImageProvider
+import io.ktor.client.plugins.convertLongTimeoutToLongWithInfiniteAsZero
 import kotlinx.coroutines.launch
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -99,15 +101,33 @@ fun Main(
     lateinit var map: MapView
     val mainState by mainViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+
     lateinit var currentLocation: Point
     val scope = rememberCoroutineScope()
     var coef = 1f
     lateinit var userLocationLayer: UserLocationLayer
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-    lateinit var circle: CircleMapObject
+    var circle: CircleMapObject? = null
     lateinit var userPlacemark: PlacemarkMapObject
+
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        confirmValueChange = {
+            if (it == ModalBottomSheetValue.Hidden) {
+                if (circle != null)
+                    map.mapWindow.map.mapObjects.remove(circle!!)
+                circle = null
+            } else {
+                circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 400f * coef))
+                circle?.fillColor = Color(0x4A92D992).toArgb()
+                circle?.strokeColor = Color(0xFF99CC99).toArgb()
+                circle?.strokeWidth = 1.5f
+            }
+
+            true
+        }
+    )
 
     // TODO: Добавить проверку интернета и геолокации
     fun enableLocation() {
@@ -122,10 +142,7 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
 
-            circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 1000f))
-            circle.fillColor = Color(0x4A92D992).toArgb()
-            circle.strokeColor = Color(0xFF99CC99).toArgb()
-            circle.strokeWidth = 1.5f
+
 
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
@@ -143,7 +160,7 @@ fun Main(
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 currentLocation = Point(it.latitude, it.longitude)
                 userPlacemark.geometry = currentLocation
-                circle.geometry = Circle(currentLocation, 1000f * coef)
+                circle?.geometry = Circle(currentLocation, 400f * coef)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
@@ -190,7 +207,6 @@ fun Main(
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
         AndroidView(factory = {
             MapView(it).apply {
@@ -232,49 +248,22 @@ fun Main(
         LeftMenu(
             modifier = Modifier
                 .padding(16.dp)
-                .withShadow(
-                    Shadow(
-                        offsetX = 0.dp,
-                        offsetY = 0.dp,
-                        radius = 4.dp,
-                        color = Color(0, 0, 0, 40)
-                    ),
-                    RoundedCornerShape(10.dp)
-                )
-                .background(Color.White, RoundedCornerShape(10.dp))
-                .align(Alignment.TopStart)
+                .align(Alignment.TopStart),
+            sheetState = sheetState
         )
 
         BalanceMenu(
             modifier = Modifier
                 .padding(16.dp)
-                .withShadow(
-                    Shadow(
-                        offsetX = 0.dp,
-                        offsetY = 0.dp,
-                        radius = 4.dp,
-                        color = Color(0, 0, 0, 40)
-                    ),
-                    RoundedCornerShape(10.dp)
-                )
-                .background(Color.White, RoundedCornerShape(10.dp))
-                .align(Alignment.TopEnd)
+                .align(Alignment.TopEnd),
+            sheetState = sheetState
         )
 
         UserCursorButton(
             modifier = Modifier
                 .padding(16.dp)
-                .withShadow(
-                    Shadow(
-                        offsetX = 0.dp,
-                        offsetY = 0.dp,
-                        radius = 4.dp,
-                        color = Color(0, 0, 0, 40)
-                    ),
-                    RoundedCornerShape(10.dp)
-                )
-                .background(Color.White, RoundedCornerShape(10.dp))
-                .align(Alignment.CenterEnd)
+                .align(Alignment.CenterEnd),
+            sheetState = sheetState
         ) {
             map.mapWindow.map.move(CameraPosition(Point(currentLocation.latitude, currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
@@ -311,8 +300,7 @@ fun Main(
                             onValueChange = {
                                 mem = it
                                 coef = it
-                                circle.geometry = Circle(currentLocation, 1000f * it)
-
+                                circle?.geometry = Circle(currentLocation, 400f * it)
                             },
                             colors = androidx.compose.material3.SliderDefaults.colors(
                                 activeTickColor = Color(0xFF6699CC),
