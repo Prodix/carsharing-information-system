@@ -11,12 +11,15 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,6 +40,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -87,8 +93,6 @@ import com.yandex.mapkit.user_location.UserLocationView
 import com.yandex.runtime.image.ImageProvider
 import io.ktor.client.plugins.convertLongTimeoutToLongWithInfiniteAsZero
 import kotlinx.coroutines.launch
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 import kotlin.system.exitProcess
 
 @SuppressLint("UnrememberedMutableInteractionSource")
@@ -102,21 +106,37 @@ fun Main(
     val mainState by mainViewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    lateinit var currentLocation: Point
+    val currentLocation: MutableState<Point> = remember {
+        mutableStateOf(Point())
+    }
     val scope = rememberCoroutineScope()
-    var coef = 1f
+    val coef = remember {
+        mutableFloatStateOf(1f)
+    }
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
-    var circle: CircleMapObject? = null
+    val circle: MutableState<CircleMapObject?> = remember {
+        mutableStateOf(null)
+    }
     lateinit var userPlacemark: PlacemarkMapObject
+
+    val sheetContent: MutableState<@Composable (ColumnScope) -> Unit> = remember {
+        mutableStateOf({ })
+    }
+
+    val isGesturesEnabled = remember {
+        mutableStateOf(true)
+    }
+
+
 
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
         confirmValueChange = {
             if (it == ModalBottomSheetValue.Hidden) {
-                if (circle != null)
-                    map.mapWindow.map.mapObjects.remove(circle!!)
-                circle = null
+                if (circle.value != null)
+                    map.mapWindow.map.mapObjects.remove(circle.value!!)
+                circle.value = null
             }
 
             true
@@ -134,29 +154,29 @@ fun Main(
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            currentLocation = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
+            currentLocation.value = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
 
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-            userPlacemark.geometry = currentLocation
-            if (currentLocation.latitude == 0.0 && currentLocation.longitude == 0.0) {
+            userPlacemark.geometry = currentLocation.value
+            if (currentLocation.value.latitude == 0.0 && currentLocation.value.longitude == 0.0) {
                 userPlacemark.isVisible = false
             }
             else {
                 map.setNoninteractive(true)
-                map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                map.mapWindow.map.move(CameraPosition(currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                 { map.setNoninteractive(false) }
             }
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
-                currentLocation = Point(it.latitude, it.longitude)
-                userPlacemark.geometry = currentLocation
-                circle?.geometry = Circle(currentLocation, 400f * coef)
+                currentLocation.value = Point(it.latitude, it.longitude)
+                userPlacemark.geometry = currentLocation.value
+                circle.value?.geometry = Circle(currentLocation.value, 400f * coef.value)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
                     map.setNoninteractive(true)
-                    map.mapWindow.map.move(CameraPosition(currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    map.mapWindow.map.move(CameraPosition(currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { map.setNoninteractive(false) }
                 }
             }
@@ -190,6 +210,16 @@ fun Main(
 
     LaunchedEffect(key1 = context) {
         activityResultLauncher.launch(locationPermissions)
+    }
+
+    sheetContent.value = {
+        RadarContent(
+            coef = coef,
+            sheetContent = sheetContent,
+            circle = circle,
+            currentLocation = currentLocation,
+            isGesturesEnabled = isGesturesEnabled
+        )
     }
 
     Box(
@@ -226,12 +256,12 @@ fun Main(
                 .align(Alignment.BottomCenter),
             onClickRadar = {
                 scope.launch {
-                    map.mapWindow.map.move(CameraPosition(Point(currentLocation.latitude, currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
-                    circle = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation, 400f * coef))
-                    circle?.fillColor = Color(0x4A92D992).toArgb()
-                    circle?.strokeColor = Color(0xFF99CC99).toArgb()
-                    circle?.strokeWidth = 1.5f
+                    circle.value = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation.value, 400f * coef.value))
+                    circle.value?.fillColor = Color(0x4A92D992).toArgb()
+                    circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
+                    circle.value?.strokeWidth = 1.5f
                     sheetState.show()
                 }
             },
@@ -260,107 +290,233 @@ fun Main(
                 .align(Alignment.CenterEnd),
             sheetState = sheetState
         ) {
-            map.mapWindow.map.move(CameraPosition(Point(currentLocation.latitude, currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+            map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
         }
 
-        ModalBottomSheetLayout(
-            sheetState = sheetState,
-            sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-            scrimColor = Color.Transparent,
-            sheetGesturesEnabled = false,
-            sheetContent = {
-                var mem by remember {
-                    mutableFloatStateOf(1f)
-                }
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 15.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "Радар",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp
-                    )
-                    Text(
-                        text = "Сколько мне идти",
-                        fontSize = 12.sp,
-                        color = Color(0xFFC2C2C2)
-                    )
-                    Column {
-                        androidx.compose.material3.Slider(
-                            value = mem,
-                            steps = 2,
-                            valueRange = 1f..4f,
-                            onValueChange = {
-                                mem = it
-                                coef = it
-                                circle?.geometry = Circle(currentLocation, 400f * it)
-                            },
-                            colors = androidx.compose.material3.SliderDefaults.colors(
-                                activeTickColor = Color(0xFF6699CC),
-                                inactiveTickColor = Color.Transparent,
-                                inactiveTrackColor = Color(0x806699CC),
-                                activeTrackColor = Color(0xFF6699CC),
-                                thumbColor = Color(0xFF34699D)
-                            ),
-                            thumb = {
-                                androidx.compose.material3.SliderDefaults.Thumb(
-                                    interactionSource = MutableInteractionSource(),
-                                    thumbSize = DpSize(30.dp, 30.dp)
-                                    )
-                            }
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ){
-                            Text(
-                                text = "5 мин",
-                                fontSize = 12.sp,
-                                color = if (mem == 1f) Color.Black else Color(0xFFC2C2C2)
-                            )
-                            Text(
-                                text = "10 мин",
-                                fontSize = 12.sp,
-                                color = if (mem == 2f) Color.Black else Color(0xFFC2C2C2)
-                            )
-                            Text(
-                                text = "15 мин",
-                                fontSize = 12.sp,
-                                color = if (mem == 3f) Color.Black else Color(0xFFC2C2C2)
-                            )
-                            Text(
-                                text = "20 мин",
-                                fontSize = 12.sp,
-                                color = if (mem == 4f) Color.Black else Color(0xFFC2C2C2)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.size(5.dp))
-                    androidx.compose.material3.Button(
-                        onClick = { /*TODO*/ },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF6699CC),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color.Transparent,
-                            disabledContentColor = Color(0xFFB5B5B5)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(text = "Начать поиск")
-                    }
-                }
-            }
-        ) {
 
+
+        //Test()
+
+
+    }
+
+
+    BottomSheetWithPages(sheetContent, sheetState, isGesturesEnabled)
+
+
+
+}
+
+@SuppressLint("UnrememberedMutableInteractionSource")
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun BottomSheetWithPages(
+    sheetContent: MutableState<@Composable (ColumnScope) -> Unit>,
+    sheetState: ModalBottomSheetState,
+    isGesturesEnabled: MutableState<Boolean>
+) {
+    ModalBottomSheetLayout(
+        sheetState = sheetState,
+        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        scrimColor = Color.Transparent,
+        sheetGesturesEnabled = isGesturesEnabled.value,
+        sheetContent = sheetContent.value
+    ) {
+    }
+    Box(
+        modifier = Modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .then(
+                    if (!isGesturesEnabled.value) {
+                        Modifier
+                            .clickable(
+                                indication = null,
+                                interactionSource = MutableInteractionSource()
+                            ) { }
+                    } else {
+                        Modifier
+                    }
+                )
+        ) {
         }
     }
 }
 
+@SuppressLint("UnrememberedMutableInteractionSource")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RadarContent(
+    coef: MutableState<Float>,
+    sheetContent: MutableState<@Composable (ColumnScope) -> Unit>,
+    circle: MutableState<CircleMapObject?>,
+    currentLocation: MutableState<Point>,
+    isGesturesEnabled: MutableState<Boolean>,
+    memValue: Float = 1f
+) {
+    var mem by remember {
+        mutableFloatStateOf(memValue)
+    }
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 15.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Радар",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp
+        )
+        Text(
+            text = "Сколько мне идти",
+            fontSize = 12.sp,
+            color = Color(0xFFC2C2C2)
+        )
+        Column {
+            androidx.compose.material3.Slider(
+                value = mem,
+                steps = 2,
+                valueRange = 1f..4f,
+                onValueChange = {
+                    mem = it
+                    coef.value = it
+                    circle.value?.geometry = Circle(currentLocation.value, 400f * it)
+                },
+                colors = androidx.compose.material3.SliderDefaults.colors(
+                    activeTickColor = Color(0xFF6699CC),
+                    inactiveTickColor = Color.Transparent,
+                    inactiveTrackColor = Color(0x806699CC),
+                    activeTrackColor = Color(0xFF6699CC),
+                    thumbColor = Color(0xFF34699D)
+                ),
+                thumb = {
+                    androidx.compose.material3.SliderDefaults.Thumb(
+                        interactionSource = MutableInteractionSource(),
+                        thumbSize = DpSize(30.dp, 30.dp)
+                    )
+                }
+            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ){
+                Text(
+                    text = "5 мин",
+                    fontSize = 12.sp,
+                    color = if (mem == 1f) Color.Black else Color(0xFFC2C2C2)
+                )
+                Text(
+                    text = "10 мин",
+                    fontSize = 12.sp,
+                    color = if (mem == 2f) Color.Black else Color(0xFFC2C2C2)
+                )
+                Text(
+                    text = "15 мин",
+                    fontSize = 12.sp,
+                    color = if (mem == 3f) Color.Black else Color(0xFFC2C2C2)
+                )
+                Text(
+                    text = "20 мин",
+                    fontSize = 12.sp,
+                    color = if (mem == 4f) Color.Black else Color(0xFFC2C2C2)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.size(5.dp))
+        androidx.compose.material3.Button(
+            onClick = {
+                isGesturesEnabled.value = false
+                sheetContent.value = {
+                    // TODO: Сделать таймер
+                    // TODO: Реализовать поиск автомобиля
+                    // TODO: Сделать мигание области
+                    // TODO: Сделать подстановку информации о минутах пешком
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 15.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "Радар",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 24.sp
+                        )
+                        Text(
+                            text = "Высокий спрос в вашей зоне, машин поблизости нет",
+                            fontSize = 12.sp,
+                            color = Color(0xFFC2C2C2)
+                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "Ищем ближайший автомобиль",
+                                fontSize = 12.sp,
+                                color = Color(0xFFC2C2C2)
+                            )
+                            Text(
+                                text = "10 МИНУТ ПЕШКОМ",
+                                fontSize = 16.sp,
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Осталось 29 минут",
+                                fontSize = 12.sp,
+                                color = Color(0xFFC2C2C2)
+                            )
+                        }
+                        Spacer(modifier = Modifier.size(5.dp))
+                        androidx.compose.material3.Button(
+                            onClick = {
+                                sheetContent.value = {
+                                    isGesturesEnabled.value = true
+                                    RadarContent(
+                                        coef = coef,
+                                        sheetContent = sheetContent,
+                                        circle = circle,
+                                        currentLocation = currentLocation,
+                                        isGesturesEnabled = isGesturesEnabled,
+                                        memValue = mem
+                                    )
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF6699CC),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color.Transparent,
+                                disabledContentColor = Color(0xFFB5B5B5)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(text = "Назад")
+                        }
+                    }
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6699CC),
+                contentColor = Color.White,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = Color(0xFFB5B5B5)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(text = "Начать поиск")
+        }
+    }
+}
 
 
