@@ -456,13 +456,17 @@ fun RadarFindingContent(
     mem: MutableFloatState,
     currentLocation: MutableState<Point>
 ) {
-    // TODO: Сделать таймер
     // TODO: Реализовать поиск автомобиля
     // TODO: Сделать подстановку информации о минутах пешком
 
     val scope = rememberCoroutineScope()
 
+    val minutes = remember {
+        mutableIntStateOf(29)
+    }
+
     LaunchedEffect(key1 = isGesturesEnabled.value) {
+        var seconds = 60 * 30
         scope.launch {
             val max = mem.floatValue
             var isIncreasing = false
@@ -482,6 +486,15 @@ fun RadarFindingContent(
 
                 delay(170)
             }
+        }
+        scope.launch {
+            while (seconds > 0) {
+                seconds--;
+                minutes.intValue = seconds / 60
+                delay(1000)
+            }
+            page.value--
+            //TODO: Добавить вывод сообщения о конце поиска
         }
     }
 
@@ -519,7 +532,7 @@ fun RadarFindingContent(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Осталось 29 минут",
+                text = "Осталось ${minutes.intValue} минут",
                 fontSize = 12.sp,
                 color = Color(0xFFC2C2C2)
             )
