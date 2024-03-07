@@ -6,11 +6,15 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.os.Looper
 import android.util.Log
+import android.util.MutableFloat
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,11 +44,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -92,6 +98,7 @@ import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
 import com.yandex.runtime.image.ImageProvider
 import io.ktor.client.plugins.convertLongTimeoutToLongWithInfiniteAsZero
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
@@ -110,7 +117,7 @@ fun Main(
         mutableStateOf(Point())
     }
     val scope = rememberCoroutineScope()
-    val coef = remember {
+    val mem = remember {
         mutableFloatStateOf(1f)
     }
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -120,15 +127,9 @@ fun Main(
     }
     lateinit var userPlacemark: PlacemarkMapObject
 
-    val sheetContent: MutableState<@Composable (ColumnScope) -> Unit> = remember {
-        mutableStateOf({ })
-    }
-
     val isGesturesEnabled = remember {
         mutableStateOf(true)
     }
-
-
 
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
@@ -171,7 +172,7 @@ fun Main(
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 currentLocation.value = Point(it.latitude, it.longitude)
                 userPlacemark.geometry = currentLocation.value
-                circle.value?.geometry = Circle(currentLocation.value, 400f * coef.value)
+                circle.value?.geometry = Circle(currentLocation.value, 400f * mem.floatValue)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
@@ -212,16 +213,6 @@ fun Main(
         activityResultLauncher.launch(locationPermissions)
     }
 
-    sheetContent.value = {
-        RadarContent(
-            coef = coef,
-            sheetContent = sheetContent,
-            circle = circle,
-            currentLocation = currentLocation,
-            isGesturesEnabled = isGesturesEnabled
-        )
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -258,7 +249,7 @@ fun Main(
                 scope.launch {
                     map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
-                    circle.value = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation.value, 400f * coef.value))
+                    circle.value = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation.value, 400f * mem.floatValue))
                     circle.value?.fillColor = Color(0x4A92D992).toArgb()
                     circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
                     circle.value?.strokeWidth = 1.5f
@@ -293,35 +284,49 @@ fun Main(
             map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
         }
-
-
-
-        //Test()
-
-
     }
 
 
-    BottomSheetWithPages(sheetContent, sheetState, isGesturesEnabled)
 
+    val page = remember {
+        mutableIntStateOf(0)
+    }
 
+    val bottomSheetPages: List<@Composable () -> Unit> = listOf({RadarContent(
+        circle = circle,
+        currentLocation = currentLocation,
+        isGesturesEnabled = isGesturesEnabled,
+        page = page,
+        mem = mem
+    )}, {RadarFindingContent(page, isGesturesEnabled, circle, mem, currentLocation)})
 
+    BottomSheetWithPages(sheetState, isGesturesEnabled, page, bottomSheetPages)
 }
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BottomSheetWithPages(
-    sheetContent: MutableState<@Composable (ColumnScope) -> Unit>,
     sheetState: ModalBottomSheetState,
-    isGesturesEnabled: MutableState<Boolean>
+    isGesturesEnabled: MutableState<Boolean>,
+    page: MutableState<Int>,
+    test: List<@Composable () -> Unit>
 ) {
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         scrimColor = Color.Transparent,
         sheetGesturesEnabled = isGesturesEnabled.value,
-        sheetContent = sheetContent.value
+        sheetContent = {
+            Box {
+                AnimatedContent(
+                    targetState = page.value,
+                    label = "test"
+                ) {
+                    test[it].invoke()
+                }
+            }
+        }
     ) {
     }
     Box(
@@ -351,16 +356,12 @@ fun BottomSheetWithPages(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarContent(
-    coef: MutableState<Float>,
-    sheetContent: MutableState<@Composable (ColumnScope) -> Unit>,
     circle: MutableState<CircleMapObject?>,
     currentLocation: MutableState<Point>,
     isGesturesEnabled: MutableState<Boolean>,
-    memValue: Float = 1f
+    page: MutableState<Int>,
+    mem: MutableFloatState
 ) {
-    var mem by remember {
-        mutableFloatStateOf(memValue)
-    }
     Column(
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -377,12 +378,11 @@ fun RadarContent(
         )
         Column {
             androidx.compose.material3.Slider(
-                value = mem,
+                value = mem.floatValue,
                 steps = 2,
                 valueRange = 1f..4f,
                 onValueChange = {
-                    mem = it
-                    coef.value = it
+                    mem.floatValue = it
                     circle.value?.geometry = Circle(currentLocation.value, 400f * it)
                 },
                 colors = androidx.compose.material3.SliderDefaults.colors(
@@ -407,22 +407,22 @@ fun RadarContent(
                 Text(
                     text = "5 мин",
                     fontSize = 12.sp,
-                    color = if (mem == 1f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mem.value == 1f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "10 мин",
                     fontSize = 12.sp,
-                    color = if (mem == 2f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mem.value == 2f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "15 мин",
                     fontSize = 12.sp,
-                    color = if (mem == 3f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mem.value == 3f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "20 мин",
                     fontSize = 12.sp,
-                    color = if (mem == 4f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mem.value == 4f) Color.Black else Color(0xFFC2C2C2)
                 )
             }
         }
@@ -430,78 +430,7 @@ fun RadarContent(
         androidx.compose.material3.Button(
             onClick = {
                 isGesturesEnabled.value = false
-                sheetContent.value = {
-                    // TODO: Сделать таймер
-                    // TODO: Реализовать поиск автомобиля
-                    // TODO: Сделать мигание области
-                    // TODO: Сделать подстановку информации о минутах пешком
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 15.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            text = "Радар",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 24.sp
-                        )
-                        Text(
-                            text = "Высокий спрос в вашей зоне, машин поблизости нет",
-                            fontSize = 12.sp,
-                            color = Color(0xFFC2C2C2)
-                        )
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                text = "Ищем ближайший автомобиль",
-                                fontSize = 12.sp,
-                                color = Color(0xFFC2C2C2)
-                            )
-                            Text(
-                                text = "10 МИНУТ ПЕШКОМ",
-                                fontSize = 16.sp,
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Осталось 29 минут",
-                                fontSize = 12.sp,
-                                color = Color(0xFFC2C2C2)
-                            )
-                        }
-                        Spacer(modifier = Modifier.size(5.dp))
-                        androidx.compose.material3.Button(
-                            onClick = {
-                                sheetContent.value = {
-                                    isGesturesEnabled.value = true
-                                    RadarContent(
-                                        coef = coef,
-                                        sheetContent = sheetContent,
-                                        circle = circle,
-                                        currentLocation = currentLocation,
-                                        isGesturesEnabled = isGesturesEnabled,
-                                        memValue = mem
-                                    )
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF6699CC),
-                                contentColor = Color.White,
-                                disabledContainerColor = Color.Transparent,
-                                disabledContentColor = Color(0xFFB5B5B5)
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(text = "Назад")
-                        }
-                    }
-                }
+                page.value++
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),
@@ -515,6 +444,104 @@ fun RadarContent(
             shape = RoundedCornerShape(10.dp)
         ) {
             Text(text = "Начать поиск")
+        }
+    }
+}
+
+@Composable
+fun RadarFindingContent(
+    page: MutableState<Int>,
+    isGesturesEnabled: MutableState<Boolean>,
+    circle: MutableState<CircleMapObject?>,
+    mem: MutableFloatState,
+    currentLocation: MutableState<Point>
+) {
+    // TODO: Сделать таймер
+    // TODO: Реализовать поиск автомобиля
+    // TODO: Сделать подстановку информации о минутах пешком
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = isGesturesEnabled.value) {
+        scope.launch {
+            val max = mem.floatValue
+            var isIncreasing = false
+            while (true) {
+                if (isIncreasing)
+                    mem.floatValue += max*0.05f
+                else
+                    mem.floatValue -= max*0.05f
+
+                if (mem.floatValue <= 0.04f)
+                    isIncreasing = true
+
+                if (mem.floatValue >= max)
+                    isIncreasing = false
+
+                circle.value?.geometry = Circle(currentLocation.value, 400f * mem.floatValue)
+
+                delay(170)
+            }
+        }
+    }
+
+    isGesturesEnabled.value = false
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 15.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Радар",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp
+        )
+        Text(
+            text = "Высокий спрос в вашей зоне, машин поблизости нет",
+            fontSize = 12.sp,
+            color = Color(0xFFC2C2C2)
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                text = "Ищем ближайший автомобиль",
+                fontSize = 12.sp,
+                color = Color(0xFFC2C2C2)
+            )
+            Text(
+                text = "10 МИНУТ ПЕШКОМ",
+                fontSize = 16.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Осталось 29 минут",
+                fontSize = 12.sp,
+                color = Color(0xFFC2C2C2)
+            )
+        }
+        Spacer(modifier = Modifier.size(5.dp))
+        androidx.compose.material3.Button(
+            onClick = {
+                isGesturesEnabled.value = true
+                page.value--
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6699CC),
+                contentColor = Color.White,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = Color(0xFFB5B5B5)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(text = "Назад")
         }
     }
 }
