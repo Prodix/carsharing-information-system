@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RadarFindingContent(
-    page: MutableState<Int>,
+    page: MutableState<String>,
     isGesturesEnabled: MutableState<Boolean>,
     circle: MutableState<CircleMapObject?>,
     mem: MutableFloatState,
@@ -44,20 +45,18 @@ fun RadarFindingContent(
 
     val scope = rememberCoroutineScope()
     val max = mem.floatValue
-    val isOpen = remember {
-        mutableStateOf(true)
-    }
+    var isOpen = true
 
     val minutes = remember {
         mutableIntStateOf(29)
     }
 
-    LaunchedEffect(key1 = isGesturesEnabled.value) {
+    LaunchedEffect(key1 = LocalContext.current) {
         var seconds = 60 * 30
 
         scope.launch {
             var isIncreasing = false
-            while (isOpen.value) {
+            while (isOpen) {
                 if (isIncreasing)
                     mem.floatValue += max*0.05f
                 else
@@ -69,6 +68,7 @@ fun RadarFindingContent(
                 if (mem.floatValue >= max)
                     isIncreasing = false
 
+
                 circle.value?.geometry = Circle(currentLocation.value, 400f * mem.floatValue)
 
                 delay(170)
@@ -77,7 +77,7 @@ fun RadarFindingContent(
         }
 
         scope.launch {
-            while (seconds > 0 && isOpen.value) {
+            while (seconds > 0 && isOpen) {
                 seconds--;
                 minutes.intValue = seconds / 60
                 delay(1000)
@@ -127,8 +127,9 @@ fun RadarFindingContent(
         Button(
             onClick = {
                 isGesturesEnabled.value = true
-                isOpen.value = false
-                page.value--
+                isOpen = false
+                page.value = "radarIntro"
+                mem.floatValue = walkMinutes.value.toFloat()
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),

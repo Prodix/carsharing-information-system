@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,14 +26,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ChipDefaults
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.FilterChip
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
+import androidx.compose.material.SelectableChipColors
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,11 +52,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -97,21 +107,32 @@ fun Main(
     val currentLocation: MutableState<Point> = remember {
         mutableStateOf(Point())
     }
+
+    val page = remember {
+        mutableStateOf("radarIntro")
+    }
+
+    val carType = remember {
+        mutableFloatStateOf(1f)
+    }
+
     val scope = rememberCoroutineScope()
+
     val mem = remember {
         mutableFloatStateOf(1f)
     }
+
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     val circle: MutableState<CircleMapObject?> = remember {
         mutableStateOf(null)
     }
+
     lateinit var userPlacemark: PlacemarkMapObject
 
     val isGesturesEnabled = remember {
         mutableStateOf(true)
     }
-
 
     val walkMinutes = remember {
         mutableIntStateOf(1)
@@ -234,6 +255,7 @@ fun Main(
                 .background(Color.White, RoundedCornerShape(16.dp))
                 .align(Alignment.BottomCenter),
             onClickRadar = {
+                page.value = "radarIntro"
                 scope.launch {
                     map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
@@ -245,7 +267,10 @@ fun Main(
                 }
             },
             onClickFilter = {
-
+                page.value = "filter"
+                scope.launch {
+                    sheetState.show()
+                }
             }
         )
 
@@ -274,20 +299,128 @@ fun Main(
         }
     }
 
-    val page = remember {
-        mutableIntStateOf(0)
-    }
 
-    val bottomSheetPages: List<@Composable (MutableState<Int>) -> Unit> = listOf({ RadarContent(
+
+    val bottomSheetPages: Map<String, @Composable (MutableState<Int>) -> Unit> = mapOf("radarIntro" to { RadarContent(
         circle = circle,
         currentLocation = currentLocation,
         isGesturesEnabled = isGesturesEnabled,
         page = page,
         mem = mem,
         walkMinutes = walkMinutes
-    )}, { RadarFindingContent(page, isGesturesEnabled, circle, mem, currentLocation, walkMinutes) })
+    )}, "radar" to { RadarFindingContent(page, isGesturesEnabled, circle, mem, currentLocation, walkMinutes) },
+        "filter" to { FilterCarsContent(carType = carType) })
 
     BottomSheetWithPages(sheetState, isGesturesEnabled, page, bottomSheetPages, walkMinutes)
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@SuppressLint("UnrememberedMutableInteractionSource")
+@Composable
+fun FilterCarsContent(
+    carType: MutableFloatState
+) {
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 15.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "Фильтр поиска",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 24.sp
+        )
+        Column {
+            Slider(
+                value = carType.floatValue,
+                steps = 1,
+                valueRange = 1f..3f,
+                onValueChange = {
+                    carType.floatValue = it
+                },
+                colors = SliderDefaults.colors(
+                    activeTickColor = Color(0xFF6699CC),
+                    inactiveTickColor = Color.Transparent,
+                    inactiveTrackColor = Color(0x806699CC),
+                    activeTrackColor = Color(0xFF6699CC),
+                    thumbColor = Color(0xFF34699D)
+                ),
+                thumb = {
+                    SliderDefaults.Thumb(
+                        interactionSource = MutableInteractionSource(),
+                        thumbSize = DpSize(30.dp, 30.dp)
+                    )
+                }
+            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ){
+                Text(
+                    text = "Эконом",
+                    fontSize = 12.sp,
+                    color = if (carType.floatValue == 1f) Color.Black else Color(0xFFC2C2C2)
+                )
+                Text(
+                    text = "Комфорт",
+                    fontSize = 12.sp,
+                    color = if (carType.floatValue == 2f) Color.Black else Color(0xFFC2C2C2)
+                )
+                Text(
+                    text = "Бизнес",
+                    fontSize = 12.sp,
+                    color = if (carType.floatValue == 3f) Color.Black else Color(0xFFC2C2C2)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.size(5.dp))
+        Text(
+            text = "Опции",
+            fontSize = 12.sp,
+            color = Color(0xFFC2C2C2)
+        )
+
+        for (i in 1 .. 3) {
+            var isSelected by remember {
+                mutableStateOf(false)
+            }
+
+            FilterChip(
+                selected = isSelected,
+                onClick = {
+                    isSelected = !isSelected
+                },
+                leadingIcon = {
+                    Image(imageVector = ImageVector.vectorResource(id = R.drawable.child_icon), contentDescription = null)
+                },
+                colors = ChipDefaults.filterChipColors(
+                    backgroundColor = Color.Transparent,
+                    selectedBackgroundColor = Color(0x266699CC)
+                )
+            ) {
+                Text(text = "Детское кресло")
+            }
+        }
+
+
+        Button(
+            onClick = {
+                //TODO: Сделать фильтрацию автомобилей
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF6699CC),
+                contentColor = Color.White,
+                disabledContainerColor = Color.Transparent,
+                disabledContentColor = Color(0xFFB5B5B5)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(text = "Фильтр по моделям")
+        }
+    }
 }
 
 

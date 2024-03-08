@@ -17,14 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-@SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterialApi::class)
+@SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun BottomSheetWithPages(
     sheetState: ModalBottomSheetState,
     isGesturesEnabled: MutableState<Boolean>,
-    page: MutableState<Int>,
-    sheetComposableList: List<@Composable (MutableState<Int>) -> Unit>,
+    page: MutableState<String>,
+    sheetComposableList: Map<String, @Composable (MutableState<Int>) -> Unit>,
     walkMinutes: MutableState<Int>
 ) {
     ModalBottomSheetLayout(
@@ -38,7 +38,7 @@ fun BottomSheetWithPages(
                     targetState = page.value,
                     label = ""
                 ) {
-                    sheetComposableList[it].invoke(walkMinutes)
+                    sheetComposableList[it]?.invoke(walkMinutes)
                 }
             }
         }

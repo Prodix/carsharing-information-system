@@ -37,7 +37,7 @@ fun RadarContent(
     circle: MutableState<CircleMapObject?>,
     currentLocation: MutableState<Point>,
     isGesturesEnabled: MutableState<Boolean>,
-    page: MutableState<Int>,
+    page: MutableState<String>,
     mem: MutableFloatState,
     walkMinutes: MutableState<Int>
 ) {
@@ -110,7 +110,7 @@ fun RadarContent(
         Button(
             onClick = {
                 isGesturesEnabled.value = false
-                page.value++
+                page.value = "radar"
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),
