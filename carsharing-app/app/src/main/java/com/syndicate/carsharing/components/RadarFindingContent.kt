@@ -130,6 +130,7 @@ fun RadarFindingContent(
                 isOpen = false
                 page.value = "radarIntro"
                 mem.floatValue = walkMinutes.value.toFloat()
+                circle.value?.geometry = Circle(currentLocation.value, 400f * walkMinutes.value)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),

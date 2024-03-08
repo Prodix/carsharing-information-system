@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ChipDefaults
 import androidx.compose.material.ExperimentalMaterialApi
@@ -38,6 +42,7 @@ import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
@@ -77,6 +82,8 @@ import com.syndicate.carsharing.components.LeftMenu
 import com.syndicate.carsharing.components.RadarContent
 import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.UserCursorButton
+import com.syndicate.carsharing.models.MainModel
+import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -299,26 +306,46 @@ fun Main(
         }
     }
 
+    val bottomSheetPages: Map<String, @Composable () -> Unit> = mapOf(
+        "radarIntro" to { RadarContent(
+            circle = circle,
+            currentLocation = currentLocation,
+            isGesturesEnabled = isGesturesEnabled,
+            page = page,
+            mem = mem,
+            walkMinutes = walkMinutes
+        )},
+        "radar" to { RadarFindingContent(
+            page = page,
+            isGesturesEnabled = isGesturesEnabled,
+            circle = circle,
+            mem = mem,
+            currentLocation = currentLocation,
+            walkMinutes = walkMinutes
+        )},
+        "filter" to { FilterCarsContent(
+            carType = carType,
+            mainViewModel
+        )}
+    )
 
-
-    val bottomSheetPages: Map<String, @Composable (MutableState<Int>) -> Unit> = mapOf("radarIntro" to { RadarContent(
-        circle = circle,
-        currentLocation = currentLocation,
+    BottomSheetWithPages(
+        sheetState = sheetState,
         isGesturesEnabled = isGesturesEnabled,
         page = page,
-        mem = mem,
+        sheetComposableList = bottomSheetPages,
         walkMinutes = walkMinutes
-    )}, "radar" to { RadarFindingContent(page, isGesturesEnabled, circle, mem, currentLocation, walkMinutes) },
-        "filter" to { FilterCarsContent(carType = carType) })
-
-    BottomSheetWithPages(sheetState, isGesturesEnabled, page, bottomSheetPages, walkMinutes)
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
+    ExperimentalLayoutApi::class
+)
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun FilterCarsContent(
-    carType: MutableFloatState
+    carType: MutableFloatState,
+    mainViewModel: MainViewModel
 ) {
     Column(
         modifier = Modifier
@@ -380,27 +407,41 @@ fun FilterCarsContent(
             color = Color(0xFFC2C2C2)
         )
 
-        for (i in 1 .. 3) {
-            var isSelected by remember {
-                mutableStateOf(false)
-            }
+        FlowRow (
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            val list by mainViewModel.listTags.collectAsState()
 
-            FilterChip(
-                selected = isSelected,
-                onClick = {
-                    isSelected = !isSelected
-                },
-                leadingIcon = {
-                    Image(imageVector = ImageVector.vectorResource(id = R.drawable.child_icon), contentDescription = null)
-                },
-                colors = ChipDefaults.filterChipColors(
-                    backgroundColor = Color.Transparent,
-                    selectedBackgroundColor = Color(0x266699CC)
-                )
-            ) {
-                Text(text = "Детское кресло")
+            for (i in list.indices) {
+                FilterChip(
+                    selected = list[i].isSelected,
+                    shape = RoundedCornerShape(10.dp),
+                    onClick = {
+                        mainViewModel.updateTags(i)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.child_icon),
+                            contentDescription = null,
+                            tint = if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
+                        )
+                    },
+                    colors = ChipDefaults.filterChipColors(
+                        backgroundColor = Color.Transparent,
+                        selectedBackgroundColor = Color(0x266699CC)
+                    ),
+                    interactionSource = MutableInteractionSource(),
+                    border = BorderStroke(1.dp, if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E))
+                ) {
+                    Text(
+                        text = "Детское кресло",
+                        color = if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
+                    )
+                }
             }
         }
+
+
 
 
         Button(

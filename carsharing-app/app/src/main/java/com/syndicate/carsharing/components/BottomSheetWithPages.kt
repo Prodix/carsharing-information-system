@@ -2,6 +2,15 @@ package com.syndicate.carsharing.components
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -15,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -24,7 +34,7 @@ fun BottomSheetWithPages(
     sheetState: ModalBottomSheetState,
     isGesturesEnabled: MutableState<Boolean>,
     page: MutableState<String>,
-    sheetComposableList: Map<String, @Composable (MutableState<Int>) -> Unit>,
+    sheetComposableList: Map<String, @Composable () -> Unit>,
     walkMinutes: MutableState<Int>
 ) {
     ModalBottomSheetLayout(
@@ -34,12 +44,7 @@ fun BottomSheetWithPages(
         sheetGesturesEnabled = isGesturesEnabled.value,
         sheetContent = {
             Box {
-                AnimatedContent(
-                    targetState = page.value,
-                    label = ""
-                ) {
-                    sheetComposableList[it]?.invoke(walkMinutes)
-                }
+                sheetComposableList[page.value]?.invoke()
             }
         }
     ) {
