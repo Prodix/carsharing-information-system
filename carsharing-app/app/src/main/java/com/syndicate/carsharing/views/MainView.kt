@@ -109,50 +109,18 @@ fun Main(
     mainViewModel: MainViewModel = viewModel()
 ) {
     lateinit var map: MapView
+    lateinit var userPlacemark: PlacemarkMapObject
     val mainState by mainViewModel.uiState.collectAsState()
     val context = LocalContext.current
-
-    val currentLocation: MutableState<Point> = remember {
-        mutableStateOf(Point())
-    }
-
-    val page = remember {
-        mutableStateOf("radarIntro")
-    }
-
-    val carType = remember {
-        mutableFloatStateOf(1f)
-    }
-
     val scope = rememberCoroutineScope()
-
-    val mem = remember {
-        mutableFloatStateOf(1f)
-    }
-
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-    val circle: MutableState<CircleMapObject?> = remember {
-        mutableStateOf(null)
-    }
-
-    lateinit var userPlacemark: PlacemarkMapObject
-
-    val isGesturesEnabled = remember {
-        mutableStateOf(true)
-    }
-
-    val walkMinutes = remember {
-        mutableIntStateOf(1)
-    }
-
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
         confirmValueChange = {
             if (it == ModalBottomSheetValue.Hidden) {
-                if (circle.value != null)
-                    map.mapWindow.map.mapObjects.remove(circle.value!!)
-                circle.value = null
+                if (mainViewModel.circle.value != null)
+                    map.mapWindow.map.mapObjects.remove(mainViewModel.circle.value!!)
+                mainViewModel.updateCircle(null)
             }
 
             true
@@ -170,31 +138,31 @@ fun Main(
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            currentLocation.value = Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0)
+            mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
 
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-            userPlacemark.geometry = currentLocation.value
-            if (currentLocation.value.latitude == 0.0 && currentLocation.value.longitude == 0.0) {
+            userPlacemark.geometry = mainViewModel.currentLocation.value
+            if (mainViewModel.currentLocation.value.latitude == 0.0 && mainViewModel.currentLocation.value.longitude == 0.0) {
                 userPlacemark.isVisible = false
             }
             else {
                 map.setNoninteractive(true)
-                map.mapWindow.map.move(CameraPosition(currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                map.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                 { map.setNoninteractive(false) }
             }
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
-                currentLocation.value = Point(it.latitude, it.longitude)
-                userPlacemark.geometry = currentLocation.value
+                mainViewModel.updateLocation(Point(it.latitude, it.longitude))
+                userPlacemark.geometry = mainViewModel.currentLocation.value
 
                 if (!sheetState.isVisible)
-                    circle.value?.geometry = Circle(currentLocation.value, 400f * walkMinutes.value)
+                    mainViewModel.circle.value?.geometry = Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
                     map.setNoninteractive(true)
-                    map.mapWindow.map.move(CameraPosition(currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    map.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { map.setNoninteractive(false) }
                 }
             }
@@ -263,19 +231,19 @@ fun Main(
                 .background(Color.White, RoundedCornerShape(16.dp))
                 .align(Alignment.BottomCenter),
             onClickRadar = {
-                page.value = "radarIntro"
+                mainViewModel.updatePage("radarIntro")
                 scope.launch {
-                    map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    map.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
-                    circle.value = map.mapWindow.map.mapObjects.addCircle(Circle(currentLocation.value, 400f * walkMinutes.value))
-                    circle.value?.fillColor = Color(0x4A92D992).toArgb()
-                    circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
-                    circle.value?.strokeWidth = 1.5f
+                    mainViewModel.updateCircle(map.mapWindow.map.mapObjects.addCircle(Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)))
+                    mainViewModel.circle.value?.fillColor = Color(0x4A92D992).toArgb()
+                    mainViewModel.circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
+                    mainViewModel.circle.value?.strokeWidth = 1.5f
                     sheetState.show()
                 }
             },
             onClickFilter = {
-                page.value = "filter"
+                mainViewModel.updatePage("filter")
                 scope.launch {
                     sheetState.show()
                 }
@@ -302,39 +270,26 @@ fun Main(
                 .align(Alignment.CenterEnd),
             sheetState = sheetState
         ) {
-            map.mapWindow.map.move(CameraPosition(Point(currentLocation.value.latitude, currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+            map.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
         }
     }
 
     val bottomSheetPages: Map<String, @Composable () -> Unit> = mapOf(
         "radarIntro" to { RadarContent(
-            circle = circle,
-            currentLocation = currentLocation,
-            isGesturesEnabled = isGesturesEnabled,
-            page = page,
-            mem = mem,
-            walkMinutes = walkMinutes
+            mainViewModel = mainViewModel
         )},
         "radar" to { RadarFindingContent(
-            page = page,
-            isGesturesEnabled = isGesturesEnabled,
-            circle = circle,
-            mem = mem,
-            currentLocation = currentLocation,
-            walkMinutes = walkMinutes
+            mainViewModel = mainViewModel
         )},
         "filter" to { FilterCarsContent(
-            carType = carType,
-            mainViewModel
+            mainViewModel = mainViewModel
         )}
     )
 
     BottomSheetWithPages(
         sheetState = sheetState,
-        isGesturesEnabled = isGesturesEnabled,
-        page = page,
         sheetComposableList = bottomSheetPages,
-        walkMinutes = walkMinutes
+        mainViewModel = mainViewModel
     )
 }

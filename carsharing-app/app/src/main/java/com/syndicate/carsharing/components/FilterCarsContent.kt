@@ -46,9 +46,10 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun FilterCarsContent(
-    carType: MutableFloatState,
     mainViewModel: MainViewModel
 ) {
+    val carType by mainViewModel.carType.collectAsState()
+
     Column(
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -60,11 +61,11 @@ fun FilterCarsContent(
         )
         Column {
             Slider(
-                value = carType.floatValue,
+                value = carType,
                 steps = 1,
                 valueRange = 1f..3f,
                 onValueChange = {
-                    carType.floatValue = it
+                    mainViewModel.updateCarType(it)
                 },
                 colors = SliderDefaults.colors(
                     activeTickColor = Color(0xFF6699CC),
@@ -88,17 +89,17 @@ fun FilterCarsContent(
                 Text(
                     text = "Эконом",
                     fontSize = 12.sp,
-                    color = if (carType.floatValue == 1f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (carType == 1f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "Комфорт",
                     fontSize = 12.sp,
-                    color = if (carType.floatValue == 2f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (carType == 2f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "Бизнес",
                     fontSize = 12.sp,
-                    color = if (carType.floatValue == 3f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (carType == 3f) Color.Black else Color(0xFFC2C2C2)
                 )
             }
         }

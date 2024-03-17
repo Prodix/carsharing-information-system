@@ -20,12 +20,15 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CircleMapObject
@@ -34,13 +37,13 @@ import com.yandex.mapkit.map.CircleMapObject
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadarContent(
-    circle: MutableState<CircleMapObject?>,
-    currentLocation: MutableState<Point>,
-    isGesturesEnabled: MutableState<Boolean>,
-    page: MutableState<String>,
-    mem: MutableFloatState,
-    walkMinutes: MutableState<Int>
+    mainViewModel: MainViewModel
 ) {
+    val circle by mainViewModel.circle.collectAsState()
+    val walkMinutes by mainViewModel.walkMinutes.collectAsState()
+    val currentLocation by mainViewModel.currentLocation.collectAsState()
+
+
     Column(
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -57,13 +60,13 @@ fun RadarContent(
         )
         Column {
             Slider(
-                value = walkMinutes.value.toFloat(),
+                value = walkMinutes.toFloat(),
                 steps = 2,
                 valueRange = 1f..4f,
                 onValueChange = {
-                    mem.floatValue = it
-                    walkMinutes.value = it.toInt()
-                    circle.value?.geometry = Circle(currentLocation.value, 400f * it)
+                    mainViewModel.updateMem(it)
+                    mainViewModel.updateWalkMinutes(it.toInt())
+                    circle?.geometry = Circle(currentLocation, 400f * it)
                 },
                 colors = SliderDefaults.colors(
                     activeTickColor = Color(0xFF6699CC),
@@ -87,30 +90,30 @@ fun RadarContent(
                 Text(
                     text = "5 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.value.toFloat() == 1f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (walkMinutes.toFloat() == 1f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "10 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.value.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (walkMinutes.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "15 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.value.toFloat() == 3f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (walkMinutes.toFloat() == 3f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "20 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.value.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (walkMinutes.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
                 )
             }
         }
         Spacer(modifier = Modifier.size(5.dp))
         Button(
             onClick = {
-                isGesturesEnabled.value = false
-                page.value = "radar"
+                mainViewModel.updateIsGesturesEnabled(false)
+                mainViewModel.updatePage("radar")
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),

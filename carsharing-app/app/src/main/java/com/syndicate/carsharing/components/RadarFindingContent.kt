@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CircleMapObject
@@ -34,17 +37,19 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun RadarFindingContent(
-    page: MutableState<String>,
-    isGesturesEnabled: MutableState<Boolean>,
-    circle: MutableState<CircleMapObject?>,
-    mem: MutableFloatState,
-    currentLocation: MutableState<Point>,
-    walkMinutes: MutableState<Int>
+    mainViewModel: MainViewModel
 ) {
     // TODO: Реализовать поиск автомобиля
 
+    val mem by mainViewModel.mem.collectAsState()
+    val page by mainViewModel.page.collectAsState()
+    val circle by mainViewModel.circle.collectAsState()
+    val walkMinutes by mainViewModel.walkMinutes.collectAsState()
+    val currentLocation by mainViewModel.currentLocation.collectAsState()
+    val isGesturesEnabled by mainViewModel.isGesturesEnabled.collectAsState()
+
     val scope = rememberCoroutineScope()
-    val max = mem.floatValue
+    val max = mem
     var isOpen = true
 
     val minutes = remember {
@@ -58,22 +63,22 @@ fun RadarFindingContent(
             var isIncreasing = false
             while (isOpen) {
                 if (isIncreasing)
-                    mem.floatValue += max*0.05f
+                    mainViewModel.updateMem(mem + max * 0.05f)
                 else
-                    mem.floatValue -= max*0.05f
+                    mainViewModel.updateMem(mem - max * 0.05f)
 
-                if (mem.floatValue <= 0.04f)
+                if (mem <= 0.04f)
                     isIncreasing = true
 
-                if (mem.floatValue >= max)
+                if (mem >= max)
                     isIncreasing = false
 
 
-                circle.value?.geometry = Circle(currentLocation.value, 400f * mem.floatValue)
+                circle?.geometry = Circle(currentLocation, 400f * mem)
 
                 delay(170)
             }
-            circle.value?.geometry = Circle(currentLocation.value, 400f * walkMinutes.value)
+            circle?.geometry = Circle(currentLocation, 400f * walkMinutes)
         }
 
         scope.launch {
@@ -112,7 +117,7 @@ fun RadarFindingContent(
                 color = Color(0xFFC2C2C2)
             )
             Text(
-                text = "${walkMinutes.value * 5} МИНУТ ПЕШКОМ",
+                text = "${walkMinutes * 5} МИНУТ ПЕШКОМ",
                 fontSize = 16.sp,
                 color = Color.Black,
                 fontWeight = FontWeight.Bold
@@ -126,11 +131,11 @@ fun RadarFindingContent(
         Spacer(modifier = Modifier.size(5.dp))
         Button(
             onClick = {
-                isGesturesEnabled.value = true
+                mainViewModel.updateIsGesturesEnabled(true)
                 isOpen = false
-                page.value = "radarIntro"
-                mem.floatValue = walkMinutes.value.toFloat()
-                circle.value?.geometry = Circle(currentLocation.value, 400f * walkMinutes.value)
+                mainViewModel.updatePage("radarIntro")
+                mainViewModel.updateMem(walkMinutes.toFloat())
+                circle?.geometry = Circle(currentLocation, 400f * walkMinutes)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),

@@ -22,29 +22,33 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.syndicate.carsharing.viewmodels.MainViewModel
 
 @OptIn(ExperimentalMaterialApi::class)
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun BottomSheetWithPages(
     sheetState: ModalBottomSheetState,
-    isGesturesEnabled: MutableState<Boolean>,
-    page: MutableState<String>,
     sheetComposableList: Map<String, @Composable () -> Unit>,
-    walkMinutes: MutableState<Int>
+    mainViewModel: MainViewModel
 ) {
+    val page by mainViewModel.page.collectAsState()
+    val isGesturesEnabled by mainViewModel.isGesturesEnabled.collectAsState()
+
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         scrimColor = Color.Transparent,
-        sheetGesturesEnabled = isGesturesEnabled.value,
+        sheetGesturesEnabled = isGesturesEnabled,
         sheetContent = {
             Box {
-                sheetComposableList[page.value]?.invoke()
+                sheetComposableList[page]?.invoke()
             }
         }
     ) {
@@ -57,7 +61,7 @@ fun BottomSheetWithPages(
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)
                 .then(
-                    if (!isGesturesEnabled.value) {
+                    if (!isGesturesEnabled) {
                         Modifier
                             .clickable(
                                 indication = null,
