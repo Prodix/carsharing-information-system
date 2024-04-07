@@ -2,6 +2,7 @@ package com.syndicate.carsharing.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,11 +20,13 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 
+//TODO: Сделать функционал нажатий на кнопки
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun LeftMenu(
     modifier: Modifier = Modifier,
-    sheetState: ModalBottomSheetState
+    sheetState: ModalBottomSheetState,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
@@ -45,6 +48,9 @@ fun LeftMenu(
             )
             .background(Color.White, RoundedCornerShape(10.dp))
             .padding(10.dp)
+            .clickable {
+                onClick()
+            }
     ) {
         Image(imageVector = ImageVector.vectorResource(id = R.drawable.profileicon), contentDescription = null)
     }

@@ -80,6 +80,8 @@ import com.syndicate.carsharing.components.BottomMenu
 import com.syndicate.carsharing.components.BottomSheetWithPages
 import com.syndicate.carsharing.components.FilterCarsContent
 import com.syndicate.carsharing.components.LeftMenu
+import com.syndicate.carsharing.components.MainMenuContent
+import com.syndicate.carsharing.components.ProfileContent
 import com.syndicate.carsharing.components.RadarContent
 import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.UserCursorButton
@@ -203,8 +205,8 @@ fun Main(
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
         AndroidView(factory = {
+            MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
             MapView(it).apply {
                 map = this
                 MapKitFactory.initialize(it)
@@ -254,7 +256,13 @@ fun Main(
             modifier = Modifier
                 .padding(16.dp)
                 .align(Alignment.TopStart),
-            sheetState = sheetState
+            sheetState = sheetState,
+            onClick = {
+                mainViewModel.updatePage("mainMenu")
+                scope.launch {
+                    sheetState.show()
+                }
+            }
         )
 
         BalanceMenu(
@@ -283,6 +291,12 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "filter" to { FilterCarsContent(
+            mainViewModel = mainViewModel
+        )},
+        "mainMenu" to { MainMenuContent(
+            mainViewModel = mainViewModel
+        )},
+        "profile" to { ProfileContent(
             mainViewModel = mainViewModel
         )}
     )
