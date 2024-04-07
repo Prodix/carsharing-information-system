@@ -126,7 +126,8 @@ fun Main(
             }
 
             true
-        }
+        },
+        skipHalfExpanded = true
     )
 
     // TODO: Добавить проверку интернета и геолокации
