@@ -70,7 +70,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 
-    implementation("com.yandex.android:maps.mobile:4.4.0-full")
+    implementation("com.yandex.android:maps.mobile:4.5.2-navikit")
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.compose.material:material:1.6.1")
