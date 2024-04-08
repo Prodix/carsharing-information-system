@@ -73,7 +73,7 @@ dependencies {
     implementation("com.yandex.android:maps.mobile:4.4.0-full")
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
-    implementation("androidx.compose.material:material:1.6.1")
+    implementation("androidx.compose.material:material:1.6.5")
     implementation("io.ktor:ktor-client-core:2.3.8")
     implementation("io.ktor:ktor-client-cio:2.3.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
