@@ -87,6 +87,7 @@ import com.syndicate.carsharing.components.ProfileContent
 import com.syndicate.carsharing.components.RadarContent
 import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.RateContent
+import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.UserCursorButton
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
@@ -110,7 +111,7 @@ import kotlinx.coroutines.launch
 import kotlin.reflect.typeOf
 import kotlin.system.exitProcess
 
-
+//TODO: Рисовать маршрут при нажатии на точку автомобиля
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
@@ -326,6 +327,9 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "rateInfo" to { RateContent(
+            mainViewModel = mainViewModel
+        )},
+        "reservationPage" to { ReservationContent(
             mainViewModel = mainViewModel
         )}
     )
