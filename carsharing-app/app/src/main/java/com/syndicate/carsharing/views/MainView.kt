@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -78,12 +79,14 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.components.BalanceMenu
 import com.syndicate.carsharing.components.BottomMenu
 import com.syndicate.carsharing.components.BottomSheetWithPages
+import com.syndicate.carsharing.components.CarContent
 import com.syndicate.carsharing.components.FilterCarsContent
 import com.syndicate.carsharing.components.LeftMenu
 import com.syndicate.carsharing.components.MainMenuContent
 import com.syndicate.carsharing.components.ProfileContent
 import com.syndicate.carsharing.components.RadarContent
 import com.syndicate.carsharing.components.RadarFindingContent
+import com.syndicate.carsharing.components.RateContent
 import com.syndicate.carsharing.components.UserCursorButton
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
@@ -94,14 +97,20 @@ import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.CircleMapObject
+import com.yandex.mapkit.map.MapObject
+import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.runtime.image.ImageProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.reflect.typeOf
 import kotlin.system.exitProcess
+
+
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
@@ -129,6 +138,13 @@ fun Main(
         },
         skipHalfExpanded = true
     )
+    val listener: MapObjectTapListener = MapObjectTapListener { _, point: Point ->
+        mainViewModel.updatePage("car")
+        scope.launch {
+            sheetState.show()
+        }
+        true
+    }
 
     // TODO: Добавить проверку интернета и геолокации
     fun enableLocation() {
@@ -143,9 +159,15 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
 
+            val testPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
+            testPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+            testPlacemark.geometry = Point(37.3935, -122.0478)
+            testPlacemark.addTapListener(listener)
+
             userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
             userPlacemark.geometry = mainViewModel.currentLocation.value
+
             if (mainViewModel.currentLocation.value.latitude == 0.0 && mainViewModel.currentLocation.value.longitude == 0.0) {
                 userPlacemark.isVisible = false
             }
@@ -298,6 +320,12 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "profile" to { ProfileContent(
+            mainViewModel = mainViewModel
+        )},
+        "car" to { CarContent(
+            mainViewModel = mainViewModel
+        )},
+        "rateInfo" to { RateContent(
             mainViewModel = mainViewModel
         )}
     )
