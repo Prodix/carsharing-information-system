@@ -39,12 +39,13 @@ fun BottomSheetWithPages(
     mainViewModel: MainViewModel
 ) {
     val page by mainViewModel.page.collectAsState()
+    val scrimColor by mainViewModel.scrimColor.collectAsState()
     val isGesturesEnabled by mainViewModel.isGesturesEnabled.collectAsState()
 
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        scrimColor = Color.Transparent,
+        scrimColor = scrimColor,
         sheetGesturesEnabled = isGesturesEnabled,
         sheetContent = {
             Box {

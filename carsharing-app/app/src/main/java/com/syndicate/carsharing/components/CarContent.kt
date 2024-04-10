@@ -200,9 +200,3 @@ fun CarContent(
         }
     }
 }
-
-@Preview
-@Composable
-fun Test() {
-    CarContent(mainViewModel = MainViewModel())
-}

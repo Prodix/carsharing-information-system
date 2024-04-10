@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
@@ -18,6 +19,7 @@ class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainModel(null))
     private val _currentLocation = MutableStateFlow(Point())
     private val _page = MutableStateFlow("radarIntro")
+    private val _scrimColor = MutableStateFlow(Color.Transparent)
     private val _carType = MutableStateFlow(1f)
     private val _listTags = MutableStateFlow(listOf(
         Tag(
@@ -47,6 +49,7 @@ class MainViewModel : ViewModel() {
     val circle = _circle.asStateFlow()
     val isGesturesEnabled = _isGesturesEnabled.asStateFlow()
     val walkMinutes = _walkMinutes.asStateFlow()
+    val scrimColor = _scrimColor.asStateFlow()
 
     init {
         fillTags()
@@ -59,6 +62,12 @@ class MainViewModel : ViewModel() {
     fun updateCircle(circle: CircleMapObject?) {
         _circle.update {
             circle
+        }
+    }
+
+    fun updateScrim(color: Color) {
+        _scrimColor.update {
+            color
         }
     }
 

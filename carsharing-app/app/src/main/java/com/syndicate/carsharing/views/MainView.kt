@@ -80,6 +80,7 @@ import com.syndicate.carsharing.components.BalanceMenu
 import com.syndicate.carsharing.components.BottomMenu
 import com.syndicate.carsharing.components.BottomSheetWithPages
 import com.syndicate.carsharing.components.CarContent
+import com.syndicate.carsharing.components.CheckContent
 import com.syndicate.carsharing.components.FilterCarsContent
 import com.syndicate.carsharing.components.LeftMenu
 import com.syndicate.carsharing.components.MainMenuContent
@@ -139,6 +140,7 @@ fun Main(
         },
         skipHalfExpanded = true
     )
+
     val listener: MapObjectTapListener = MapObjectTapListener { _, point: Point ->
         mainViewModel.updatePage("car")
         scope.launch {
@@ -330,6 +332,9 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "reservationPage" to { ReservationContent(
+            mainViewModel = mainViewModel
+        )},
+        "checkPage" to { CheckContent(
             mainViewModel = mainViewModel
         )}
     )
