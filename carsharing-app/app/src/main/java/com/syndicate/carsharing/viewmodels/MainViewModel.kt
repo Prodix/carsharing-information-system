@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
+import com.syndicate.carsharing.data.Timer
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CircleMapObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ class MainViewModel : ViewModel() {
     private val _page = MutableStateFlow("radarIntro")
     private val _scrimColor = MutableStateFlow(Color.Transparent)
     private val _carType = MutableStateFlow(1f)
+    private val _timer = MutableStateFlow(Timer())
     private val _listTags = MutableStateFlow(listOf(
         Tag(
             "child1",
@@ -45,6 +47,7 @@ class MainViewModel : ViewModel() {
     val currentLocation = _currentLocation.asStateFlow()
     val page = _page.asStateFlow()
     val carType = _carType.asStateFlow()
+    val timer = _timer.asStateFlow()
     val mem = _mem.asStateFlow()
     val circle = _circle.asStateFlow()
     val isGesturesEnabled = _isGesturesEnabled.asStateFlow()

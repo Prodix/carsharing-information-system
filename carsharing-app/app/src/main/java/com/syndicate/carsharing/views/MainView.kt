@@ -61,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -93,6 +94,7 @@ import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.UserCursorButton
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
+import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -125,6 +127,7 @@ fun Main(
     lateinit var map: MapView
     lateinit var userPlacemark: PlacemarkMapObject
     val mainState by mainViewModel.uiState.collectAsState()
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -292,12 +295,24 @@ fun Main(
             }
         )
 
-        BalanceMenu(
+        Column(
             modifier = Modifier
-                .padding(16.dp)
                 .align(Alignment.TopEnd),
-            sheetState = sheetState
-        )
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            BalanceMenu(
+                modifier = Modifier
+                    .padding(16.dp),
+                sheetState = sheetState
+            )
+            TimerBox(
+                modifier = Modifier
+                    .padding(end = 16.dp),
+                mainViewModel = mainViewModel,
+                sheetState = sheetState
+            )
+        }
 
         UserCursorButton(
             modifier = Modifier
@@ -347,5 +362,38 @@ fun Main(
         sheetState = sheetState,
         sheetComposableList = bottomSheetPages,
         mainViewModel = mainViewModel
+    )
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun TimerBox(
+    modifier: Modifier,
+    mainViewModel: MainViewModel,
+    sheetState: ModalBottomSheetState
+) {
+    val timer = mainViewModel.timer.collectAsState()
+    Text(
+        text = "${timer.value}",
+        modifier = modifier
+            .then(
+                if (timer.value.isStarted && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
+                    Modifier.alpha(1f)
+                } else {
+                    Modifier.alpha(0f)
+                }
+            )
+            .withShadow(
+                Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
+                RoundedCornerShape(10.dp)
+            )
+            .background(
+                Color.White,
+                RoundedCornerShape(10.dp)
+            )
+            .padding(
+                horizontal = 10.dp,
+                vertical = 5.dp
+            )
     )
 }

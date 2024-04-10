@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
@@ -26,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,11 +49,13 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -106,9 +110,13 @@ fun DoorSlider(
 
     LaunchedEffect(key1 = isClosed.value) {
         if (isInitialized) {
-            swipeableState.anchoredDrag(targetValue = DragAnchors.Start) { anchors, targetValue ->
+            while (swipeableState.isAnimationRunning)
+                delay(200)
+            swipeableState.anchoredDrag(
+                targetValue = DragAnchors.Start
+            ) { _, _ ->
                 animate(
-                    initialValue = with(density) {sliderSize.width.toDp().toPx() - thumbSize.width.toDp().toPx()},
+                    initialValue = swipeableState.requireOffset(),
                     initialVelocity = 0f,
                     targetValue = 0f,
                     animationSpec = tween()
@@ -205,17 +213,14 @@ fun ReservationContent(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer = remember {
-        mutableStateOf(Timer(20,0))
-    }
+    val timer = mainViewModel.timer.collectAsState()
 
-    DisposableEffect(key1 = context) {
-        scope.launch {
-            timer.value.start()
-        }
-
-        onDispose {
-            timer.value.stop()
+    LaunchedEffect(key1 = context) {
+        if (!timer.value.isStarted) {
+            timer.value.changeStartTime(20,0)
+            mainViewModel.viewModelScope.launch {
+                timer.value.start()
+            }
         }
     }
 

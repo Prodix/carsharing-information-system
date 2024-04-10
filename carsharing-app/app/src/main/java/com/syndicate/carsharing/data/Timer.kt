@@ -15,6 +15,15 @@ class Timer {
 
     var onTimerEnd: () -> Unit = { }
 
+    val isStarted: Boolean
+        get() = _isStarted
+
+    val defaultMinutes: Int
+        get() = _defaultMinutes
+
+    val defaultSeconds: Int
+        get() = _defaultSeconds
+
     var minutes: Int
         get() = _minutes.value
         set(value) {
@@ -47,6 +56,7 @@ class Timer {
     fun changeStartTime(minutes: Int, seconds: Int) {
         _defaultMinutes = minutes
         _defaultSeconds = seconds
+        restart()
     }
 
     suspend fun start() {

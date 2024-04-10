@@ -19,6 +19,8 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -51,20 +54,23 @@ fun CheckContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
-    val timer = remember {
-        mutableStateOf(Timer(5,0))
-    }
+    val timer = mainViewModel.timer.collectAsState()
 
     DisposableEffect(key1 = context) {
         mainViewModel.updateScrim(Color(0xB5000000))
-        scope.launch {
-            timer.value.start()
+
+        if (timer.value.defaultMinutes != 5) {
+            timer.value.changeStartTime(5,0)
+        }
+
+        if (!timer.value.isStarted) {
+            mainViewModel.viewModelScope.launch {
+                timer.value.start()
+            }
         }
 
         onDispose {
             mainViewModel.updateScrim(Color.Transparent)
-            timer.value.stop()
         }
     }
 
@@ -91,41 +97,46 @@ fun CheckContent(
                 )
             }
         }
-        Box(
+        Box (
             modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Color(0x666699CC),
-                    RoundedCornerShape(10.dp)
-                )
-                .drawBehind {
-                    drawRoundRect(
-                        color = Color(0xFF6699CC),
-                        style = Stroke(
-                            width = 4f,
-                            pathEffect = PathEffect.dashPathEffect(
-                                floatArrayOf(10f, 10f)
-                            )
-                        ),
-                        cornerRadius = CornerRadius(x = 10.dp.toPx(), y = 10.dp.toPx())
+                .padding(4.dp)
+        ){
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Color(0x666699CC),
+                        RoundedCornerShape(10.dp)
+                    )
+                    .drawBehind {
+                        drawRoundRect(
+                            color = Color(0xFF6699CC),
+                            style = Stroke(
+                                width = 4f,
+                                pathEffect = PathEffect.dashPathEffect(
+                                    floatArrayOf(10f, 10f)
+                                )
+                            ),
+                            cornerRadius = CornerRadius(x = 10.dp.toPx(), y = 10.dp.toPx())
+                        )
+                    }
+                    .clickable { }
+                    .padding(vertical = 25.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                ) {
+                    Image(
+                        imageVector = ImageVector.vectorResource(R.drawable.camera),
+                        contentDescription = null
+                    )
+                    Text(
+                        text = "Добавить фото"
                     )
                 }
-                .clickable { }
-                .padding(vertical = 25.dp)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .align(Alignment.Center)
-            ) {
-                Image(
-                    imageVector = ImageVector.vectorResource(R.drawable.camera),
-                    contentDescription = null
-                )
-                Text(
-                    text = "Добавить фото"
-                )
             }
         }
         Text(
