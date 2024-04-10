@@ -88,6 +88,7 @@ import com.syndicate.carsharing.components.ProfileContent
 import com.syndicate.carsharing.components.RadarContent
 import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.RateContent
+import com.syndicate.carsharing.components.RentContent
 import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.UserCursorButton
 import com.syndicate.carsharing.models.MainModel
@@ -335,6 +336,9 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "checkPage" to { CheckContent(
+            mainViewModel = mainViewModel
+        )},
+        "rentPage" to { RentContent(
             mainViewModel = mainViewModel
         )}
     )

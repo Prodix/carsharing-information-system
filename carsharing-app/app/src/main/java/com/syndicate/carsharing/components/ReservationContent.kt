@@ -63,7 +63,8 @@ enum class DragAnchors {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DoorSlider(
-    isClosed: MutableState<Boolean>
+    isClosed: MutableState<Boolean>,
+    mainViewModel: MainViewModel
 ) {
     val density = LocalDensity.current
     var isInitialized by remember {
@@ -115,6 +116,7 @@ fun DoorSlider(
                     dragTo(value, velocity)
                 }
             }
+            mainViewModel.updatePage("checkPage")
         }
         else {
             isInitialized = true
@@ -200,15 +202,6 @@ fun DoorSlider(
 fun ReservationContent(
     mainViewModel: MainViewModel
 ) {
-//    val context = LocalContext.current
-
-//    DisposableEffect(key1 = context) {
-//        mainViewModel.updateScrim(Color(0xB5000000))
-//
-//        onDispose {
-//            mainViewModel.updateScrim(Color.Transparent)
-//        }
-//    }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -304,7 +297,8 @@ fun ReservationContent(
             contentDescription = null
         )
         DoorSlider(
-            isClosed = isClosed
+            isClosed = isClosed,
+            mainViewModel = mainViewModel
         )
         Text(
             text = "Откройте двери, чтобы перейти к осмотру автомобиля"
@@ -386,7 +380,7 @@ fun ReservationContent(
         }
         Button(
             onClick = {
-                      mainViewModel.updatePage("checkPage")
+                      /* TODO */
             },
             modifier = Modifier
                 .fillMaxWidth()
