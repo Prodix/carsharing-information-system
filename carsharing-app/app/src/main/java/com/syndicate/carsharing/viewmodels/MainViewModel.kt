@@ -97,6 +97,7 @@ class MainViewModel : ViewModel() {
                         mapView.value!!.mapWindow.map.mapObjects.addPolyline(validRoute!!).apply {
                             dashLength = 8f
                             dashOffset = 8f
+                            gapLength = 8f
                             strokeWidth = 4f
                             setStrokeColor(Color(0xFF99CC99).toArgb())
                         }
