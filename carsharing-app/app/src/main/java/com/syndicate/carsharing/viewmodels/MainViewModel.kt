@@ -1,21 +1,32 @@
 package com.syndicate.carsharing.viewmodels
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
+import com.syndicate.carsharing.R
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.data.Timer
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.Transport
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CircleMapObject
+import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.masstransit.PedestrianRouter
 import com.yandex.mapkit.transport.masstransit.Route
 import com.yandex.mapkit.transport.masstransit.Session
 import com.yandex.mapkit.transport.masstransit.TimeOptions
+import com.yandex.runtime.image.ImageProvider
+import io.ktor.client.call.body
+import io.ktor.client.request.parameter
+import io.ktor.client.request.request
+import io.ktor.client.statement.request
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -53,10 +64,14 @@ class MainViewModel : ViewModel() {
     private val _walkMinutes = MutableStateFlow(1)
     private val _isReserving = MutableStateFlow(false)
     private val _isRenting = MutableStateFlow(false)
+    private val _transport = MutableStateFlow(listOf<Transport>())
+    private val _transportPlacemarkList = MutableStateFlow(listOf<PlacemarkMapObject>())
 
     val options = TimeOptions()
 
     val mapView = _mapView.asStateFlow()
+    val transport = _transport.asStateFlow()
+    val transportPlacemarkList = _transportPlacemarkList.asStateFlow()
     val pedestrianRouter = _pedestrianRouter.asStateFlow()
     val points = _points.asStateFlow()
     val session = _session.asStateFlow()
@@ -209,6 +224,26 @@ class MainViewModel : ViewModel() {
     fun setMap(map: MapView) {
         _mapView.update {
             map
+        }
+    }
+
+    suspend fun getTransport() {
+        val response = HttpClient.client.request(
+            "${HttpClient.url}/transport/get"
+        ) {
+            method = HttpMethod.Get
+        }
+
+        if (response.status.value == 200) {
+            _transport.update {
+                response.body()
+            }
+        }
+    }
+
+    fun updatePlacemarks(list: List<PlacemarkMapObject>) {
+        _transportPlacemarkList.update {
+            list
         }
     }
 

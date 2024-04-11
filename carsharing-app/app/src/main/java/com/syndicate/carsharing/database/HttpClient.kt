@@ -5,9 +5,10 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.jackson.jackson
 
-class HttpClientSingleton {
+class HttpClient {
 
     companion object Client {
+        val url = "http://10.0.2.2:5052/api"
         val client = HttpClient(CIO) {
             install(ContentNegotiation) {
                 jackson()

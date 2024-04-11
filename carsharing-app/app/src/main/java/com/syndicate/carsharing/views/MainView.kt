@@ -55,6 +55,7 @@ import com.syndicate.carsharing.components.RentContent
 import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.ResultContent
 import com.syndicate.carsharing.components.UserCursorButton
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -70,6 +71,7 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
 import com.yandex.runtime.image.ImageProvider
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
@@ -135,11 +137,6 @@ fun Main(
         ) {
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
-
-            val testPlacemark = mapView!!.mapWindow.map.mapObjects.addPlacemark()
-            testPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
-            testPlacemark.geometry = Point(37.3935, -122.0478)
-            testPlacemark.addTapListener(listener)
 
             userPlacemark = mapView!!.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
@@ -223,6 +220,59 @@ fun Main(
                 MapKitFactory.getInstance().onStart()
                 this.onStart()
                 mainViewModel.updateRouter(TransportFactory.getInstance().createPedestrianRouter())
+
+                var isFirstTime = true
+
+                scope.launch {
+                    while (true) {
+                        val oldList = mainViewModel.transport.value.map { x -> x.id }
+                        mainViewModel.getTransport()
+                        val newList = mainViewModel.transport.value.map { x -> x.id }
+
+                        if (isFirstTime) {
+                            val list = mutableListOf<PlacemarkMapObject>()
+                            for (i in mainViewModel.transport.value) {
+                                val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                                    geometry = Point(i.latitude, i.longitude)
+                                    setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                                    addTapListener(listener)
+                                    userData = i
+                                }
+                                list.add(placemarkMapObject)
+                            }
+                            mainViewModel.updatePlacemarks(list.toList())
+                            isFirstTime = false
+                        }
+
+                        if (oldList.size != newList.size) {
+                            val doubleList = oldList.toMutableList() + newList
+                            val difference = doubleList.filter { x -> doubleList.count { y -> y == x } == 1 }
+                            val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
+                            if (oldList.size > newList.size) {
+                                val needToRemove = mainViewModel.transportPlacemarkList.value.filter { x ->
+                                    (x.userData as Transport).id in difference
+                                }
+                                for (i in needToRemove) {
+                                    mainViewModel.mapView.value!!.mapWindow.map.mapObjects.remove(i)
+                                    replacedList.remove(i)
+                                }
+                            } else {
+                                for (i in mainViewModel.transport.value.filter { x -> x.id in difference }) {
+                                    val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                                        geometry = Point(i.latitude, i.longitude)
+                                        setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                                        addTapListener(listener)
+                                        userData = i
+                                    }
+                                    replacedList.add(placemarkMapObject)
+                                }
+                            }
+                            mainViewModel.updatePlacemarks(replacedList.toList())
+                        }
+
+                        delay(3000)
+                    }
+                }
             }
 
         }, modifier = Modifier) {
