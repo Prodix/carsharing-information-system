@@ -7,50 +7,23 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ChipDefaults
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FilterChip
-import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.SelectableChipColors
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableFloatState
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -100,15 +73,25 @@ import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
+import com.yandex.mapkit.RequestPoint
+import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.CircleMapObject
 import com.yandex.mapkit.map.MapObject
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
+import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
+import com.yandex.mapkit.transport.TransportFactory
+import com.yandex.mapkit.transport.masstransit.PedestrianRouter
+import com.yandex.mapkit.transport.masstransit.Route
+import com.yandex.mapkit.transport.masstransit.Session
+import com.yandex.mapkit.transport.masstransit.Session.RouteListener
+import com.yandex.mapkit.transport.masstransit.TimeOptions
 import com.yandex.runtime.image.ImageProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -117,6 +100,7 @@ import kotlin.system.exitProcess
 
 //TODO: Рисовать маршрут при нажатии на точку автомобиля
 
+
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -124,9 +108,10 @@ fun Main(
     navigation: NavHostController,
     mainViewModel: MainViewModel = viewModel()
 ) {
-    lateinit var map: MapView
     lateinit var userPlacemark: PlacemarkMapObject
     val mainState by mainViewModel.uiState.collectAsState()
+    val mapView by mainViewModel.mapView.collectAsState()
+    val router by mainViewModel.pedestrianRouter.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -136,7 +121,7 @@ fun Main(
         confirmValueChange = {
             if (it == ModalBottomSheetValue.Hidden) {
                 if (mainViewModel.circle.value != null)
-                    map.mapWindow.map.mapObjects.remove(mainViewModel.circle.value!!)
+                    mapView!!.mapWindow.map.mapObjects.remove(mainViewModel.circle.value!!)
                 mainViewModel.updateCircle(null)
             }
 
@@ -146,7 +131,15 @@ fun Main(
     )
 
     val listener: MapObjectTapListener = MapObjectTapListener { _, point: Point ->
-        mainViewModel.updatePage("car")
+        mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
+
+        if (mainViewModel.isRenting.value)
+            mainViewModel.updatePage("reservationPage")
+        else if (mainViewModel.isChecking.value)
+            mainViewModel.updatePage("checkPage")
+        else
+            mainViewModel.updatePage("car")
+
         scope.launch {
             sheetState.show()
         }
@@ -166,12 +159,12 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
 
-            val testPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
+            val testPlacemark = mapView!!.mapWindow.map.mapObjects.addPlacemark()
             testPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
             testPlacemark.geometry = Point(37.3935, -122.0478)
             testPlacemark.addTapListener(listener)
 
-            userPlacemark = map.mapWindow.map.mapObjects.addPlacemark()
+            userPlacemark = mapView!!.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
             userPlacemark.geometry = mainViewModel.currentLocation.value
 
@@ -179,23 +172,33 @@ fun Main(
                 userPlacemark.isVisible = false
             }
             else {
-                map.setNoninteractive(true)
-                map.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                { map.setNoninteractive(false) }
+                mapView!!.setNoninteractive(true)
+                mapView!!.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                { mapView!!.setNoninteractive(false) }
             }
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 mainViewModel.updateLocation(Point(it.latitude, it.longitude))
                 userPlacemark.geometry = mainViewModel.currentLocation.value
+                mainViewModel.updatePoints(0, RequestPoint(userPlacemark.geometry, RequestPointType.WAYPOINT, null, null))
+                if (mainViewModel.session.value != null && mainViewModel.isRenting.value) {
+                    mainViewModel.updateSession(
+                        router!!.requestRoutes(
+                            mainViewModel.points.value,
+                            mainViewModel.options,
+                            mainViewModel.routeListener
+                        )
+                    )
+                }
 
                 if (!sheetState.isVisible)
                     mainViewModel.circle.value?.geometry = Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
-                    map.setNoninteractive(true)
-                    map.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                    { map.setNoninteractive(false) }
+                    mapView!!.setNoninteractive(true)
+                    mapView!!.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    { mapView!!.setNoninteractive(false) }
                 }
             }
         }
@@ -238,10 +241,11 @@ fun Main(
         AndroidView(factory = {
             MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
             MapView(it).apply {
-                map = this
+                mainViewModel.setMap(this)
                 MapKitFactory.initialize(it)
                 MapKitFactory.getInstance().onStart()
                 this.onStart()
+                mainViewModel.updateRouter(TransportFactory.getInstance().createPedestrianRouter())
             }
 
         }, modifier = Modifier) {
@@ -265,9 +269,9 @@ fun Main(
             onClickRadar = {
                 mainViewModel.updatePage("radarIntro")
                 scope.launch {
-                    map.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    mapView!!.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
-                    mainViewModel.updateCircle(map.mapWindow.map.mapObjects.addCircle(Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)))
+                    mainViewModel.updateCircle(mapView!!.mapWindow.map.mapObjects.addCircle(Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)))
                     mainViewModel.circle.value?.fillColor = Color(0x4A92D992).toArgb()
                     mainViewModel.circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
                     mainViewModel.circle.value?.strokeWidth = 1.5f
@@ -320,7 +324,7 @@ fun Main(
                 .align(Alignment.CenterEnd),
             sheetState = sheetState
         ) {
-            map.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+            mapView!!.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
         }
     }

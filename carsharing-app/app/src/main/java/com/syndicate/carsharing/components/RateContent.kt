@@ -115,7 +115,15 @@ fun RateContent(
         )
         Button(
             onClick = {
-                      mainViewModel.updatePage("reservationPage")
+                mainViewModel.updatePage("reservationPage")
+                mainViewModel.updateSession(
+                    mainViewModel.pedestrianRouter.value!!.requestRoutes(
+                        mainViewModel.points.value,
+                        mainViewModel.options,
+                        mainViewModel.routeListener
+                    )
+                )
+                mainViewModel.updateRenting(true)
             },
             modifier = Modifier.fillMaxWidth()
         ) {

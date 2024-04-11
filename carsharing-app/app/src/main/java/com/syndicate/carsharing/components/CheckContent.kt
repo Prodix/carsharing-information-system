@@ -58,6 +58,9 @@ fun CheckContent(
 
     DisposableEffect(key1 = context) {
         mainViewModel.updateScrim(Color(0xB5000000))
+        mainViewModel.updateRenting(false)
+        mainViewModel.updateSession(null)
+        mainViewModel.updateChecking(true)
 
         if (timer.value.defaultMinutes != 5) {
             timer.value.changeStartTime(5,0)
