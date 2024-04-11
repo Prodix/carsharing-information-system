@@ -6,7 +6,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -26,24 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -64,10 +53,8 @@ import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.RateContent
 import com.syndicate.carsharing.components.RentContent
 import com.syndicate.carsharing.components.ReservationContent
+import com.syndicate.carsharing.components.ResultContent
 import com.syndicate.carsharing.components.UserCursorButton
-import com.syndicate.carsharing.models.MainModel
-import com.syndicate.carsharing.data.Tag
-import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -77,25 +64,13 @@ import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
-import com.yandex.mapkit.geometry.Polyline
-import com.yandex.mapkit.layers.GeoObjectTapListener
 import com.yandex.mapkit.map.CameraPosition
-import com.yandex.mapkit.map.CircleMapObject
-import com.yandex.mapkit.map.MapObject
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
-import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
-import com.yandex.mapkit.transport.masstransit.PedestrianRouter
-import com.yandex.mapkit.transport.masstransit.Route
-import com.yandex.mapkit.transport.masstransit.Session
-import com.yandex.mapkit.transport.masstransit.Session.RouteListener
-import com.yandex.mapkit.transport.masstransit.TimeOptions
 import com.yandex.runtime.image.ImageProvider
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.reflect.typeOf
 import kotlin.system.exitProcess
 
 //TODO: Рисовать маршрут при нажатии на точку автомобиля
@@ -133,10 +108,12 @@ fun Main(
     val listener: MapObjectTapListener = MapObjectTapListener { _, point: Point ->
         mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
 
-        if (mainViewModel.isRenting.value)
+        if (mainViewModel.isReserving.value)
             mainViewModel.updatePage("reservationPage")
         else if (mainViewModel.isChecking.value)
             mainViewModel.updatePage("checkPage")
+        else if (mainViewModel.isRenting.value)
+            mainViewModel.updatePage("rentPage")
         else
             mainViewModel.updatePage("car")
 
@@ -181,7 +158,7 @@ fun Main(
                 mainViewModel.updateLocation(Point(it.latitude, it.longitude))
                 userPlacemark.geometry = mainViewModel.currentLocation.value
                 mainViewModel.updatePoints(0, RequestPoint(userPlacemark.geometry, RequestPointType.WAYPOINT, null, null))
-                if (mainViewModel.session.value != null && mainViewModel.isRenting.value) {
+                if (mainViewModel.session.value != null && mainViewModel.isReserving.value) {
                     mainViewModel.updateSession(
                         router!!.requestRoutes(
                             mainViewModel.points.value,
@@ -358,6 +335,9 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "rentPage" to { RentContent(
+            mainViewModel = mainViewModel
+        )},
+        "resultPage" to { ResultContent(
             mainViewModel = mainViewModel
         )}
     )

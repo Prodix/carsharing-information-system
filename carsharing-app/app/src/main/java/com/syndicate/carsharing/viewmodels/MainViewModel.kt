@@ -1,11 +1,5 @@
 package com.syndicate.carsharing.viewmodels
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
@@ -16,7 +10,6 @@ import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CircleMapObject
-import com.yandex.mapkit.map.MapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.masstransit.PedestrianRouter
@@ -58,6 +51,7 @@ class MainViewModel : ViewModel() {
     private val _mem = MutableStateFlow(1f)
     private val _isGesturesEnabled = MutableStateFlow(true)
     private val _walkMinutes = MutableStateFlow(1)
+    private val _isReserving = MutableStateFlow(false)
     private val _isRenting = MutableStateFlow(false)
 
     val options = TimeOptions()
@@ -68,7 +62,7 @@ class MainViewModel : ViewModel() {
     val session = _session.asStateFlow()
     val route = _route.asStateFlow()
     val uiState = _uiState.asStateFlow()
-    val isRenting = _isRenting.asStateFlow()
+    val isReserving = _isReserving.asStateFlow()
     val listTags = _listTags.asStateFlow()
     val currentLocation = _currentLocation.asStateFlow()
     val page = _page.asStateFlow()
@@ -80,6 +74,7 @@ class MainViewModel : ViewModel() {
     val walkMinutes = _walkMinutes.asStateFlow()
     val scrimColor = _scrimColor.asStateFlow()
     val isChecking = _isChecking.asStateFlow()
+    val isRenting = _isRenting.asStateFlow()
 
     val routeListener = object : Session.RouteListener {
         override fun onMasstransitRoutes(p0: MutableList<Route>) {
@@ -142,6 +137,12 @@ class MainViewModel : ViewModel() {
             _route.value?.let { _mapView.value!!.mapWindow.map.mapObjects.remove(it) }
         _session.update {
             session
+        }
+    }
+
+    fun updateReserving(isReserving: Boolean) {
+        _isReserving.update {
+            isReserving
         }
     }
 

@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -32,20 +30,17 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.modifiers.withShadow
-import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun RentContent(
+fun ResultContent(
     mainViewModel: MainViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val timer = mainViewModel.timer.collectAsState()
-
-    mainViewModel.updateRenting(true)
+    mainViewModel.updateRenting(false)
 
     LaunchedEffect(key1 = context) {
         if (!timer.value.isStarted) {
@@ -133,23 +128,6 @@ fun RentContent(
             modifier = Modifier.fillMaxWidth(),
             contentDescription = null
         )
-        DoorSlider(
-            isClosed = isClosed,
-            action = { /*TODO: Переход в режим ожидания */ },
-            mainViewModel = mainViewModel
-        )
-        Text(
-            text = "Закройте двери, чтобы перейти в режим ожидания"
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Аренда 12,34 Р/мин")
-            Text(text = "12,34 Р")
-        }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -168,16 +146,23 @@ fun RentContent(
             Text(text = "Время ожидания")
             Text(text = "0:00")
         }
-        Button(
-            onClick = {
-                mainViewModel.updatePage("resultPage")
-            },
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Text(
-                text = "Закончить аренду"
-            )
+            Text(text = "Платный осмотр")
+            Text(text = "0:00")
+        }
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Text(text = "Итого")
+            Text(text = "100 Р")
         }
     }
 }

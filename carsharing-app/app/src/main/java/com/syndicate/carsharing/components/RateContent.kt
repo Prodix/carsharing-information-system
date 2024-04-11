@@ -1,6 +1,5 @@
 package com.syndicate.carsharing.components
 
-import android.graphics.fonts.FontStyle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -123,7 +122,7 @@ fun RateContent(
                         mainViewModel.routeListener
                     )
                 )
-                mainViewModel.updateRenting(true)
+                mainViewModel.updateReserving(true)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
