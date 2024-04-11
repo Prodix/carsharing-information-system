@@ -16,8 +16,12 @@ public class TransportController : Controller
 
     [HttpGet]
     [Route("/api/transport/get")]
-    public string GetTransport()
+    public IActionResult GetTransport()
     {
-        return JsonConvert.SerializeObject(_db.Transport.ToList(), Formatting.Indented);
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(_db.Transport.ToList()),
+            ContentType = "application/json"
+        };
     }
 }
