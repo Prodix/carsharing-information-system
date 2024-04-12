@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class Transport (
     @JsonProperty("Id") val id: Int,
+    @JsonProperty("TransportType") val transportType: String,
     @JsonProperty("CarName") val carName: String,
     @JsonProperty("CarNumber") val carNumber: String,
     @JsonProperty("CarImagePath") val carImagePath: String,

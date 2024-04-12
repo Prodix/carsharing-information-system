@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -52,6 +53,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -64,6 +66,7 @@ enum class DragAnchors {
     End
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun ReservationContent(
     mainViewModel: MainViewModel
@@ -72,6 +75,8 @@ fun ReservationContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val timer = mainViewModel.timer.collectAsState()
+    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
+    val transportInfo = placemark?.userData as Transport
 
     LaunchedEffect(key1 = context) {
         if (!timer.value.isStarted) {
@@ -96,7 +101,7 @@ fun ReservationContent(
             modifier = Modifier.fillMaxWidth()
         ){
             Text(
-                text = "Daewoo Nexia"
+                text = transportInfo.carName
             )
             Box(
                 modifier = Modifier
@@ -105,7 +110,7 @@ fun ReservationContent(
                 Text(
                     modifier = Modifier
                         .padding(5.dp),
-                    text = "C 409 MM 797"
+                    text = "${transportInfo.carNumber[0]} ${transportInfo.carNumber.subSequence(1, 4)} ${transportInfo.carNumber.subSequence(4, 6)} ${transportInfo.carNumber.subSequence(6, transportInfo.carNumber.length)}"
                 )
             }
         }
@@ -123,7 +128,7 @@ fun ReservationContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "234 км • 55%"
+                    text = "234 км • ${transportInfo.gasLevel}"
                 )
             }
             Row(
@@ -135,7 +140,12 @@ fun ReservationContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "Базовая"
+                    text = when (transportInfo.transportType) {
+                        "BASE" -> "Базовый"
+                        "COMFORT" -> "Комфорт"
+                        "BUSINESS" -> "Бизнес"
+                        else -> "Неизвестно"
+                    }
                 )
             }
             Row(
@@ -147,7 +157,10 @@ fun ReservationContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "Без каско"
+                    text = when (transportInfo.hasInsurance) {
+                        true -> "Со страховкой"
+                        else -> "Без страховки"
+                    }
                 )
             }
         }

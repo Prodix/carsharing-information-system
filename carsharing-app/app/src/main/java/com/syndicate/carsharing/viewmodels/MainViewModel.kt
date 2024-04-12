@@ -65,6 +65,7 @@ class MainViewModel : ViewModel() {
     private val _isReserving = MutableStateFlow(false)
     private val _isRenting = MutableStateFlow(false)
     private val _transport = MutableStateFlow(listOf<Transport>())
+    private val _lastSelectedPlacemark = MutableStateFlow<PlacemarkMapObject?>(null)
     private val _transportPlacemarkList = MutableStateFlow(listOf<PlacemarkMapObject>())
 
     val options = TimeOptions()
@@ -77,6 +78,7 @@ class MainViewModel : ViewModel() {
     val session = _session.asStateFlow()
     val route = _route.asStateFlow()
     val uiState = _uiState.asStateFlow()
+    val lastSelectedPlacemark = _lastSelectedPlacemark.asStateFlow()
     val isReserving = _isReserving.asStateFlow()
     val listTags = _listTags.asStateFlow()
     val currentLocation = _currentLocation.asStateFlow()
@@ -132,6 +134,13 @@ class MainViewModel : ViewModel() {
             isChecking
         }
     }
+
+    fun updateLastSelectedPlacemark(placemark: PlacemarkMapObject?) {
+        _lastSelectedPlacemark.update {
+            placemark
+        }
+    }
+
 
     fun updatePoints(index: Int, point: RequestPoint) {
 

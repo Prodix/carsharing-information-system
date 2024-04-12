@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeCompilerApi
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,16 +36,21 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 
 
 //TODO: Загрузка изображения и информации
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun CarContent(
     mainViewModel: MainViewModel
 ) {
+    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
+    val transportInfo = placemark?.userData as Transport
+
     Column (
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -54,7 +62,7 @@ fun CarContent(
             modifier = Modifier.fillMaxWidth()
         ){
             Text(
-                text = "Daewoo Nexia"
+                text = transportInfo.carName
             )
             Box(
                 modifier = Modifier
@@ -63,7 +71,7 @@ fun CarContent(
                 Text(
                     modifier = Modifier
                         .padding(5.dp),
-                    text = "C 409 MM 797"
+                    text = "${transportInfo.carNumber[0]} ${transportInfo.carNumber.subSequence(1, 4)} ${transportInfo.carNumber.subSequence(4, 6)} ${transportInfo.carNumber.subSequence(6, transportInfo.carNumber.length)}"
                 )
             }
         }
@@ -81,7 +89,7 @@ fun CarContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "234 км • 55%"
+                    text = "234 км • ${transportInfo.gasLevel}"
                 )
             }
             Row(
@@ -93,7 +101,12 @@ fun CarContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "Базовая"
+                    text = when (transportInfo.transportType) {
+                        "BASE" -> "Базовый"
+                        "COMFORT" -> "Комфорт"
+                        "BUSINESS" -> "Бизнес"
+                        else -> "Неизвестно"
+                    }
                 )
             }
             Row(
@@ -105,7 +118,10 @@ fun CarContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "Без каско"
+                    text = when (transportInfo.hasInsurance) {
+                        true -> "Со страховкой"
+                        else -> "Без страховки"
+                    }
                 )
             }
         }

@@ -108,6 +108,7 @@ fun Main(
     )
 
     val listener: MapObjectTapListener = MapObjectTapListener { placemark, point: Point ->
+        mainViewModel.updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
         mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
 
         if (mainViewModel.isReserving.value)
