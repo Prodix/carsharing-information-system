@@ -107,7 +107,7 @@ fun Main(
         skipHalfExpanded = true
     )
 
-    val listener: MapObjectTapListener = MapObjectTapListener { _, point: Point ->
+    val listener: MapObjectTapListener = MapObjectTapListener { placemark, point: Point ->
         mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
 
         if (mainViewModel.isReserving.value)
@@ -225,9 +225,11 @@ fun Main(
 
                 scope.launch {
                     while (true) {
-                        val oldList = mainViewModel.transport.value.map { x -> x.id }
+                        val oldList = mainViewModel.transport.value
+                        val oldListNumbers = mainViewModel.transport.value.map { x -> x.id }
                         mainViewModel.getTransport()
-                        val newList = mainViewModel.transport.value.map { x -> x.id }
+                        val newList = mainViewModel.transport.value
+                        val newListNumbers = mainViewModel.transport.value.map { x -> x.id }
 
                         if (isFirstTime) {
                             val list = mutableListOf<PlacemarkMapObject>()
@@ -244,11 +246,12 @@ fun Main(
                             isFirstTime = false
                         }
 
-                        if (oldList.size != newList.size) {
-                            val doubleList = oldList.toMutableList() + newList
+                        val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
+
+                        if (oldListNumbers.size != newListNumbers.size) {
+                            val doubleList = oldListNumbers.toMutableList() + newListNumbers
                             val difference = doubleList.filter { x -> doubleList.count { y -> y == x } == 1 }
-                            val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
-                            if (oldList.size > newList.size) {
+                            if (oldListNumbers.size > newListNumbers.size) {
                                 val needToRemove = mainViewModel.transportPlacemarkList.value.filter { x ->
                                     (x.userData as Transport).id in difference
                                 }
@@ -267,8 +270,17 @@ fun Main(
                                     replacedList.add(placemarkMapObject)
                                 }
                             }
-                            mainViewModel.updatePlacemarks(replacedList.toList())
                         }
+
+                        for (i in newList) {
+                            val placemark = replacedList.first {
+                                    x -> (x.userData as Transport).id == i.id
+                            }
+                            if (placemark.geometry !== Point(i.latitude, i.longitude)) {
+                                placemark.geometry = Point(i.latitude, i.longitude)
+                            }
+                        }
+                        mainViewModel.updatePlacemarks(replacedList.toList())
 
                         delay(3000)
                     }
