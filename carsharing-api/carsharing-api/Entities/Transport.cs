@@ -1,13 +1,19 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace carsharing_api.Entities;
 
 [Table("transport")]
+[JsonObject(MemberSerialization = MemberSerialization.OptOut)]
 public class Transport
 {
     public int Id { get; set; }
+
+    [JsonConverter(typeof(StringEnumConverter))]
+    public CarType TransportType { get; set; }
 
     public string CarName { get; set; } = null!;
 

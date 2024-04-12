@@ -1,6 +1,8 @@
 ﻿using carsharing_api.Context;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Npgsql;
 
 namespace carsharing_api.Controllers;
 
@@ -18,9 +20,12 @@ public class TransportController : Controller
     [Route("/api/transport/get")]
     public IActionResult GetTransport()
     {
+        var settings = new JsonSerializerSettings();
+        settings.Converters.Add(new StringEnumConverter());
+        var test = _db.Transport.ToList();
         return new ContentResult()
         {
-            Content = JsonConvert.SerializeObject(_db.Transport.ToList()),
+            Content = JsonConvert.SerializeObject(test,  settings),
             ContentType = "application/json"
         };
     }

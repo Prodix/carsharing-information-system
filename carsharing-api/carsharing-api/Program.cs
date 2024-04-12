@@ -1,5 +1,6 @@
 using carsharing_api.Context;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace carsharing_api;
 
@@ -19,9 +20,13 @@ public class Program
 
         var connection = builder.Configuration.GetConnectionString("DefaultConnection");
 
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(connection);
+        dataSourceBuilder.MapEnum<CarType>();
+        var dataSource = dataSourceBuilder.Build();
+
         builder.Services.AddDbContext<CarsharingDbContext>(options =>
         {
-            options.UseNpgsql(connection).UseSnakeCaseNamingConvention();
+            options.UseNpgsql(dataSource).UseSnakeCaseNamingConvention();
         });
 
         var app = builder.Build();
