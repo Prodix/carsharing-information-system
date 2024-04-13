@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,31 +29,28 @@ fun TimerBox(
 ) {
     val timer by mainViewModel.timer.collectAsState()
     val stopwatch by mainViewModel.stopwatch.collectAsState()
-    val completedModifier = modifier
-        .then(
-            if (sheetState.targetValue != ModalBottomSheetValue.Expanded) {
-                Modifier.alpha(1f)
-            } else {
-                Modifier.alpha(0f)
-            }
-        )
-        .withShadow(
-            Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
-            RoundedCornerShape(10.dp)
-        )
-        .background(
-            Color.White,
-            RoundedCornerShape(10.dp)
-        )
-        .padding(
-            horizontal = 10.dp,
-            vertical = 5.dp
-        )
 
-    if (timer.isStarted || stopwatch.isStarted) {
-        Text(
-            text = if (timer.isStarted) timer.toString() else stopwatch.toString(),
-            modifier = completedModifier
-        )
-    }
+    Text(
+        text = if (timer.isStarted) timer.toString() else stopwatch.toString(),
+        modifier = modifier
+            .then(
+                if ((timer.isStarted || stopwatch.isStarted) && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
+                    Modifier.alpha(1f)
+                } else {
+                    Modifier.alpha(0f)
+                }
+            )
+            .withShadow(
+                Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
+                RoundedCornerShape(10.dp)
+            )
+            .background(
+                Color.White,
+                RoundedCornerShape(10.dp)
+            )
+            .padding(
+                horizontal = 10.dp,
+                vertical = 5.dp
+            )
+    )
 }

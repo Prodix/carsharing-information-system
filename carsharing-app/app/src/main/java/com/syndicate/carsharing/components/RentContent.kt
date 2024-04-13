@@ -167,7 +167,7 @@ fun RentContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время в пути")
-            Text(text = "0:59")
+            Text(text = stopwatch.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,

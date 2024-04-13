@@ -2,21 +2,25 @@ package com.syndicate.carsharing.data
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.delay
 
 class Timer {
 
     private val _minutes: MutableState<Int> = mutableIntStateOf(5)
     private val _seconds: MutableState<Int> = mutableIntStateOf(0)
-    private var _isStarted: Boolean = false
+    private var _isStarted: MutableState<Boolean> = mutableStateOf(false)
 
     private var _defaultMinutes: Int = 5
     private var _defaultSeconds: Int = 0
 
     var onTimerEnd: () -> Unit = { }
 
-    val isStarted: Boolean
-        get() = _isStarted
+    var isStarted: Boolean
+        get() = _isStarted.value
+        set(value) {
+            _isStarted.value = value
+        }
 
     val defaultMinutes: Int
         get() = _defaultMinutes
@@ -61,14 +65,14 @@ class Timer {
 
     suspend fun start() {
 
-        _isStarted = true
+        _isStarted.value = true
 
-        while (_isStarted) {
+        while (_isStarted.value) {
             if (_seconds.value == 0 && _minutes.value != 0) {
                 _minutes.value -= 1
                 _seconds.value = 59
             } else if (_seconds.value == 0 && _minutes.value == 0) {
-                _isStarted = false
+                _isStarted.value = false
                 onTimerEnd()
             } else {
                 _seconds.value -= 1
@@ -78,7 +82,7 @@ class Timer {
     }
 
     fun stop() {
-        _isStarted = false
+        _isStarted.value = false
     }
 
     override fun toString(): String {
