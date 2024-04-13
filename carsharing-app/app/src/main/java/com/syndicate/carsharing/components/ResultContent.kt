@@ -48,11 +48,8 @@ fun ResultContent(
     mainViewModel.updateRenting(false)
 
     LaunchedEffect(key1 = context) {
-        if (!timer.value.isStarted) {
-            timer.value.changeStartTime(20,0)
-            mainViewModel.viewModelScope.launch {
-                timer.value.start()
-            }
+        mainViewModel.viewModelScope.launch {
+            timer.value.stop()
         }
     }
 
@@ -97,7 +94,7 @@ fun ResultContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "234 км • ${transportInfo.gasLevel}"
+                    text = "${((transportInfo.gasLevel / (transportInfo.gasConsumption / 100.0))).toInt()} км • ${((transportInfo.gasLevel / transportInfo.tankCapacity.toDouble()) * 100).toInt()}%"
                 )
             }
             Row(
@@ -126,10 +123,7 @@ fun ResultContent(
                     contentDescription = null
                 )
                 Text(
-                    text = when (transportInfo.hasInsurance) {
-                        true -> "Со страховкой"
-                        else -> "Без страховки"
-                    }
+                    text = transportInfo.insuranceType
                 )
             }
         }

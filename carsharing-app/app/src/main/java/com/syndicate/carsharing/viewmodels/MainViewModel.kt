@@ -157,8 +157,12 @@ class MainViewModel : ViewModel() {
     }
 
     fun updateSession(session: Session?) {
-        if (session == null)
+        if (session == null) {
             _route.value?.let { _mapView.value!!.mapWindow.map.mapObjects.remove(it) }
+            _route.update {
+                null
+            }
+        }
         _session.update {
             session
         }

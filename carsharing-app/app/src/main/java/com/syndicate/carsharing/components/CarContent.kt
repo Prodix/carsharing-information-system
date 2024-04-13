@@ -89,7 +89,7 @@ fun CarContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "234 км • ${transportInfo.gasLevel}"
+                    text = "${((transportInfo.gasLevel / (transportInfo.gasConsumption / 100.0))).toInt()} км • ${((transportInfo.gasLevel / transportInfo.tankCapacity.toDouble()) * 100).toInt()}%"
                 )
             }
             Row(
@@ -118,10 +118,7 @@ fun CarContent(
                     contentDescription = null
                 )
                 Text(
-                    text = when (transportInfo.hasInsurance) {
-                        true -> "Со страховкой"
-                        else -> "Без страховки"
-                    }
+                    text = transportInfo.insuranceType
                 )
             }
         }

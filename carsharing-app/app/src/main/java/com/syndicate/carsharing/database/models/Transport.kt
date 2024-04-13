@@ -10,8 +10,10 @@ data class Transport (
     @JsonProperty("CarImagePath") val carImagePath: String,
     @JsonProperty("IsReserved") val isReserved: Boolean,
     @JsonProperty("GasLevel") val gasLevel: Int,
-    @JsonProperty("HasInsurance") val hasInsurance: Boolean,
+    @JsonProperty("InsuranceType") val insuranceType: String,
     @JsonProperty("IsDoorOpened") val isDoorOpened: Boolean,
     @JsonProperty("Longitude") val longitude: Double,
     @JsonProperty("Latitude") val latitude: Double,
+    @JsonProperty("GasConsumption") val gasConsumption: Int,
+    @JsonProperty("TankCapacity") val tankCapacity: Int
 )
