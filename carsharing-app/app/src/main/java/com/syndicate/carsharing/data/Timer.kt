@@ -82,7 +82,6 @@ class Timer {
     }
 
     override fun toString(): String {
-        return "${_minutes.value}:${if (_seconds.value.toString().length == 1) "0${_seconds.value}" else _seconds.value}"
+        return "${(if (_minutes.value < 10) 0 else "")}${_minutes.value}:${(if (_seconds.value < 10) 0 else "")}${_seconds.value}"
     }
-
 }

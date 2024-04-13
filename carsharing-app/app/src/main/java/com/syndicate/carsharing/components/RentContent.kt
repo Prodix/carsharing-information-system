@@ -47,18 +47,17 @@ fun RentContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer = mainViewModel.timer.collectAsState()
+    val timer by mainViewModel.timer.collectAsState()
+    val stopwatch by mainViewModel.stopwatch.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val transportInfo = placemark?.userData as Transport
 
     mainViewModel.updateRenting(true)
 
     LaunchedEffect(key1 = context) {
-        if (!timer.value.isStarted) {
-            timer.value.changeStartTime(20,0)
-            mainViewModel.viewModelScope.launch {
-                timer.value.start()
-            }
+        mainViewModel.viewModelScope.launch {
+            timer.stop()
+            stopwatch.start()
         }
     }
 
@@ -182,6 +181,9 @@ fun RentContent(
         Button(
             onClick = {
                 mainViewModel.updatePage("resultPage")
+                mainViewModel.viewModelScope.launch {
+                    stopwatch.stop()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

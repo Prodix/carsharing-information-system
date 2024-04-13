@@ -25,7 +25,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -54,6 +57,7 @@ import com.syndicate.carsharing.components.RateContent
 import com.syndicate.carsharing.components.RentContent
 import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.ResultContent
+import com.syndicate.carsharing.components.TimerBox
 import com.syndicate.carsharing.components.UserCursorButton
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
@@ -409,38 +413,5 @@ fun Main(
         sheetState = sheetState,
         sheetComposableList = bottomSheetPages,
         mainViewModel = mainViewModel
-    )
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun TimerBox(
-    modifier: Modifier,
-    mainViewModel: MainViewModel,
-    sheetState: ModalBottomSheetState
-) {
-    val timer = mainViewModel.timer.collectAsState()
-    Text(
-        text = "${timer.value}",
-        modifier = modifier
-            .then(
-                if (timer.value.isStarted && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
-                    Modifier.alpha(1f)
-                } else {
-                    Modifier.alpha(0f)
-                }
-            )
-            .withShadow(
-                Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
-                RoundedCornerShape(10.dp)
-            )
-            .background(
-                Color.White,
-                RoundedCornerShape(10.dp)
-            )
-            .padding(
-                horizontal = 10.dp,
-                vertical = 5.dp
-            )
     )
 }
