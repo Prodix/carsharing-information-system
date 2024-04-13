@@ -29,4 +29,12 @@ public class TransportController : Controller
             ContentType = "application/json"
         };
     }
+    
+    [HttpGet]
+    [Route("/api/transport/get/image")]
+    public async Task GetTransportImage(string name)
+    {
+        Response.Headers.ContentDisposition = "attachment";
+        await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", name));
+    }
 }

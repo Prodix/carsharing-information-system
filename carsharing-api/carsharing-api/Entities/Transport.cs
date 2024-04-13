@@ -25,11 +25,15 @@ public class Transport
 
     public short GasLevel { get; set; }
 
-    public bool HasInsurance { get; set; }
+    public string InsuranceType { get; set; }
 
     public bool IsDoorOpened { get; set; }
 
     public float Longitude { get; set; }
 
     public float Latitude { get; set; }
+    
+    public int GasConsumption { get; set; }
+    
+    public int TankCapacity { get; set; }
 }
