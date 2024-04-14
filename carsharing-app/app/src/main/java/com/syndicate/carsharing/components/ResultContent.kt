@@ -30,7 +30,11 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import kotlinx.coroutines.launch
@@ -42,6 +46,7 @@ fun ResultContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val timer = mainViewModel.timer.collectAsState()
+    val stopwatch by mainViewModel.stopwatch.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val transportInfo = placemark?.userData as Transport
 
@@ -127,14 +132,19 @@ fun ResultContent(
                 )
             }
         }
-        Image(
-            painter = BitmapPainter(
-                image = ImageBitmap.imageResource(id = R.drawable.nexia)
-            ),
+        SubcomposeAsyncImage(
+            model = "${HttpClient.url}/transport/get/image?name=${transportInfo.carImagePath}",
+            contentDescription = null,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier.fillMaxWidth(),
-            contentDescription = null
-        )
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                Loader()
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -142,7 +152,7 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время в пути")
-            Text(text = "0:59")
+            Text(text = stopwatch.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,

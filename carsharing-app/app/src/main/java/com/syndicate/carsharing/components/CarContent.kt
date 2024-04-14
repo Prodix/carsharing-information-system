@@ -1,6 +1,9 @@
 package com.syndicate.carsharing.components
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Picture
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,29 +20,49 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
+import androidx.compose.material.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeCompilerApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import io.ktor.utils.io.core.isEmpty
+import io.ktor.utils.io.core.readBytes
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.InputStream
 
 
 //TODO: Загрузка изображения и информации
@@ -50,6 +73,12 @@ fun CarContent(
 ) {
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val transportInfo = placemark?.userData as Transport
+
+    val context = LocalContext.current
+    val file = File("${context.cacheDir.absolutePath}/${transportInfo.carImagePath}")
+    var isImageInitialized by remember {
+        mutableStateOf(false)
+    }
 
     Column (
         modifier = Modifier
@@ -122,14 +151,21 @@ fun CarContent(
                 )
             }
         }
-        Image(
-            painter = BitmapPainter(
-                image = ImageBitmap.imageResource(id = R.drawable.nexia)
-            ),
+
+        SubcomposeAsyncImage(
+            model = "${HttpClient.url}/transport/get/image?name=${transportInfo.carImagePath}",
+            contentDescription = null,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier.fillMaxWidth(),
-            contentDescription = null
-        )
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                Loader()
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
+
         Text(
             text = "Что есть в машине?"
         )

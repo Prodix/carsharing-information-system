@@ -51,8 +51,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
+import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
@@ -161,19 +165,25 @@ fun ReservationContent(
                 )
             }
         }
-        Image(
-            painter = BitmapPainter(
-                image = ImageBitmap.imageResource(id = R.drawable.nexia)
-            ),
+        SubcomposeAsyncImage(
+            model = "${HttpClient.url}/transport/get/image?name=${transportInfo.carImagePath}",
+            contentDescription = null,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier.fillMaxWidth(),
-            contentDescription = null
-        )
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                Loader()
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
         DoorSlider(
             isClosed = isClosed,
-            action = { mainViewModel.updatePage("checkPage") },
-            mainViewModel = mainViewModel
-        )
+            states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
+        ) {
+            mainViewModel.updatePage("checkPage")
+        }
         Text(
             text = "Откройте двери, чтобы перейти к осмотру автомобиля"
         )

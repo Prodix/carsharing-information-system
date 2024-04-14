@@ -33,7 +33,11 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
@@ -57,7 +61,7 @@ fun RentContent(
     LaunchedEffect(key1 = context) {
         mainViewModel.viewModelScope.launch {
             timer.stop()
-            stopwatch.start()
+            stopwatch.restart()
         }
     }
 
@@ -135,19 +139,25 @@ fun RentContent(
                 )
             }
         }
-        Image(
-            painter = BitmapPainter(
-                image = ImageBitmap.imageResource(id = R.drawable.nexia)
-            ),
+        SubcomposeAsyncImage(
+            model = "${HttpClient.url}/transport/get/image?name=${transportInfo.carImagePath}",
+            contentDescription = null,
             contentScale = ContentScale.FillWidth,
             modifier = Modifier.fillMaxWidth(),
-            contentDescription = null
-        )
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                Loader()
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
         DoorSlider(
             isClosed = isClosed,
-            action = { /*TODO: Переход в режим ожидания */ },
-            mainViewModel = mainViewModel
-        )
+            states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
+        ) {
+            /* TODO: Переход в режим ожидания */
+        }
         Text(
             text = "Закройте двери, чтобы перейти в режим ожидания"
         )
@@ -181,9 +191,7 @@ fun RentContent(
         Button(
             onClick = {
                 mainViewModel.updatePage("resultPage")
-                mainViewModel.viewModelScope.launch {
-                    stopwatch.stop()
-                }
+                stopwatch.stop()
             },
             modifier = Modifier
                 .fillMaxWidth()

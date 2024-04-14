@@ -1,5 +1,7 @@
 package com.syndicate.carsharing.components
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntOffset
@@ -45,12 +48,12 @@ import kotlin.math.roundToInt
 @Composable
 fun DoorSlider(
     isClosed: MutableState<Boolean>,
+    states: Pair<String, String>,
     action: () -> Unit,
-    mainViewModel: MainViewModel
 ) {
     val density = LocalDensity.current
-    var isInitialized by remember {
-        mutableStateOf(false)
+    var lastTarget: DragAnchors? by remember {
+        mutableStateOf(null)
     }
 
     var sliderSize by remember {
@@ -66,16 +69,7 @@ fun DoorSlider(
             initialValue = DragAnchors.Start,
             positionalThreshold = { totalDistance: Float -> totalDistance * 0.5f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = tween(),
-            confirmValueChange = {
-                if (it == DragAnchors.End) {
-                    isClosed.value = !isClosed.value
-                    true
-                }
-                else {
-                    true
-                }
-            }
+            animationSpec = tween()
         ).apply {
             updateAnchors(
                 DraggableAnchors {
@@ -86,26 +80,20 @@ fun DoorSlider(
         }
     }
 
-    LaunchedEffect(key1 = isClosed.value) {
-        if (isInitialized) {
-            while (swipeableState.isAnimationRunning)
-                delay(200)
-            swipeableState.anchoredDrag(
-                targetValue = DragAnchors.Start
-            ) { _, _ ->
+    LaunchedEffect(key1 = swipeableState.currentValue) {
+        if (swipeableState.currentValue == DragAnchors.End) {
+            swipeableState.anchoredDrag {
                 animate(
                     initialValue = swipeableState.requireOffset(),
-                    initialVelocity = 0f,
                     targetValue = 0f,
+                    initialVelocity = 0f,
                     animationSpec = tween()
-                ) { value, velocity ->
-                    dragTo(value, velocity)
+                ) { offset, velocity ->
+                    dragTo(offset, velocity)
                 }
             }
+            isClosed.value = !isClosed.value
             action()
-        }
-        else {
-            isInitialized = true
         }
     }
 
@@ -170,7 +158,7 @@ fun DoorSlider(
             }
         }
         Text(
-            text = if (isClosed.value) "Открыть двери" else "Закрыть двери",
+            text = if (isClosed.value) states.first else states.second,
             modifier = Modifier
                 .zIndex(9f)
         )

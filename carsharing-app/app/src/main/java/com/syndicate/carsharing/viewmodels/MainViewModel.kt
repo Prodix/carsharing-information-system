@@ -28,9 +28,12 @@ import io.ktor.client.request.parameter
 import io.ktor.client.request.request
 import io.ktor.client.statement.request
 import io.ktor.http.HttpMethod
+import io.ktor.http.parameters
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.File
 
 class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainModel(null))

@@ -54,8 +54,6 @@ class Stopwatch {
             }
             delay(1000L)
         }
-        _seconds.value = 0
-        _minutes.value = 0
     }
 
     override fun toString(): String {

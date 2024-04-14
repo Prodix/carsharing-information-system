@@ -70,9 +70,13 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+
     implementation("com.yandex.android:maps.mobile:4.4.0-full")
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
+    implementation("io.coil-kt.coil3:coil-compose:3.0.0-alpha06")
+    implementation("io.coil-kt.coil3:coil-network-ktor:3.0.0-alpha06")
     implementation("androidx.compose.material:material:1.6.1")
     implementation("io.ktor:ktor-client-core:2.3.8")
     implementation("io.ktor:ktor-client-cio:2.3.7")
