@@ -25,12 +25,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="images\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Remove="images\nexia.png" />
       <Content Include="images\nexia.png">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="images\volkswagen_golf_4.png" />
+      <Content Include="images\volkswagen_golf_4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>

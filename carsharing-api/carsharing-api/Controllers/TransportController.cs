@@ -22,10 +22,10 @@ public class TransportController : Controller
     {
         var settings = new JsonSerializerSettings();
         settings.Converters.Add(new StringEnumConverter());
-        var test = _db.Transport.ToList();
+        var transportList = _db.Transport.ToList();
         return new ContentResult()
         {
-            Content = JsonConvert.SerializeObject(test,  settings),
+            Content = JsonConvert.SerializeObject(transportList,  settings),
             ContentType = "application/json"
         };
     }
