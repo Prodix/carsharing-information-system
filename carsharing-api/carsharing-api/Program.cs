@@ -1,4 +1,5 @@
 using carsharing_api.Context;
+using carsharing_api.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -22,6 +23,7 @@ public class Program
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connection);
         dataSourceBuilder.MapEnum<CarType>();
+        dataSourceBuilder.MapEnum<FunctionType>();
         var dataSource = dataSourceBuilder.Build();
 
         builder.Services.AddDbContext<CarsharingDbContext>(options =>

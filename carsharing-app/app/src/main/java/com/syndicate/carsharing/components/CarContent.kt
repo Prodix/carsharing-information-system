@@ -166,34 +166,29 @@ fun CarContent(
             }
         }
 
-        Text(
-            text = "Что есть в машине?"
-        )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Image(
-                imageVector = ImageVector.vectorResource(R.drawable.child_icon),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(Color(0xFF6699CC))
-            )
+        if (!transportInfo.functions.isEmpty()) {
             Text(
-                text = "Детское кресло"
+                text = "Что есть в машине?"
             )
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Image(
-                imageVector = ImageVector.vectorResource(R.drawable.child_icon),
-                contentDescription = null,
-                colorFilter = ColorFilter.tint(Color(0xFF6699CC))
-            )
-            Text(
-                text = "Детское кресло x 2"
-            )
+            for (function in transportInfo.functions) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Image(
+                        imageVector = ImageVector.vectorResource(R.drawable.child_icon),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(Color(0xFF6699CC))
+                    )
+                    Text(
+                        text = when (function.functionData) {
+                            "CHILD_CHAIR" -> "Детское кресло"
+                            "TRANSPONDER" -> "Транспондер"
+                            else -> "Неизвестно"
+                        }
+                    )
+                }
+            }
         }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(25.dp)
