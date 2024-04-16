@@ -23,6 +23,12 @@ public class TransportController : Controller
         var settings = new JsonSerializerSettings();
         settings.Converters.Add(new StringEnumConverter());
         var transportList = _db.Transport.ToList();
+
+        foreach (var transport in transportList)
+        {
+            transport.Functions = _db.Function.Where(x => x.TransportId == transport.Id).ToList();
+        }
+        
         return new ContentResult()
         {
             Content = JsonConvert.SerializeObject(transportList,  settings),
