@@ -52,9 +52,93 @@ CREATE TYPE public.car_type AS ENUM (
 
 ALTER TYPE public.car_type OWNER TO postgres;
 
+--
+-- Name: function_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.function_type AS ENUM (
+    'child_chair',
+    'transponder'
+);
+
+
+ALTER TYPE public.function_type OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: function; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.function (
+    id integer NOT NULL,
+    transport_id integer NOT NULL,
+    function_data public.function_type NOT NULL
+);
+
+
+ALTER TABLE public.function OWNER TO postgres;
+
+--
+-- Name: function_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.function_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.function_id_seq OWNER TO postgres;
+
+--
+-- Name: function_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.function_id_seq OWNED BY public.function.id;
+
+
+--
+-- Name: rates; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.rates (
+    id integer NOT NULL,
+    transport_id integer NOT NULL,
+    rate_name text NOT NULL,
+    on_road_price real NOT NULL,
+    parking_price real NOT NULL
+);
+
+
+ALTER TABLE public.rates OWNER TO postgres;
+
+--
+-- Name: rates_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.rates_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.rates_id_seq OWNER TO postgres;
+
+--
+-- Name: rates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.rates_id_seq OWNED BY public.rates.id;
+
 
 --
 -- Name: transport; Type: TABLE; Schema: public; Owner: postgres
@@ -68,14 +152,41 @@ CREATE TABLE public.transport (
     car_image_path text NOT NULL,
     is_reserved boolean DEFAULT false NOT NULL,
     gas_level smallint NOT NULL,
-    has_insurance boolean NOT NULL,
+    insurance_type text NOT NULL,
     is_door_opened boolean NOT NULL,
     longitude real NOT NULL,
-    latitude real NOT NULL
+    latitude real NOT NULL,
+    gas_consumption smallint,
+    tank_capacity smallint
 );
 
 
 ALTER TABLE public.transport OWNER TO postgres;
+
+--
+-- Name: transport_full_info; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.transport_full_info AS
+ SELECT t.id,
+    t.transport_type,
+    t.car_name,
+    t.car_number,
+    t.car_image_path,
+    t.is_reserved,
+    t.gas_level,
+    t.insurance_type,
+    t.is_door_opened,
+    t.longitude,
+    t.latitude,
+    t.gas_consumption,
+    t.tank_capacity,
+    f.function_data
+   FROM (public.transport t
+     JOIN public.function f ON ((t.id = f.transport_id)));
+
+
+ALTER VIEW public.transport_full_info OWNER TO postgres;
 
 --
 -- Name: transport_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -100,6 +211,20 @@ ALTER SEQUENCE public.transport_id_seq OWNED BY public.transport.id;
 
 
 --
+-- Name: function id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.function ALTER COLUMN id SET DEFAULT nextval('public.function_id_seq'::regclass);
+
+
+--
+-- Name: rates id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rates ALTER COLUMN id SET DEFAULT nextval('public.rates_id_seq'::regclass);
+
+
+--
 -- Name: transport id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -107,20 +232,70 @@ ALTER TABLE ONLY public.transport ALTER COLUMN id SET DEFAULT nextval('public.tr
 
 
 --
+-- Data for Name: function; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.function (id, transport_id, function_data) FROM stdin;
+1	1	child_chair
+2	1	transponder
+\.
+
+
+--
+-- Data for Name: rates; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.rates (id, transport_id, rate_name, on_road_price, parking_price) FROM stdin;
+1	1	Фикс	5	5
+2	1	Поминутно	12.34	4.56
+\.
+
+
+--
 -- Data for Name: transport; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.transport (id, transport_type, car_name, car_number, car_image_path, is_reserved, gas_level, has_insurance, is_door_opened, longitude, latitude) FROM stdin;
-1	base	Daewoo Nexia	К742СМ53	nexia.png	f	100	t	f	58.56117	31.32089
-2	base	ИЖ-2126 "Ода"	Е756ЕВ53	izh2126.png	f	100	t	f	58.562798	31.315336
+COPY public.transport (id, transport_type, car_name, car_number, car_image_path, is_reserved, gas_level, insurance_type, is_door_opened, longitude, latitude, gas_consumption, tank_capacity) FROM stdin;
+1	base	Daewoo Nexia	К742СМ53	nexia.png	f	45	ОСАГО	f	31.32089	58.56117	8	50
+2	base	Volkswagen Golf IV	Е756ЕВ53	volkswagen_golf_4.png	f	34	ОСАГО	f	31.315336	58.562798	8	55
 \.
+
+
+--
+-- Name: function_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.function_id_seq', 2, true);
+
+
+--
+-- Name: rates_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.rates_id_seq', 2, true);
 
 
 --
 -- Name: transport_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.transport_id_seq', 2, true);
+SELECT pg_catalog.setval('public.transport_id_seq', 5, true);
+
+
+--
+-- Name: function function_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.function
+    ADD CONSTRAINT function_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rates rates_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rates
+    ADD CONSTRAINT rates_pkey PRIMARY KEY (id);
 
 
 --
@@ -132,6 +307,21 @@ ALTER TABLE ONLY public.transport
 
 
 --
--- PostgreSQL database dump complete
+-- Name: function function_transport_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
+ALTER TABLE ONLY public.function
+    ADD CONSTRAINT function_transport_id_fkey FOREIGN KEY (transport_id) REFERENCES public.transport(id);
+
+
+--
+-- Name: rates rates_transport_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.rates
+    ADD CONSTRAINT rates_transport_id_fkey FOREIGN KEY (transport_id) REFERENCES public.transport(id);
+
+
+--
+-- PostgreSQL database dump complete
+--
