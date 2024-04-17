@@ -27,6 +27,7 @@ public class TransportController : Controller
         foreach (var transport in transportList)
         {
             transport.Functions = _db.Function.Where(x => x.TransportId == transport.Id).ToList();
+            transport.Rates = _db.Rate.Where(x => x.TransportId == transport.Id).ToList();
         }
         
         return new ContentResult()

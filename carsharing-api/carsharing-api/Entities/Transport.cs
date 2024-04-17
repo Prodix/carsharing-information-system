@@ -37,4 +37,5 @@ public class Transport
     
     public int TankCapacity { get; set; }
     public List<Function>? Functions { get; set; }
+    public List<Rate>? Rates { get; set; }
 }
