@@ -193,7 +193,7 @@ fun CarContent(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(25.dp)
         ) {
-            items(2) {
+            items(transportInfo.rates) {
                 Box(
                     modifier = Modifier
                         .width(217.dp)
@@ -204,6 +204,7 @@ fun CarContent(
                             shape = RoundedCornerShape(10.dp)
                         )
                         .clickable {
+                            mainViewModel.updateSelectedRate(it);
                             mainViewModel.updatePage("rateInfo")
                         }
                 ) {
@@ -221,8 +222,8 @@ fun CarContent(
                                 .padding(15.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ){
-                            Text(text = "12,34 P/мин")
-                            Text(text = "Поминутно")
+                            Text(text = "${String.format("%.2f", it.onRoadPrice)} P/мин")
+                            Text(text = it.rateName)
                         }
                         Image(
                             modifier = Modifier

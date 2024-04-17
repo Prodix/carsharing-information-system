@@ -59,4 +59,17 @@ class Stopwatch {
     override fun toString(): String {
         return "${(if (_minutes.value < 10) 0 else "")}${_minutes.value}:${(if (_seconds.value < 10) 0 else "")}${_seconds.value}"
     }
+
+    operator fun plus(stopwatch: Stopwatch): Any {
+        val resultStopwatch = Stopwatch()
+        resultStopwatch.minutes = this.minutes + stopwatch.minutes
+        resultStopwatch.seconds = this.seconds + stopwatch.seconds
+
+        if (resultStopwatch.seconds >= 60) {
+            resultStopwatch.minutes += resultStopwatch.seconds / 60
+            resultStopwatch.seconds %= 60
+        }
+
+        return resultStopwatch
+    }
 }

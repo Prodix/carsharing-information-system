@@ -10,6 +10,7 @@ import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.geometry.Point
@@ -42,7 +43,8 @@ class MainViewModel : ViewModel() {
     private val _scrimColor = MutableStateFlow(Color.Transparent)
     private val _carType = MutableStateFlow(1f)
     private val _timer = MutableStateFlow(Timer())
-    private val _stopwatch = MutableStateFlow(Stopwatch())
+    private val _stopwatchOnRoad = MutableStateFlow(Stopwatch())
+    private val _stopwatchOnParking = MutableStateFlow(Stopwatch())
     private var _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
     private var _pedestrianRouter: MutableStateFlow<PedestrianRouter?> = MutableStateFlow(null)
     private val _isChecking = MutableStateFlow(false)
@@ -68,6 +70,7 @@ class MainViewModel : ViewModel() {
     private val _isGesturesEnabled = MutableStateFlow(true)
     private val _walkMinutes = MutableStateFlow(1)
     private val _isReserving = MutableStateFlow(false)
+    private val _lastSelectedRate = MutableStateFlow<Rate?>(null)
     private val _isRenting = MutableStateFlow(false)
     private val _transport = MutableStateFlow(listOf<Transport>())
     private val _lastSelectedPlacemark = MutableStateFlow<PlacemarkMapObject?>(null)
@@ -90,7 +93,9 @@ class MainViewModel : ViewModel() {
     val page = _page.asStateFlow()
     val carType = _carType.asStateFlow()
     val timer = _timer.asStateFlow()
-    val stopwatch = _stopwatch.asStateFlow()
+    val stopwatchOnRoad = _stopwatchOnRoad.asStateFlow()
+    val stopwatchOnParking = _stopwatchOnParking.asStateFlow()
+    val lastSelectedRate = _lastSelectedRate.asStateFlow()
     val mem = _mem.asStateFlow()
     val circle = _circle.asStateFlow()
     val isGesturesEnabled = _isGesturesEnabled.asStateFlow()
@@ -138,6 +143,12 @@ class MainViewModel : ViewModel() {
     fun updateChecking(isChecking: Boolean) {
         _isChecking.update {
             isChecking
+        }
+    }
+
+    fun updateSelectedRate(rate: Rate) {
+        _lastSelectedRate.update {
+            rate
         }
     }
 

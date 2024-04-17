@@ -104,10 +104,10 @@ ALTER SEQUENCE public.function_id_seq OWNED BY public.function.id;
 
 
 --
--- Name: rates; Type: TABLE; Schema: public; Owner: postgres
+-- Name: rate; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.rates (
+CREATE TABLE public.rate (
     id integer NOT NULL,
     transport_id integer NOT NULL,
     rate_name text NOT NULL,
@@ -116,13 +116,13 @@ CREATE TABLE public.rates (
 );
 
 
-ALTER TABLE public.rates OWNER TO postgres;
+ALTER TABLE public.rate OWNER TO postgres;
 
 --
--- Name: rates_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: rate_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.rates_id_seq
+CREATE SEQUENCE public.rate_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -131,13 +131,13 @@ CREATE SEQUENCE public.rates_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.rates_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.rate_id_seq OWNER TO postgres;
 
 --
--- Name: rates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: rate_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rates_id_seq OWNED BY public.rates.id;
+ALTER SEQUENCE public.rate_id_seq OWNED BY public.rate.id;
 
 
 --
@@ -218,10 +218,10 @@ ALTER TABLE ONLY public.function ALTER COLUMN id SET DEFAULT nextval('public.fun
 
 
 --
--- Name: rates id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: rate id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rates ALTER COLUMN id SET DEFAULT nextval('public.rates_id_seq'::regclass);
+ALTER TABLE ONLY public.rate ALTER COLUMN id SET DEFAULT nextval('public.rate_id_seq'::regclass);
 
 
 --
@@ -242,10 +242,10 @@ COPY public.function (id, transport_id, function_data) FROM stdin;
 
 
 --
--- Data for Name: rates; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: rate; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.rates (id, transport_id, rate_name, on_road_price, parking_price) FROM stdin;
+COPY public.rate (id, transport_id, rate_name, on_road_price, parking_price) FROM stdin;
 1	1	Фикс	5	5
 2	1	Поминутно	12.34	4.56
 \.
@@ -269,10 +269,10 @@ SELECT pg_catalog.setval('public.function_id_seq', 2, true);
 
 
 --
--- Name: rates_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: rate_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.rates_id_seq', 2, true);
+SELECT pg_catalog.setval('public.rate_id_seq', 2, true);
 
 
 --
@@ -291,11 +291,11 @@ ALTER TABLE ONLY public.function
 
 
 --
--- Name: rates rates_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rate rate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rates
-    ADD CONSTRAINT rates_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.rate
+    ADD CONSTRAINT rate_pkey PRIMARY KEY (id);
 
 
 --
@@ -315,11 +315,11 @@ ALTER TABLE ONLY public.function
 
 
 --
--- Name: rates rates_transport_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: rate rate_transport_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rates
-    ADD CONSTRAINT rates_transport_id_fkey FOREIGN KEY (transport_id) REFERENCES public.transport(id);
+ALTER TABLE ONLY public.rate
+    ADD CONSTRAINT rate_transport_id_fkey FOREIGN KEY (transport_id) REFERENCES public.transport(id);
 
 
 --

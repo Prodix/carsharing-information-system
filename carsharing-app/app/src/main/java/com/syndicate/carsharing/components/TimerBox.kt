@@ -28,13 +28,14 @@ fun TimerBox(
     sheetState: ModalBottomSheetState
 ) {
     val timer by mainViewModel.timer.collectAsState()
-    val stopwatch by mainViewModel.stopwatch.collectAsState()
+    val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
+    val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
 
     Text(
-        text = if (timer.isStarted) timer.toString() else stopwatch.toString(),
+        text = if (timer.isStarted) timer.toString() else (stopwatchOnRoad + stopwatchOnParking).toString(),
         modifier = modifier
             .then(
-                if ((timer.isStarted || stopwatch.isStarted) && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
+                if ((timer.isStarted || stopwatchOnRoad.isStarted || stopwatchOnParking.isStarted) && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
                     Modifier.alpha(1f)
                 } else {
                     Modifier.alpha(0f)

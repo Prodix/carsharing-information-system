@@ -16,5 +16,6 @@ data class Transport (
     @JsonProperty("Latitude") val latitude: Double,
     @JsonProperty("GasConsumption") val gasConsumption: Int,
     @JsonProperty("TankCapacity") val tankCapacity: Int,
-    @JsonProperty("Functions") val functions: List<Function>
+    @JsonProperty("Functions") val functions: List<Function>,
+    @JsonProperty("Rates") val rates: List<Rate>
 )

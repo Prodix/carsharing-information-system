@@ -52,21 +52,24 @@ fun RentContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val timer by mainViewModel.timer.collectAsState()
-    val stopwatch by mainViewModel.stopwatch.collectAsState()
+    val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
+    val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
+    val rate by mainViewModel.lastSelectedRate.collectAsState()
     val transportInfo = placemark?.userData as Transport
 
     mainViewModel.updateRenting(true)
 
     LaunchedEffect(key1 = context) {
+        timer.stop()
+        stopwatchOnParking.clear()
         mainViewModel.viewModelScope.launch {
-            timer.stop()
-            stopwatch.restart()
+            stopwatchOnRoad.restart()
         }
     }
 
     val isClosed = remember {
-        mutableStateOf(true)
+        mutableStateOf(false)
     }
     Column (
         modifier = Modifier
@@ -156,7 +159,15 @@ fun RentContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
-            /* TODO: Переход в режим ожидания */
+            scope.launch {
+                if (isClosed.value) {
+                    stopwatchOnRoad.stop()
+                    stopwatchOnParking.start()
+                } else {
+                    stopwatchOnParking.stop()
+                    stopwatchOnRoad.start()
+                }
+            }
         }
         Text(
             text = "Закройте двери, чтобы перейти в режим ожидания"
@@ -167,8 +178,8 @@ fun RentContent(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            Text(text = "Аренда 12,34 Р/мин")
-            Text(text = "12,34 Р")
+            Text(text = "Аренда ${String.format("%.2f", rate!!.onRoadPrice)} Р/мин")
+            Text(text = "${String.format("%.2f", rate!!.onRoadPrice * (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -177,7 +188,7 @@ fun RentContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время в пути")
-            Text(text = stopwatch.toString())
+            Text(text = stopwatchOnRoad.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -186,12 +197,13 @@ fun RentContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время ожидания")
-            Text(text = "0:00")
+            Text(text = stopwatchOnParking.toString())
         }
         Button(
             onClick = {
                 mainViewModel.updatePage("resultPage")
-                stopwatch.stop()
+                stopwatchOnRoad.stop()
+                stopwatchOnParking.stop()
             },
             modifier = Modifier
                 .fillMaxWidth()

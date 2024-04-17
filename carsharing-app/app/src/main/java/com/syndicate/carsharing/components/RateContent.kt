@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +20,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 
 //TODO: Подгрузка инфы из базы
@@ -26,6 +29,8 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 fun RateContent(
     mainViewModel: MainViewModel
 ) {
+    val rate by mainViewModel.lastSelectedRate.collectAsState()
+
     Column (
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
@@ -36,7 +41,7 @@ fun RateContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Поминутно")
+            Text(text = rate!!.rateName)
             Image(
                 imageVector = ImageVector.vectorResource(R.drawable.close),
                 contentDescription = null
@@ -61,7 +66,7 @@ fun RateContent(
                 )
             }
             Text(
-                text = "12,34 P/мин"
+                text = "${String.format("%.2f", rate!!.onRoadPrice)} P/мин"
             )
         }
         Row(
@@ -83,35 +88,9 @@ fun RateContent(
                 )
             }
             Text(
-                text = "12,34 P/мин"
+                text = "${String.format("%.2f", rate!!.parkingPrice)} P/мин"
             )
         }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Image(
-                    imageVector = ImageVector.vectorResource(R.drawable.share),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(Color(0xFF6699CC))
-                )
-                Text(
-                    text = "Передача авто"
-                )
-            }
-            Text(
-                text = "12,34 P/мин"
-            )
-        }
-        Text(
-            text = "Подробнее о тарифе", 
-            textDecoration = TextDecoration.Underline
-        )
         Button(
             onClick = {
                 mainViewModel.updatePage("reservationPage")
