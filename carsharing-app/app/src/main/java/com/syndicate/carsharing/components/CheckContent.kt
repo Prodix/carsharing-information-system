@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,20 +48,28 @@ fun CheckContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer = mainViewModel.timer.collectAsState()
+    val timer by mainViewModel.timer.collectAsState()
+    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
 
     LaunchedEffect(key1 = context) {
         mainViewModel.updateReserving(false)
         mainViewModel.updateSession(null)
         mainViewModel.updateChecking(true)
 
-        if (timer.value.defaultMinutes != 5) {
-            timer.value.changeStartTime(5,0)
+        stopwatchOnChecking.clear()
+        timer.onTimerEnd = {
+            mainViewModel.viewModelScope.launch {
+                stopwatchOnChecking.start()
+            }
         }
 
-        if (!timer.value.isStarted) {
+        if (timer.defaultMinutes != 5) {
+            timer.changeStartTime(0,5)
+        }
+
+        if (!timer.isStarted) {
             mainViewModel.viewModelScope.launch {
-                timer.value.start()
+                timer.start()
             }
         }
     }
@@ -147,14 +156,21 @@ fun CheckContent(
                 .fillMaxWidth()
         ) {
             Text(
-                text = "Время бесплатного осмотра закончится через"
+                text = if (stopwatchOnChecking.isStarted)
+                    "Платный осмотр"
+                else
+                    "Время бесплатного осмотра закончится через"
             )
             Text(
-                text = "${timer.value}"
+                text = if (stopwatchOnChecking.isStarted)
+                    stopwatchOnChecking.toString()
+                else
+                    timer.toString()
             )
         }
         Button(
             onClick = {
+                stopwatchOnChecking.stop()
                 mainViewModel.updatePage("rentPage")
                 mainViewModel.updateChecking(false)
             },

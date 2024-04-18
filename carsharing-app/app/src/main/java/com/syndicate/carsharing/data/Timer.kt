@@ -14,7 +14,7 @@ class Timer {
     private var _defaultMinutes: Int = 5
     private var _defaultSeconds: Int = 0
 
-    var onTimerEnd: () -> Unit = { }
+    var onTimerEnd: (() -> Unit)? = null
 
     var isStarted: Boolean
         get() = _isStarted.value
@@ -73,7 +73,7 @@ class Timer {
                 _seconds.value = 59
             } else if (_seconds.value == 0 && _minutes.value == 0) {
                 _isStarted.value = false
-                onTimerEnd()
+                onTimerEnd?.let { it() }
             } else {
                 _seconds.value -= 1
             }

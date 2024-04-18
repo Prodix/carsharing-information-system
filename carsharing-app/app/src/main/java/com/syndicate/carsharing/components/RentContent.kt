@@ -54,6 +54,7 @@ fun RentContent(
     val timer by mainViewModel.timer.collectAsState()
     val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
     val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
+    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val rate by mainViewModel.lastSelectedRate.collectAsState()
     val transportInfo = placemark?.userData as Transport
@@ -204,6 +205,7 @@ fun RentContent(
                 mainViewModel.updatePage("resultPage")
                 stopwatchOnRoad.stop()
                 stopwatchOnParking.stop()
+                stopwatchOnChecking.stop()
             },
             modifier = Modifier
                 .fillMaxWidth()

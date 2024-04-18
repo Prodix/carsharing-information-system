@@ -48,6 +48,7 @@ fun ResultContent(
     val timer = mainViewModel.timer.collectAsState()
     val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
     val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
+    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
     val rate by mainViewModel.lastSelectedRate.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val transportInfo = placemark?.userData as Transport
@@ -172,8 +173,7 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Платный осмотр")
-            Text(text = "0:00")
-            //TODO: Добавить платный осмотр
+            Text(text = stopwatchOnChecking.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -182,7 +182,11 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Итого")
-            Text(text = "${String.format("%.2f", rate!!.onRoadPrice * (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
+            Text(text = "${String.format("%.2f", rate!!.onRoadPrice * 
+                    (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) 
+                    + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0))
+                + 10 * (if (stopwatchOnChecking.minutes > 0 || stopwatchOnChecking.seconds > 0) stopwatchOnChecking.minutes + 1 else 0)
+            )} Р")
         }
     }
 }
