@@ -64,7 +64,7 @@ fun CheckContent(
         }
 
         if (timer.defaultMinutes != 5) {
-            timer.changeStartTime(0,5)
+            timer.changeStartTime(5,0)
         }
 
         if (!timer.isStarted) {

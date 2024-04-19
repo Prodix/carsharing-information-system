@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -70,10 +72,12 @@ enum class DragAnchors {
     End
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun ReservationContent(
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    modalBottomSheetState: ModalBottomSheetState
 ) {
 
     val context = LocalContext.current
@@ -264,7 +268,11 @@ fun ReservationContent(
         }
         Button(
             onClick = {
-                      /* TODO */
+                mainViewModel.updateReserving(false)
+                mainViewModel.timer.value.stop()
+                scope.launch {
+                    modalBottomSheetState.hide()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

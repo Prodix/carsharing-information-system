@@ -396,7 +396,8 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "reservationPage" to { ReservationContent(
-            mainViewModel = mainViewModel
+            mainViewModel = mainViewModel,
+            modalBottomSheetState = sheetState
         )},
         "checkPage" to { CheckContent(
             mainViewModel = mainViewModel
