@@ -55,6 +55,7 @@ fun RentContent(
     val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
     val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
     val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
+    val isFixed by mainViewModel.isFixed.collectAsState()
     val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
     val rate by mainViewModel.lastSelectedRate.collectAsState()
     val transportInfo = placemark?.userData as Transport
@@ -62,10 +63,14 @@ fun RentContent(
     mainViewModel.updateRenting(true)
 
     LaunchedEffect(key1 = context) {
-        timer.stop()
         stopwatchOnParking.clear()
-        mainViewModel.viewModelScope.launch {
-            stopwatchOnRoad.restart()
+        if (isFixed) {
+            timer.changeStartTime(mainViewModel.rentHours.value, 0, 0)
+        } else {
+            timer.stop()
+            mainViewModel.viewModelScope.launch {
+                stopwatchOnRoad.restart()
+            }
         }
     }
 
@@ -160,59 +165,63 @@ fun RentContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
-            scope.launch {
-                if (isClosed.value) {
-                    stopwatchOnRoad.stop()
-                    stopwatchOnParking.start()
-                } else {
-                    stopwatchOnParking.stop()
-                    stopwatchOnRoad.start()
+            if (!isFixed) {
+                scope.launch {
+                    if (isClosed.value) {
+                        stopwatchOnRoad.stop()
+                        stopwatchOnParking.start()
+                    } else {
+                        stopwatchOnParking.stop()
+                        stopwatchOnRoad.start()
+                    }
                 }
             }
         }
-        Text(
-            text = "Закройте двери, чтобы перейти в режим ожидания"
-        )
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Аренда ${String.format("%.2f", rate!!.onRoadPrice)} Р/мин")
-            Text(text = "${String.format("%.2f", rate!!.onRoadPrice * (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Время в пути")
-            Text(text = stopwatchOnRoad.toString())
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Время ожидания")
-            Text(text = stopwatchOnParking.toString())
-        }
-        Button(
-            onClick = {
-                mainViewModel.updatePage("resultPage")
-                stopwatchOnRoad.stop()
-                stopwatchOnParking.stop()
-                stopwatchOnChecking.stop()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
+        if (!isFixed) {
             Text(
-                text = "Закончить аренду"
+                text = "Закройте двери, чтобы перейти в режим ожидания"
             )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(text = "Аренда ${String.format("%.2f", rate!!.onRoadPrice)} Р/мин")
+                Text(text = "${String.format("%.2f", rate!!.onRoadPrice * (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(text = "Время в пути")
+                Text(text = stopwatchOnRoad.toString())
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(text = "Время ожидания")
+                Text(text = stopwatchOnParking.toString())
+            }
+            Button(
+                onClick = {
+                    mainViewModel.updatePage("resultPage")
+                    stopwatchOnRoad.stop()
+                    stopwatchOnParking.stop()
+                    stopwatchOnChecking.stop()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Закончить аренду"
+                )
+            }
         }
     }
 }

@@ -40,6 +40,7 @@ class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainModel(null))
     private val _currentLocation = MutableStateFlow(Point())
     private val _page = MutableStateFlow("radarIntro")
+    private val _rentHours = MutableStateFlow(2)
     private val _scrimColor = MutableStateFlow(Color.Transparent)
     private val _carType = MutableStateFlow(1f)
     private val _timer = MutableStateFlow(Timer())
@@ -49,6 +50,7 @@ class MainViewModel : ViewModel() {
     private var _mapView: MutableStateFlow<MapView?> = MutableStateFlow(null)
     private var _pedestrianRouter: MutableStateFlow<PedestrianRouter?> = MutableStateFlow(null)
     private val _isChecking = MutableStateFlow(false)
+    private val _isFixed = MutableStateFlow(false)
     private val _points = MutableStateFlow(listOf(RequestPoint(), RequestPoint()))
     private var _session: MutableStateFlow<Session?> = MutableStateFlow(null)
     private var _route: MutableStateFlow<PolylineMapObject?> = MutableStateFlow(null)
@@ -105,6 +107,8 @@ class MainViewModel : ViewModel() {
     val scrimColor = _scrimColor.asStateFlow()
     val isChecking = _isChecking.asStateFlow()
     val isRenting = _isRenting.asStateFlow()
+    val isFixed = _isFixed.asStateFlow()
+    val rentHours = _rentHours.asStateFlow()
 
     val routeListener = object : Session.RouteListener {
         override fun onMasstransitRoutes(p0: MutableList<Route>) {
@@ -160,6 +164,17 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun updateRentHours(hours: Int) {
+        _rentHours.update {
+            hours
+        }
+    }
+
+    fun updateIsFixed(isFixed: Boolean) {
+        _isFixed.update {
+            isFixed
+        }
+    }
 
     fun updatePoints(index: Int, point: RequestPoint) {
 

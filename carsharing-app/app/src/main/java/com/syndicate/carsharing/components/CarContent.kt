@@ -222,7 +222,10 @@ fun CarContent(
                                 .padding(15.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ){
-                            Text(text = "${String.format("%.2f", it.onRoadPrice)} P/мин")
+                            Text(text = if (String.format("%.2f", it.onRoadPrice) == String.format("%.2f", it.parkingPrice))
+                                    "${String.format("%.2f", it.onRoadPrice * 60)} P/час"
+                                else
+                                    "${String.format("%.2f", it.onRoadPrice)} P/мин")
                             Text(text = it.rateName)
                         }
                         Image(
