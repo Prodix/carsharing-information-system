@@ -1,5 +1,13 @@
 package com.syndicate.carsharing.components
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.telephony.TelephonyManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -7,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -41,8 +52,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -53,10 +69,14 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.util.Date
+import kotlin.random.Random
 
 @Composable
 fun CheckContent(
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    navigation: NavHostController
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -68,7 +88,7 @@ fun CheckContent(
     val damagesNameList = remember {
         mutableStateOf<List<String>?>(null)
     }
-
+    //TODO: ускоряется таймер при платном осмотре и добавлении фото
     LaunchedEffect(key1 = context) {
         mainViewModel.updateReserving(false)
         mainViewModel.updateSession(null)
@@ -95,6 +115,37 @@ fun CheckContent(
             }
         }
     }
+
+    val REQUIRED_PERMISSIONS =
+        mutableListOf (
+            Manifest.permission.CAMERA
+        ).apply {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }.toTypedArray()
+
+    val activityResultLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions())
+        { permissions ->
+            var permissionGranted = true
+            permissions.entries.forEach {
+                if (it.key in REQUIRED_PERMISSIONS && !it.value)
+                    permissionGranted = false
+            }
+            if (!permissionGranted) {
+                Toast.makeText(
+                    context,
+                    "Вы должны выдать разрешения использования камеры!",
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     Column (
         modifier = Modifier
@@ -151,7 +202,20 @@ fun CheckContent(
                             cornerRadius = CornerRadius(x = 10.dp.toPx(), y = 10.dp.toPx())
                         )
                     }
-                    .clickable { }
+                    .clickable {
+                        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            //TODO: Привязать к id юзера
+
+                            navigation.navigate("camera/damage_${transportInfo.id}_${Random.nextInt()}${Date().time}")
+                        } else {
+                            launcher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
                     .padding(vertical = 25.dp)
             ) {
                 Row(

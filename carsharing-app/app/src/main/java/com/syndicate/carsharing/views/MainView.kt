@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -38,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.BuildConfig
@@ -87,7 +89,9 @@ import kotlin.system.exitProcess
 @Composable
 fun Main(
     navigation: NavHostController,
-    mainViewModel: MainViewModel = viewModel()
+    mainViewModel: MainViewModel = viewModel(),
+    sheetState: ModalBottomSheetState,
+    listener: MapObjectTapListener
 ) {
     lateinit var userPlacemark: PlacemarkMapObject
     val mainState by mainViewModel.uiState.collectAsState()
@@ -97,38 +101,6 @@ fun Main(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-    val sheetState = rememberModalBottomSheetState(
-        initialValue = ModalBottomSheetValue.Hidden,
-        confirmValueChange = {
-            if (it == ModalBottomSheetValue.Hidden) {
-                if (mainViewModel.circle.value != null)
-                    mapView!!.mapWindow.map.mapObjects.remove(mainViewModel.circle.value!!)
-                mainViewModel.updateCircle(null)
-            }
-
-            true
-        },
-        skipHalfExpanded = true
-    )
-
-    val listener: MapObjectTapListener = MapObjectTapListener { placemark, point: Point ->
-        mainViewModel.updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
-        mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
-
-        if (mainViewModel.isReserving.value)
-            mainViewModel.updatePage("reservationPage")
-        else if (mainViewModel.isChecking.value)
-            mainViewModel.updatePage("checkPage")
-        else if (mainViewModel.isRenting.value)
-            mainViewModel.updatePage("rentPage")
-        else
-            mainViewModel.updatePage("car")
-
-        scope.launch {
-            sheetState.show()
-        }
-        true
-    }
 
     // TODO: Добавить проверку интернета и геолокации
     fun enableLocation() {
@@ -208,8 +180,71 @@ fun Main(
             }
         }
 
-    LaunchedEffect(key1 = context) {
+    LaunchedEffect(key1 = Unit) {
         activityResultLauncher.launch(locationPermissions)
+        mainViewModel.updatePlacemarks(listOf())
+    }
+    
+    LaunchedEffect(key1 = mapView) {
+        while (true) {
+            val oldList = mainViewModel.transport.value
+            val oldListNumbers = mainViewModel.transport.value.map { x -> x.id }
+            mainViewModel.getTransport()
+            val newList = mainViewModel.transport.value
+            val newListNumbers = mainViewModel.transport.value.map { x -> x.id }
+
+            if (mainViewModel.transportPlacemarkList.value.isEmpty()) {
+                val list = mutableListOf<PlacemarkMapObject>()
+                for (i in mainViewModel.transport.value) {
+                    val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                        geometry = Point(i.latitude, i.longitude)
+                        setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                        addTapListener(listener)
+                        userData = i
+                    }
+                    list.add(placemarkMapObject)
+                }
+                mainViewModel.updatePlacemarks(list.toList())
+            } else {
+                val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
+
+                if (oldListNumbers.size != newListNumbers.size) {
+                    val doubleList = oldListNumbers.toMutableList() + newListNumbers
+                    val difference = doubleList.filter { x -> doubleList.count { y -> y == x } == 1 }
+                    if (oldListNumbers.size > newListNumbers.size) {
+                        val needToRemove = mainViewModel.transportPlacemarkList.value.filter { x ->
+                            (x.userData as Transport).id in difference
+                        }
+                        for (i in needToRemove) {
+                            mainViewModel.mapView.value!!.mapWindow.map.mapObjects.remove(i)
+                            replacedList.remove(i)
+                        }
+                    } else {
+                        for (i in mainViewModel.transport.value.filter { x -> x.id in difference }) {
+                            val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                                geometry = Point(i.latitude, i.longitude)
+                                setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                                addTapListener(listener)
+                                userData = i
+                            }
+                            replacedList.add(placemarkMapObject)
+                        }
+                    }
+                }
+
+                for (i in newList) {
+                    val placemark = replacedList.first {
+                            x -> (x.userData as Transport).id == i.id
+                    }
+                    if (placemark.geometry !== Point(i.latitude, i.longitude)) {
+                        placemark.geometry = Point(i.latitude, i.longitude)
+                    }
+                }
+                mainViewModel.updatePlacemarks(replacedList.toList())
+            }
+
+            delay(3000)
+        }
     }
 
     Box(
@@ -218,78 +253,12 @@ fun Main(
         contentAlignment = Alignment.Center
     ) {
         AndroidView(factory = {
-            MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
             MapView(it).apply {
                 mainViewModel.setMap(this)
                 MapKitFactory.initialize(it)
                 MapKitFactory.getInstance().onStart()
                 this.onStart()
                 mainViewModel.updateRouter(TransportFactory.getInstance().createPedestrianRouter())
-
-                var isFirstTime = true
-
-                scope.launch {
-                    while (true) {
-                        val oldList = mainViewModel.transport.value
-                        val oldListNumbers = mainViewModel.transport.value.map { x -> x.id }
-                        mainViewModel.getTransport()
-                        val newList = mainViewModel.transport.value
-                        val newListNumbers = mainViewModel.transport.value.map { x -> x.id }
-
-                        if (isFirstTime) {
-                            val list = mutableListOf<PlacemarkMapObject>()
-                            for (i in mainViewModel.transport.value) {
-                                val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
-                                    geometry = Point(i.latitude, i.longitude)
-                                    setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
-                                    addTapListener(listener)
-                                    userData = i
-                                }
-                                list.add(placemarkMapObject)
-                            }
-                            mainViewModel.updatePlacemarks(list.toList())
-                            isFirstTime = false
-                        }
-
-                        val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
-
-                        if (oldListNumbers.size != newListNumbers.size) {
-                            val doubleList = oldListNumbers.toMutableList() + newListNumbers
-                            val difference = doubleList.filter { x -> doubleList.count { y -> y == x } == 1 }
-                            if (oldListNumbers.size > newListNumbers.size) {
-                                val needToRemove = mainViewModel.transportPlacemarkList.value.filter { x ->
-                                    (x.userData as Transport).id in difference
-                                }
-                                for (i in needToRemove) {
-                                    mainViewModel.mapView.value!!.mapWindow.map.mapObjects.remove(i)
-                                    replacedList.remove(i)
-                                }
-                            } else {
-                                for (i in mainViewModel.transport.value.filter { x -> x.id in difference }) {
-                                    val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
-                                        geometry = Point(i.latitude, i.longitude)
-                                        setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
-                                        addTapListener(listener)
-                                        userData = i
-                                    }
-                                    replacedList.add(placemarkMapObject)
-                                }
-                            }
-                        }
-
-                        for (i in newList) {
-                            val placemark = replacedList.first {
-                                    x -> (x.userData as Transport).id == i.id
-                            }
-                            if (placemark.geometry !== Point(i.latitude, i.longitude)) {
-                                placemark.geometry = Point(i.latitude, i.longitude)
-                            }
-                        }
-                        mainViewModel.updatePlacemarks(replacedList.toList())
-
-                        delay(3000)
-                    }
-                }
             }
 
         }, modifier = Modifier) {
@@ -400,7 +369,8 @@ fun Main(
             modalBottomSheetState = sheetState
         )},
         "checkPage" to { CheckContent(
-            mainViewModel = mainViewModel
+            mainViewModel = mainViewModel,
+            navigation = navigation
         )},
         "rentPage" to { RentContent(
             mainViewModel = mainViewModel

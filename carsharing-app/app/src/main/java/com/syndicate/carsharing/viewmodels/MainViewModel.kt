@@ -1,9 +1,13 @@
 package com.syndicate.carsharing.viewmodels
 
 import android.util.Log
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material3.SheetState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
+import com.syndicate.carsharing.MainActivity
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Stopwatch
 import com.syndicate.carsharing.models.MainModel
@@ -13,9 +17,11 @@ import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.yandex.mapkit.RequestPoint
+import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CircleMapObject
+import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
@@ -31,11 +37,14 @@ import io.ktor.client.statement.request
 import io.ktor.http.HttpMethod
 import io.ktor.http.parameters
 import io.ktor.utils.io.ByteReadChannel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.File
 
+@OptIn(ExperimentalMaterialApi::class)
 class MainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(MainModel(null))
     private val _currentLocation = MutableStateFlow(Point())
@@ -78,6 +87,8 @@ class MainViewModel : ViewModel() {
     private val _transport = MutableStateFlow(listOf<Transport>())
     private val _lastSelectedPlacemark = MutableStateFlow<PlacemarkMapObject?>(null)
     private val _transportPlacemarkList = MutableStateFlow(listOf<PlacemarkMapObject>())
+    private val _sheetState = MutableStateFlow<ModalBottomSheetState?>(null)
+    private val _tapListener = MutableStateFlow<MapObjectTapListener?>(null)
 
     val options = TimeOptions()
 
@@ -109,6 +120,8 @@ class MainViewModel : ViewModel() {
     val isRenting = _isRenting.asStateFlow()
     val isFixed = _isFixed.asStateFlow()
     val rentHours = _rentHours.asStateFlow()
+    val sheetState = _sheetState.asStateFlow()
+    val tapListener = _tapListener.asStateFlow()
 
     val routeListener = object : Session.RouteListener {
         override fun onMasstransitRoutes(p0: MutableList<Route>) {
@@ -149,6 +162,32 @@ class MainViewModel : ViewModel() {
     fun updateChecking(isChecking: Boolean) {
         _isChecking.update {
             isChecking
+        }
+    }
+
+    fun updateSheetState(sheetState: ModalBottomSheetState, scope: CoroutineScope) {
+        _sheetState.update {
+            sheetState
+        }
+        _tapListener.update {
+            MapObjectTapListener { placemark, point: Point ->
+                updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
+                updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
+
+                if (isReserving.value)
+                    updatePage("reservationPage")
+                else if (isChecking.value)
+                    updatePage("checkPage")
+                else if (isRenting.value)
+                    updatePage("rentPage")
+                else
+                    updatePage("car")
+
+                scope.launch {
+                    sheetState.show()
+                }
+                true
+            }
         }
     }
 

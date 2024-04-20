@@ -3,6 +3,7 @@ package com.syndicate.carsharing.views
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.icu.text.SimpleDateFormat
 import android.media.Image
 import android.net.Uri
@@ -36,6 +37,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,8 +51,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.viewmodels.MainViewModel
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 import java.lang.Exception
 import java.util.Locale
@@ -69,6 +84,7 @@ fun Camera(
     val cameraProviderFuture = remember(context) { ProcessCameraProvider.getInstance(context) }
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
     val executor = Executors.newSingleThreadExecutor()
 
     Box (
@@ -86,7 +102,7 @@ fun Camera(
                             it.setSurfaceProvider(previewView.surfaceProvider)
                         }
 
-
+                    //TODO: Почему фронталка?
                     val cameraSelector = if (fileName == "selfie") CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
 
                     imageCapture = ImageCapture.Builder()
@@ -123,10 +139,11 @@ fun Camera(
             ) {
                 Button(
                     onClick = {
-                        when (fileName) {
-                            "passport" -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/passport") }
-                            "selfie" -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/selfie") }
-                            else -> imageCapture?.let { takePhoto(navigation, "${fileName}.jpeg", context, it, "documentViewer/license") }
+                        when {
+                            fileName.startsWith("damage") -> imageCapture?.let { takePhoto(scope, navigation, "$fileName.jpeg", context, it, "back") }
+                            fileName == "passport" -> imageCapture?.let { takePhoto(scope, navigation, "${fileName}.jpeg", context, it, "documentViewer/passport") }
+                            fileName == "selfie" -> imageCapture?.let { takePhoto(scope, navigation, "${fileName}.jpeg", context, it, "documentViewer/selfie") }
+                            else -> imageCapture?.let { takePhoto(scope, navigation, "${fileName}.jpeg", context, it, "documentViewer/license") }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -142,8 +159,8 @@ fun Camera(
     }
 }
 
-private fun takePhoto(navigation: NavHostController, name: String, context: Context, imageCapture: ImageCapture, route: String) {
-    val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}")
+private fun takePhoto(scope: CoroutineScope, navigation: NavHostController, name: String, context: Context, imageCapture: ImageCapture, route: String) {
+    var file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}")
     if (file.exists()) {
         file.delete()
     }
@@ -174,7 +191,25 @@ private fun takePhoto(navigation: NavHostController, name: String, context: Cont
                 val msg = "Photo capture succeeded"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 Log.d("Camera", msg)
-                navigation.navigate(route)
+                if (route == "back") {
+                    file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}")
+                    scope.launch {
+                        HttpClient.client.post("${HttpClient.url}/transport/damage/send") {
+                            setBody(
+                                MultiPartFormDataContent(
+                                formData {
+                                    append("image", file.readBytes(), Headers.build {
+                                        append(HttpHeaders.ContentType, "image/jpeg")
+                                        append(HttpHeaders.ContentDisposition, "filename=\"${file.name.slice(IntRange(file.name.indexOf('_') + 1, file.name.length - 1))}\"")
+                                    })
+                                }
+                            ))
+                        }
+                        navigation.popBackStack()
+                    }
+                }
+                else
+                    navigation.navigate(route)
 
             }
 
