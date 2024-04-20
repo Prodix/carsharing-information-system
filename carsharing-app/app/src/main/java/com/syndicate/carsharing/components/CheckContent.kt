@@ -12,14 +12,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,8 +43,15 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,11 +62,21 @@ fun CheckContent(
     val scope = rememberCoroutineScope()
     val timer by mainViewModel.timer.collectAsState()
     val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
+    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
+    val transportInfo = placemark?.userData as Transport
+
+    val damagesNameList = remember {
+        mutableStateOf<List<String>?>(null)
+    }
 
     LaunchedEffect(key1 = context) {
         mainViewModel.updateReserving(false)
         mainViewModel.updateSession(null)
         mainViewModel.updateChecking(true)
+
+        damagesNameList.value = HttpClient.client.get(
+            "${HttpClient.url}/transport/get/damage?id=${transportInfo.id}"
+        ).body<List<String>>()
 
         stopwatchOnChecking.clear()
         timer.onTimerEnd = {
@@ -82,19 +104,28 @@ fun CheckContent(
         Text(
             text = "Недостатки, о которых мы уже знаем"
         )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(3) {
-                Image(
-                    painter = BitmapPainter(ImageBitmap.imageResource(R.drawable.passport)),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .width(190.dp)
-                        .height(115.dp)
-                        .clip(RoundedCornerShape(10.dp)),
-                    contentScale = ContentScale.FillWidth
-                )
+        if (damagesNameList.value != null) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(damagesNameList.value!!) {
+                    SubcomposeAsyncImage(
+                        model = "${HttpClient.url}/transport/get/damage/image?name=$it",
+                        contentDescription = null,
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .width(190.dp)
+                            .height(115.dp)
+                            .clip(RoundedCornerShape(10.dp)),
+                    ) {
+                        val state = painter.state
+                        if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                            Loader()
+                        } else {
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                }
             }
         }
         Box (
