@@ -17,5 +17,6 @@ public class CarsharingDbContext : DbContext
     public DbSet<Transport> Transport { get; set; }
     public DbSet<Function> Function { get; set; }
     public DbSet<Rate> Rate { get; set; }
+    public DbSet<Damage> Damage { get; set; }
 
 }

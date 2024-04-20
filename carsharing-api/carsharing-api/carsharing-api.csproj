@@ -33,6 +33,30 @@
       <Content Include="images\volkswagen_golf_4.png">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <None Remove="damages\1_gdfgdhf.jpg" />
+      <Content Include="damages\1_gdfgdhf.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="damages\1_hfgj.jpg" />
+      <Content Include="damages\1_hfgj.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="damages\1_sdfsdf.jpg" />
+      <Content Include="damages\1_sdfsdf.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="damages\2_kmnk.jpg" />
+      <Content Include="damages\2_kmnk.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="damages\2_kokhj.jpg" />
+      <Content Include="damages\2_kokhj.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="damages\2_lpkokgh.jpg" />
+      <Content Include="damages\2_lpkokgh.jpg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

@@ -44,4 +44,27 @@ public class TransportController : Controller
         Response.Headers.ContentDisposition = "attachment";
         await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images", name));
     }
+    
+    [HttpGet]
+    [Route("/api/transport/get/damage")]
+    public IActionResult GetTransportDamage(int id)
+    {
+        List<string> paths = _db.Damage.Where(x => x.TransportId == id)
+            .Select(x => x.Path)
+            .ToList();
+        
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(paths),
+            ContentType = "application/json"
+        };
+    }
+    
+    [HttpGet]
+    [Route("/api/transport/get/damage/image")]
+    public async Task GetTransportDamage(string name)
+    {
+        Response.Headers.ContentDisposition = "attachment";
+        await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "damages", name));
+    }
 }
