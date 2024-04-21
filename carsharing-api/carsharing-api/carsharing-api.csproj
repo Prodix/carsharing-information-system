@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
+        <PackageReference Include="JWT" Version="10.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.16"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.18">
           <PrivateAssets>all</PrivateAssets>
