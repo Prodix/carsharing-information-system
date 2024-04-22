@@ -82,7 +82,7 @@ dependencies {
     implementation("io.ktor:ktor-client-cio:2.3.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.13.0")
     implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
     implementation("io.ktor:ktor-serialization-jackson:2.3.8")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
