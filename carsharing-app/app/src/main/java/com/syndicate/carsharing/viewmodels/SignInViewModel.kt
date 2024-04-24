@@ -5,6 +5,7 @@ import com.syndicate.carsharing.models.SignInModel
 import com.syndicate.carsharing.models.SignUpModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class SignInViewModel : ViewModel() {
 
@@ -14,7 +15,9 @@ class SignInViewModel : ViewModel() {
     fun changeEmail(email: String) {
 
         if (email.isEmpty()) {
-            _uiState.value = SignInModel("", _uiState.value.password, _uiState.value.isByPassword, _uiState.value.buttonText, _uiState.value.emailNote, _uiState.value.passwordNote)
+            _uiState.update {
+                it.copy(email = "")
+            }
             return
         }
 

@@ -1,9 +1,11 @@
 package com.syndicate.carsharing.views
 
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Environment
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,24 +20,54 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.User
+import com.syndicate.carsharing.viewmodels.CodeViewModel
+import com.syndicate.carsharing.viewmodels.DocumentViewModel
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.launch
+import java.io.File
+import java.util.Date
+import kotlin.random.Random
 
 @Composable
 fun Document(
     fileName: String,
+    documentViewModel: DocumentViewModel = hiltViewModel(),
     navigation: NavHostController
 ) {
     val image = BitmapFactory.decodeFile("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${fileName}.jpeg")
     val matrix = Matrix()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val userStore = documentViewModel.userStore
+    val token by userStore.getToken().collectAsState(initial = "")
+    val user by userStore.getUser().collectAsState(initial = User())
+
     matrix.postRotate(90f)
 
     Box(
@@ -87,17 +119,74 @@ fun Document(
                 onClick = {
                     when (fileName) {
                         "passport" -> {
-                            /* TODO: Отправка паспорта */
-                            navigation.navigate("documentIntro/false/true")
+                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/passport.jpeg")
+                            scope.launch {
+                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=passport&token=${token}") {
+                                    setBody(
+                                        MultiPartFormDataContent(
+                                            formData {
+                                                append("image", file.readBytes(), Headers.build {
+                                                    append(HttpHeaders.ContentType, "image/jpeg")
+                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_passport.jpeg\"")
+                                                })
+                                            }
+                                        ))
+                                }
+                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
+                                    headers["Authorization"] = "Bearer $token"
+                                }.body<DefaultResponse>()
+                                userStore.saveToken(response.token as String)
+                                userStore.saveUser(userStore.decryptToken(token))
+                                navigation.navigate("documentIntro/false/true")
+                            }
                         }
                         "selfie" -> {
-                            /* TODO: Отправка селфи */
-                            navigation.navigate("documentIntro/false/false")
+                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/selfie.jpeg")
+                            scope.launch {
+                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=selfie&token=${token}") {
+                                    setBody(
+                                        MultiPartFormDataContent(
+                                            formData {
+                                                append("image", file.readBytes(), Headers.build {
+                                                    append(HttpHeaders.ContentType, "image/jpeg")
+                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_selfie.jpeg\"")
+                                                })
+                                            }
+                                        ))
+                                }
+                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
+                                    headers["Authorization"] = "Bearer $token"
+                                }.body<DefaultResponse>()
+                                userStore.saveToken(response.token as String)
+                                userStore.saveUser(userStore.decryptToken(token))
+                                navigation.navigate("documentIntro/false/false")
+                            }
                         }
                         else -> {
-                            /* TODO: Отправка удостоверения */
-                            /* TODO: Показать предупреждение о длительности верификации аккаунта */
-                            navigation.navigate("main")
+                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/license.jpeg")
+                            scope.launch {
+                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=driver_license&token=${token}") {
+                                    setBody(
+                                        MultiPartFormDataContent(
+                                            formData {
+                                                append("image", file.readBytes(), Headers.build {
+                                                    append(HttpHeaders.ContentType, "image/jpeg")
+                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_license.jpeg\"")
+                                                })
+                                            }
+                                        ))
+                                }
+                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
+                                    headers["Authorization"] = "Bearer $token"
+                                }.body<DefaultResponse>()
+                                userStore.saveToken(response.token as String)
+                                userStore.saveUser(userStore.decryptToken(token))
+                                AlertDialog.Builder(context)
+                                    .setMessage("Ваш аккаунт будет верифицирован в течение 3 рабочих дней")
+                                    .setPositiveButton("ok") { _, _ -> run { } }
+                                    .show()
+                                navigation.navigate("main")
+                            }
                         }
                     }
                 },

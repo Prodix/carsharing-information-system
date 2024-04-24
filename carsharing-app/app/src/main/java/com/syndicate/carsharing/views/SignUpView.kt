@@ -1,6 +1,8 @@
 package com.syndicate.carsharing.views
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.util.Log
 import android.view.ViewTreeObserver
 import android.widget.Toast
 import androidx.compose.animation.core.tween
@@ -44,6 +46,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,22 +68,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.UserStore
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.User
 import com.syndicate.carsharing.viewmodels.SignUpViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.nefilim.kjwt.JWT
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import kotlinx.coroutines.launch
+import java.security.spec.AlgorithmParameterSpec
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SignUp(
     navigation: NavHostController,
-    signUpViewModel: SignUpViewModel = viewModel()
+    signUpViewModel: SignUpViewModel = hiltViewModel()
 ) {
-    val signUpState = signUpViewModel.uiState.collectAsState()
+    val signUpState by signUpViewModel.uiState.collectAsState()
     val imeState = rememberImeState()
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val userStore = signUpViewModel.userStore
 
     LaunchedEffect(key1 = imeState.value) {
         if (imeState.value){
@@ -145,7 +173,7 @@ fun SignUp(
                     .height(43.dp)
             )
             OutlinedTextField(
-                value = signUpState.value.email,
+                value = signUpState.email,
                 onValueChange = { value -> signUpViewModel.changeEmail(value) },
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -166,11 +194,11 @@ fun SignUp(
                     errorCursorColor = Color(0xFFBB3E3E),
                     errorSupportingTextColor = Color(0xFFBB3E3E)
                 ),
-                isError = signUpState.value.emailNote != "",
+                isError = signUpState.emailNote != "",
                 supportingText = {
-                    if (signUpState.value.emailNote != "") {
+                    if (signUpState.emailNote != "") {
                         Text(
-                            text = signUpState.value.emailNote,
+                            text = signUpState.emailNote,
                             fontSize = 12.sp,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -183,7 +211,7 @@ fun SignUp(
                     .size(16.dp)
             )
             OutlinedTextField(
-                value = signUpState.value.password,
+                value = signUpState.password,
                 onValueChange = { value -> signUpViewModel.changePassword(value) },
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -205,11 +233,11 @@ fun SignUp(
                     errorCursorColor = Color(0xFFBB3E3E),
                     errorSupportingTextColor = Color(0xFFBB3E3E)
                 ),
-                isError = signUpState.value.passwordNote != "",
+                isError = signUpState.passwordNote != "",
                 supportingText = {
-                    if (signUpState.value.passwordNote != "") {
+                    if (signUpState.passwordNote != "") {
                         Text(
-                            text = signUpState.value.passwordNote,
+                            text = signUpState.passwordNote,
                             fontSize = 12.sp,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -223,8 +251,30 @@ fun SignUp(
             )
             Button(
                 onClick = {
-                    /* TODO: Нужно сделать проверку на существование аккаунта */
-                    navigation.navigate("code/true/${signUpState.value.email}")
+                    val mapper = jacksonObjectMapper()
+                    scope.launch {
+                        val response = HttpClient.client.post(
+                            "${HttpClient.url}/account/signup"
+                        ) {
+                            setBody(
+                                MultiPartFormDataContent(
+                                    formData {
+                                        append("email", signUpState.email)
+                                        append("password", signUpState.password)
+                                    }
+                                ))
+                        }.body<DefaultResponse>()
+                        if (response.status_code != 200) {
+                            AlertDialog.Builder(context)
+                                .setMessage(response.message)
+                                .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                        } else {
+                            userStore.saveToken(response.token as String)
+                            userStore.saveUser(userStore.decryptToken(response.token))
+                            navigation.navigate("code/true/${signUpState.email}")
+                        }
+                    }
                 },
                 content = { Text(
                     text = "Зарегистрироваться",
@@ -242,8 +292,8 @@ fun SignUp(
                     disabledContainerColor = Color.Transparent,
                     disabledContentColor = Color(0xFFB5B5B5)
                 ),
-                border = if (signUpState.value.emailNote == "" && signUpState.value.passwordNote == "" && signUpState.value.password != "" && signUpState.value.email != "") null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
-                enabled = signUpState.value.emailNote == "" && signUpState.value.passwordNote == "" && signUpState.value.password != "" && signUpState.value.email != ""
+                border = if (signUpState.emailNote == "" && signUpState.passwordNote == "" && signUpState.password != "" && signUpState.email != "") null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
+                enabled = signUpState.emailNote == "" && signUpState.passwordNote == "" && signUpState.password != "" && signUpState.email != ""
             )
             Spacer(
                 modifier = Modifier

@@ -3,11 +3,13 @@ package com.syndicate.carsharing.database.models
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class User(
-    @JsonProperty("id") val id: Int,
-    @JsonProperty("email") val email: String,
-    @JsonProperty("password") val password: String,
-    @JsonProperty("passport") val passport: Int,
-    @JsonProperty("driver_license") val driverLicense: Int,
-    @JsonProperty("billing") val billing: Int,
-    @JsonProperty("token") val token: String,
+    @JsonProperty("Id") val id: Int = 0,
+    @JsonProperty("Email") val email: String = "",
+    @JsonProperty("Password") val password: String = "",
+    @JsonProperty("UserRole") val userRole: String = "",
+    @JsonProperty("PassportId") val passportId: Int? = null,
+    @JsonProperty("DriverLicenseId") val driverLicenseId: Int? = null,
+    @JsonProperty("Balance") val balance: Double = 0.0,
+    @JsonProperty("IsVerified") val isVerified: Boolean = false,
+    @JsonProperty("SelfieId") val selfieId: Int? = null,
 )

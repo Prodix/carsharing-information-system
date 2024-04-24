@@ -1,8 +1,7 @@
 package com.syndicate.carsharing
 
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
-import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,8 +13,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,31 +31,38 @@ import com.syndicate.carsharing.views.Document
 import com.syndicate.carsharing.views.DocumentIntro
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
-import com.syndicate.carsharing.views.Start
+import com.syndicate.carsharing.views.SplashScreen
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-
+    @Inject
+    lateinit var userStore: UserStore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
         setContent {
-            App()
+            CarsharingApp(userStore)
         }
     }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun App() {
+fun CarsharingApp(
+    userStore: UserStore
+) {
     CarsharingTheme {
         val navController = rememberNavController()
 
@@ -95,14 +102,26 @@ fun App() {
             true
         }
 
+
+
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "main"
+                startDestination = "splash"
             ) {
+                composable("splash") {
+                    SplashScreen(
+                        navigateToDestination = {
+                            navController.navigate(it) {
+                                popUpTo(0)
+                            }
+                        },
+                        userStore = userStore
+                    )
+                }
                 composable("signIn") {
                     SignIn(
                         navigation = navController

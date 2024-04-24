@@ -1,6 +1,8 @@
 package com.syndicate.carsharing.views
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,11 +30,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +46,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.viewmodels.SignInViewModel
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.launch
+import kotlin.system.exitProcess
 
 @SuppressLint("UnrememberedMutableInteractionSource")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +69,8 @@ fun SignIn(
     val signInState by signInViewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val imeState = rememberImeState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = imeState.value) {
         if (imeState.value){
@@ -199,8 +216,27 @@ fun SignIn(
             Button(
                 onClick = {
                     if (signInState.isByPassword) {
-                        /* TODO: Проверка пароля аккаунта */
-                        navigation.navigate("main")
+                        scope.launch {
+                            val response = HttpClient.client.post(
+                                "${HttpClient.url}/account/signin"
+                            ) {
+                                setBody(
+                                    MultiPartFormDataContent(
+                                        formData {
+                                            append("email", signInState.email)
+                                            append("password", signInState.password)
+                                        }
+                                    ))
+                            }.body<DefaultResponse>()
+                            if (response.status_code != 200) {
+                                AlertDialog.Builder(context)
+                                    .setMessage(response.message)
+                                    .setPositiveButton("ok") { _, _ -> run { } }
+                                    .show()
+                            } else {
+                                navigation.navigate("main")
+                            }
+                        }
                     } else {
                         navigation.navigate("code/false/${signInState.email}")
                     }
