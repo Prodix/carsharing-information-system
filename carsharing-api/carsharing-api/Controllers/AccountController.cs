@@ -54,10 +54,12 @@ public class AccountController : Controller
 
     [HttpPost]
     [Route("/api/account/signin")]
-    public IActionResult SignIn(string? code, string? oldToken)
+    public IActionResult SignIn(string? code)
     {
-        if (oldToken is not null)
+        if (Request.Headers.ContainsKey("Authorization"))
         {
+            var oldToken = Request.Headers.Authorization.ToString()[7..];
+            Console.WriteLine(oldToken);
             return VerifyToken(oldToken) 
                 ? new JsonResult(new { token = RefreshToken(oldToken) }) 
                 : new JsonResult(new { message = "Неверный токен", status_code = 401 });
@@ -77,7 +79,7 @@ public class AccountController : Controller
                 .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(user), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
                 .Encode();
             
-            return new JsonResult(new { tokenForCode, message = "Успешный вход", status_code = 200 });
+            return new JsonResult(new { token = tokenForCode, message = "Успешный вход", status_code = 200 });
         }
 
         if (!_db.User.Any(x => x.Email == email))
@@ -190,7 +192,7 @@ public class AccountController : Controller
         //TODO: Отправка на почту
         if (!VerifyToken(token))
         {
-            return StatusCode(409);
+            return new JsonResult(new { message = "Неверный токен", status_code = 409 });
         }
 
         var user = DecryptToken(token);
@@ -217,6 +219,29 @@ public class AccountController : Controller
         return new JsonResult(new { message = "Сообщение отправлено", status_code = 200 });
     }
 
+    [HttpGet]
+    [Route("/api/account/history/get")]
+    public IActionResult GetActionHistory()
+    {
+        if (!Request.Headers.ContainsKey("Authorization"))
+            return new JsonResult(new { message = "Неверный токен", status_code = 401 });
+        
+        var token = Request.Headers.Authorization.ToString()[7..];
+        
+        Console.WriteLine(token);
+            
+        if (!VerifyToken(token))
+            return new JsonResult(new { message = "Неверный токен", status_code = 401 });
+            
+        var user = DecryptToken(token);
+            
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(_db.TransportLog.Where(x => x.UserId == user.Id).ToList()),
+            ContentType = "application/json"
+        };
+    }
+
     private bool VerifyToken(string token)
     {
         var user = DecryptToken(token);
@@ -230,7 +255,7 @@ public class AccountController : Controller
         
         var newToken = JwtBuilder.Create()
             .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
-            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Email == user.Email && x.Password == user.Password).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
+            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Id == user.Id).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
 
         return newToken;
