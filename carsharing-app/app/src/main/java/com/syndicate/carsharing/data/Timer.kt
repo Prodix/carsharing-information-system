@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.data
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -113,6 +114,7 @@ class Timer {
                 _seconds.value -= 1
             }
             delay(1000L)
+            Log.d("timer", this.toString())
         }
     }
 

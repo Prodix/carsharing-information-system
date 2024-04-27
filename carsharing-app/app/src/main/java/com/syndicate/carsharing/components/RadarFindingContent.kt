@@ -41,15 +41,10 @@ fun RadarFindingContent(
 ) {
     // TODO: Реализовать поиск автомобиля
 
-    val mem by mainViewModel.mem.collectAsState()
-    val page by mainViewModel.page.collectAsState()
-    val circle by mainViewModel.circle.collectAsState()
-    val walkMinutes by mainViewModel.walkMinutes.collectAsState()
-    val currentLocation by mainViewModel.currentLocation.collectAsState()
-    val isGesturesEnabled by mainViewModel.isGesturesEnabled.collectAsState()
+    val mainState by mainViewModel.uiState.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val max = mem
+    val max = mainState.mem
     var isOpen = true
 
     val minutes = remember {
@@ -63,22 +58,22 @@ fun RadarFindingContent(
             var isIncreasing = false
             while (isOpen) {
                 if (isIncreasing)
-                    mainViewModel.updateMem(mem + max * 0.05f)
+                    mainViewModel.updateMem(mainState.mem + max * 0.05f)
                 else
-                    mainViewModel.updateMem(mem - max * 0.05f)
+                    mainViewModel.updateMem(mainState.mem - max * 0.05f)
 
-                if (mem <= 0.04f)
+                if (mainState.mem <= 0.04f)
                     isIncreasing = true
 
-                if (mem >= max)
+                if (mainState.mem >= max)
                     isIncreasing = false
 
 
-                circle?.geometry = Circle(currentLocation, 400f * mem)
+                mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.mem)
 
                 delay(170)
             }
-            circle?.geometry = Circle(currentLocation, 400f * walkMinutes)
+            mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.walkMinutes)
         }
 
         scope.launch {
@@ -117,7 +112,7 @@ fun RadarFindingContent(
                 color = Color(0xFFC2C2C2)
             )
             Text(
-                text = "${walkMinutes * 5} МИНУТ ПЕШКОМ",
+                text = "${mainState.walkMinutes * 5} МИНУТ ПЕШКОМ",
                 fontSize = 16.sp,
                 color = Color.Black,
                 fontWeight = FontWeight.Bold
@@ -134,8 +129,8 @@ fun RadarFindingContent(
                 mainViewModel.updateIsGesturesEnabled(true)
                 isOpen = false
                 mainViewModel.updatePage("radarIntro")
-                mainViewModel.updateMem(walkMinutes.toFloat())
-                circle?.geometry = Circle(currentLocation, 400f * walkMinutes)
+                mainViewModel.updateMem(mainState.walkMinutes.toFloat())
+                mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.walkMinutes)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF6699CC),

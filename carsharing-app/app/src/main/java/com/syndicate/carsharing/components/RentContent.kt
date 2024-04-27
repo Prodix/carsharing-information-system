@@ -51,25 +51,23 @@ fun RentContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer by mainViewModel.timer.collectAsState()
-    val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
-    val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
-    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
-    val isFixed by mainViewModel.isFixed.collectAsState()
-    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
-    val rate by mainViewModel.lastSelectedRate.collectAsState()
-    val transportInfo = placemark?.userData as Transport
+    val mainState by mainViewModel.uiState.collectAsState()
+    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     mainViewModel.updateRenting(true)
 
     LaunchedEffect(key1 = context) {
-        stopwatchOnParking.clear()
-        if (isFixed) {
-            timer.changeStartTime(mainViewModel.rentHours.value, 0, 0)
-        } else {
-            timer.stop()
-            mainViewModel.viewModelScope.launch {
-                stopwatchOnRoad.restart()
+        if (!mainState.stopwatchOnParking.isStarted &&
+            !mainState.stopwatchOnRoad.isStarted &&
+            !mainState.timer.isStarted) {
+            mainState.stopwatchOnParking.clear()
+            if (mainState.isFixed) {
+                mainState.timer.changeStartTime(mainState.rentHours, 0, 0)
+            } else {
+                mainState.timer.stop()
+                mainViewModel.viewModelScope.launch {
+                    mainState.stopwatchOnRoad.restart()
+                }
             }
         }
     }
@@ -165,19 +163,19 @@ fun RentContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
-            if (!isFixed) {
+            if (!mainState.isFixed) {
                 scope.launch {
                     if (isClosed.value) {
-                        stopwatchOnRoad.stop()
-                        stopwatchOnParking.start()
+                        mainState.stopwatchOnRoad.stop()
+                        mainState.stopwatchOnParking.start()
                     } else {
-                        stopwatchOnParking.stop()
-                        stopwatchOnRoad.start()
+                        mainState.stopwatchOnParking.stop()
+                        mainState.stopwatchOnRoad.start()
                     }
                 }
             }
         }
-        if (!isFixed) {
+        if (!mainState.isFixed) {
             Text(
                 text = "Закройте двери, чтобы перейти в режим ожидания"
             )
@@ -187,8 +185,8 @@ fun RentContent(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                Text(text = "Аренда ${String.format("%.2f", rate!!.onRoadPrice)} Р/мин")
-                Text(text = "${String.format("%.2f", rate!!.onRoadPrice * (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
+                Text(text = "Аренда ${String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)} Р/мин")
+                Text(text = "${String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice * (mainState.stopwatchOnRoad.minutes + (if (mainState.stopwatchOnRoad.minutes > 0 || mainState.stopwatchOnRoad.seconds > 0) 1 else 0)) + mainState.lastSelectedRate!!.parkingPrice * (mainState.stopwatchOnParking.minutes + (if (mainState.stopwatchOnParking.minutes > 0 || mainState.stopwatchOnParking.seconds > 0) 1 else 0)))} Р")
             }
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -197,7 +195,7 @@ fun RentContent(
                     .fillMaxWidth()
             ) {
                 Text(text = "Время в пути")
-                Text(text = stopwatchOnRoad.toString())
+                Text(text = mainState.stopwatchOnRoad.toString())
             }
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -206,14 +204,14 @@ fun RentContent(
                     .fillMaxWidth()
             ) {
                 Text(text = "Время ожидания")
-                Text(text = stopwatchOnParking.toString())
+                Text(text = mainState.stopwatchOnParking.toString())
             }
             Button(
                 onClick = {
                     mainViewModel.updatePage("resultPage")
-                    stopwatchOnRoad.stop()
-                    stopwatchOnParking.stop()
-                    stopwatchOnChecking.stop()
+                    mainState.stopwatchOnRoad.stop()
+                    mainState.stopwatchOnParking.stop()
+                    mainState.stopwatchChecking.stop()
                 },
                 modifier = Modifier
                     .fillMaxWidth()

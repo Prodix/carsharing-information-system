@@ -63,6 +63,7 @@ import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import com.yandex.runtime.image.ImageProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -82,15 +83,15 @@ fun ReservationContent(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer = mainViewModel.timer.collectAsState()
-    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
-    val transportInfo = placemark?.userData as Transport
+    val mainState by mainViewModel.uiState.collectAsState()
+    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     LaunchedEffect(key1 = context) {
-        if (!timer.value.isStarted) {
-            timer.value.changeStartTime(20,0)
+        if (!mainState.timer.isStarted) {
+            mainState.timer.changeStartTime(20,0)
+            mainState.lastSelectedPlacemark!!.setIcon(ImageProvider.fromResource(context, R.drawable.routedcar))
             mainViewModel.viewModelScope.launch {
-                timer.value.start()
+                mainState.timer.start()
             }
         }
     }
@@ -186,6 +187,7 @@ fun ReservationContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
+            mainViewModel.updateReserving(false)
             mainViewModel.updatePage("checkPage")
         }
         Text(
@@ -263,13 +265,15 @@ fun ReservationContent(
                 text = "Бронирование закончится через"
             )
             Text(
-                text = "${timer.value}"
+                text = "${mainState.timer}"
             )
         }
         Button(
             onClick = {
                 mainViewModel.updateReserving(false)
-                mainViewModel.timer.value.stop()
+                mainViewModel.updateSession(null)
+                mainState.lastSelectedPlacemark!!.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                mainState.timer.stop()
                 scope.launch {
                     modalBottomSheetState.hide()
                 }

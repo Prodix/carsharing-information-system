@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.TelephonyManager
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,17 +81,14 @@ fun CheckContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer by mainViewModel.timer.collectAsState()
-    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
-    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
-    val transportInfo = placemark?.userData as Transport
+    val mainState by mainViewModel.uiState.collectAsState()
+    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     val damagesNameList = remember {
         mutableStateOf<List<String>?>(null)
     }
     //TODO: ускоряется таймер при платном осмотре и добавлении фото
     LaunchedEffect(key1 = context) {
-        mainViewModel.updateReserving(false)
         mainViewModel.updateSession(null)
         mainViewModel.updateChecking(true)
 
@@ -98,22 +96,25 @@ fun CheckContent(
             "${HttpClient.url}/transport/get/damage?id=${transportInfo.id}"
         ).body<List<String>>()
 
-        stopwatchOnChecking.clear()
-        timer.onTimerEnd = {
-            mainViewModel.viewModelScope.launch {
-                stopwatchOnChecking.start()
+        if (!mainState.stopwatchChecking.isStarted) {
+            mainState.stopwatchChecking.clear()
+            mainState.timer.onTimerEnd = {
+                mainViewModel.viewModelScope.launch {
+                    mainState.stopwatchChecking.start()
+                }
             }
         }
 
-        if (timer.defaultMinutes != 5) {
-            timer.changeStartTime(5,0)
-        }
+        if (!mainState.timer.isStarted && !mainState.stopwatchChecking.isStarted) {
+            if (mainState.timer.defaultMinutes != 5) {
+                mainState.timer.changeStartTime(5,0)
+            }
 
-        if (!timer.isStarted) {
             mainViewModel.viewModelScope.launch {
-                timer.start()
+                mainState.timer.start()
             }
         }
+
     }
 
     val REQUIRED_PERMISSIONS =
@@ -251,21 +252,21 @@ fun CheckContent(
                 .fillMaxWidth()
         ) {
             Text(
-                text = if (stopwatchOnChecking.isStarted)
+                text = if (mainState.stopwatchChecking.isStarted)
                     "Платный осмотр"
                 else
                     "Время бесплатного осмотра закончится через"
             )
             Text(
-                text = if (stopwatchOnChecking.isStarted)
-                    stopwatchOnChecking.toString()
+                text = if (mainState.stopwatchChecking.isStarted)
+                    mainState.stopwatchChecking.toString()
                 else
-                    timer.toString()
+                    mainState.timer.toString()
             )
         }
         Button(
             onClick = {
-                stopwatchOnChecking.stop()
+                mainState.stopwatchChecking.stop()
                 mainViewModel.updatePage("rentPage")
                 mainViewModel.updateChecking(false)
             },

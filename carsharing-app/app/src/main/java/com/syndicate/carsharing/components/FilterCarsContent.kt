@@ -48,7 +48,7 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 fun FilterCarsContent(
     mainViewModel: MainViewModel
 ) {
-    val carType by mainViewModel.carType.collectAsState()
+    val mainState by mainViewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -61,7 +61,7 @@ fun FilterCarsContent(
         )
         Column {
             Slider(
-                value = carType,
+                value = mainState.carType,
                 steps = 1,
                 valueRange = 1f..3f,
                 onValueChange = {
@@ -89,17 +89,17 @@ fun FilterCarsContent(
                 Text(
                     text = "Эконом",
                     fontSize = 12.sp,
-                    color = if (carType == 1f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.carType == 1f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "Комфорт",
                     fontSize = 12.sp,
-                    color = if (carType == 2f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.carType == 2f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "Бизнес",
                     fontSize = 12.sp,
-                    color = if (carType == 3f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.carType == 3f) Color.Black else Color(0xFFC2C2C2)
                 )
             }
         }
@@ -113,12 +113,11 @@ fun FilterCarsContent(
         FlowRow (
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            val list by mainViewModel.listTags.collectAsState()
 
-            for (i in list.indices) {
+            for (i in mainState.listTags.indices) {
                 //TODO: Написать условие выбора иконки
                 FilterChip(
-                    selected = list[i].isSelected,
+                    selected = mainState.listTags[i].isSelected,
                     shape = RoundedCornerShape(10.dp),
                     onClick = {
                         mainViewModel.updateTags(i)
@@ -127,7 +126,7 @@ fun FilterCarsContent(
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.child_icon),
                             contentDescription = null,
-                            tint = if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
+                            tint = if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
                         )
                     },
                     colors = ChipDefaults.filterChipColors(
@@ -135,11 +134,11 @@ fun FilterCarsContent(
                         selectedBackgroundColor = Color(0x266699CC)
                     ),
                     interactionSource = MutableInteractionSource(),
-                    border = BorderStroke(1.dp, if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E))
+                    border = BorderStroke(1.dp, if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E))
                 ) {
                     Text(
                         text = "Детское кресло",
-                        color = if (list[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
+                        color = if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
                     )
                 }
             }

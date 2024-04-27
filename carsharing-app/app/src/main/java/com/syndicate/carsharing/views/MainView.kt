@@ -39,11 +39,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.BuildConfig
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.UserStore
 import com.syndicate.carsharing.components.BalanceMenu
 import com.syndicate.carsharing.components.BottomMenu
 import com.syndicate.carsharing.components.BottomSheetWithPages
@@ -89,15 +91,12 @@ import kotlin.system.exitProcess
 @Composable
 fun Main(
     navigation: NavHostController,
-    mainViewModel: MainViewModel = viewModel(),
+    mainViewModel: MainViewModel = hiltViewModel(),
     sheetState: ModalBottomSheetState,
     listener: MapObjectTapListener
 ) {
     lateinit var userPlacemark: PlacemarkMapObject
     val mainState by mainViewModel.uiState.collectAsState()
-    val mapView by mainViewModel.mapView.collectAsState()
-    val router by mainViewModel.pedestrianRouter.collectAsState()
-
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -115,27 +114,27 @@ fun Main(
             val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
             mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
 
-            userPlacemark = mapView!!.mapWindow.map.mapObjects.addPlacemark()
+            userPlacemark = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark()
             userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-            userPlacemark.geometry = mainViewModel.currentLocation.value
+            userPlacemark.geometry = mainState.currentLocation
 
-            if (mainViewModel.currentLocation.value.latitude == 0.0 && mainViewModel.currentLocation.value.longitude == 0.0) {
+            if (mainState.currentLocation.latitude == 0.0 && mainState.currentLocation.longitude == 0.0) {
                 userPlacemark.isVisible = false
             }
             else {
-                mapView!!.setNoninteractive(true)
-                mapView!!.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                { mapView!!.setNoninteractive(false) }
+                mainState.mapView!!.setNoninteractive(true)
+                mainState.mapView!!.mapWindow.map.move(CameraPosition(mainState.currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                { mainState.mapView!!.setNoninteractive(false) }
             }
 
             location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
                 mainViewModel.updateLocation(Point(it.latitude, it.longitude))
-                userPlacemark.geometry = mainViewModel.currentLocation.value
+                userPlacemark.geometry = mainState.currentLocation
                 mainViewModel.updatePoints(0, RequestPoint(userPlacemark.geometry, RequestPointType.WAYPOINT, null, null))
-                if (mainViewModel.session.value != null && mainViewModel.isReserving.value) {
+                if (mainState.session != null && mainState.isReserving) {
                     mainViewModel.updateSession(
-                        router!!.requestRoutes(
-                            mainViewModel.points.value,
+                        mainState.pedestrianRouter!!.requestRoutes(
+                            mainState.points,
                             mainViewModel.options,
                             mainViewModel.routeListener
                         )
@@ -143,13 +142,13 @@ fun Main(
                 }
 
                 if (!sheetState.isVisible)
-                    mainViewModel.circle.value?.geometry = Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)
+                    mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.walkMinutes)
 
                 if (!userPlacemark.isVisible) {
                     userPlacemark.isVisible = true
-                    mapView!!.setNoninteractive(true)
-                    mapView!!.mapWindow.map.move(CameraPosition(mainViewModel.currentLocation.value, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                    { mapView!!.setNoninteractive(false) }
+                    mainState.mapView!!.setNoninteractive(true)
+                    mainState.mapView!!.mapWindow.map.move(CameraPosition(mainState.currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    { mainState.mapView!!.setNoninteractive(false) }
                 }
             }
         }
@@ -185,18 +184,18 @@ fun Main(
         mainViewModel.updatePlacemarks(listOf())
     }
     
-    LaunchedEffect(key1 = mapView) {
+    LaunchedEffect(key1 = mainState.mapView) {
         while (true) {
-            val oldList = mainViewModel.transport.value
-            val oldListNumbers = mainViewModel.transport.value.map { x -> x.id }
+            val oldList = mainState.transport
+            val oldListNumbers = mainState.transport.map { x -> x.id }
             mainViewModel.getTransport()
-            val newList = mainViewModel.transport.value
-            val newListNumbers = mainViewModel.transport.value.map { x -> x.id }
+            val newList = mainState.transport
+            val newListNumbers = mainState.transport.map { x -> x.id }
 
-            if (mainViewModel.transportPlacemarkList.value.isEmpty()) {
+            if (mainState.transportPlacemarkList.isEmpty()) {
                 val list = mutableListOf<PlacemarkMapObject>()
-                for (i in mainViewModel.transport.value) {
-                    val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                for (i in mainState.transport) {
+                    val placemarkMapObject = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark().apply {
                         geometry = Point(i.latitude, i.longitude)
                         setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
                         addTapListener(listener)
@@ -206,22 +205,22 @@ fun Main(
                 }
                 mainViewModel.updatePlacemarks(list.toList())
             } else {
-                val replacedList = mainViewModel.transportPlacemarkList.value.toMutableList()
+                val replacedList = mainState.transportPlacemarkList.toMutableList()
 
                 if (oldListNumbers.size != newListNumbers.size) {
                     val doubleList = oldListNumbers.toMutableList() + newListNumbers
                     val difference = doubleList.filter { x -> doubleList.count { y -> y == x } == 1 }
                     if (oldListNumbers.size > newListNumbers.size) {
-                        val needToRemove = mainViewModel.transportPlacemarkList.value.filter { x ->
+                        val needToRemove = mainState.transportPlacemarkList.filter { x ->
                             (x.userData as Transport).id in difference
                         }
                         for (i in needToRemove) {
-                            mainViewModel.mapView.value!!.mapWindow.map.mapObjects.remove(i)
+                            mainState.mapView!!.mapWindow.map.mapObjects.remove(i)
                             replacedList.remove(i)
                         }
                     } else {
-                        for (i in mainViewModel.transport.value.filter { x -> x.id in difference }) {
-                            val placemarkMapObject = mainViewModel.mapView.value!!.mapWindow.map.mapObjects.addPlacemark().apply {
+                        for (i in mainState.transport.filter { x -> x.id in difference }) {
+                            val placemarkMapObject = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark().apply {
                                 geometry = Point(i.latitude, i.longitude)
                                 setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
                                 addTapListener(listener)
@@ -282,12 +281,12 @@ fun Main(
             onClickRadar = {
                 mainViewModel.updatePage("radarIntro")
                 scope.launch {
-                    mapView!!.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
-                    mainViewModel.updateCircle(mapView!!.mapWindow.map.mapObjects.addCircle(Circle(mainViewModel.currentLocation.value, 400f * mainViewModel.walkMinutes.value)))
-                    mainViewModel.circle.value?.fillColor = Color(0x4A92D992).toArgb()
-                    mainViewModel.circle.value?.strokeColor = Color(0xFF99CC99).toArgb()
-                    mainViewModel.circle.value?.strokeWidth = 1.5f
+                    mainViewModel.updateCircle(mainState.mapView!!.mapWindow.map.mapObjects.addCircle(Circle(mainState.currentLocation, 400f * mainState.walkMinutes)))
+                    mainState.circle?.fillColor = Color(0x4A92D992).toArgb()
+                    mainState.circle?.strokeColor = Color(0xFF99CC99).toArgb()
+                    mainState.circle?.strokeWidth = 1.5f
                     sheetState.show()
                 }
             },
@@ -337,7 +336,7 @@ fun Main(
                 .align(Alignment.CenterEnd),
             sheetState = sheetState
         ) {
-            mapView!!.mapWindow.map.move(CameraPosition(Point(mainViewModel.currentLocation.value.latitude, mainViewModel.currentLocation.value.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+            mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
         }
     }

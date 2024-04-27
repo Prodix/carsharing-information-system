@@ -16,6 +16,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,10 +27,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.geometry.Circle
+import kotlinx.coroutines.launch
 
 //TODO: Подгрузка инфы из базы
 
@@ -39,8 +42,8 @@ import com.yandex.mapkit.geometry.Circle
 fun RateContent(
     mainViewModel: MainViewModel
 ) {
-    val rate by mainViewModel.lastSelectedRate.collectAsState()
-    val rentHours by mainViewModel.rentHours.collectAsState()
+    val mainState by mainViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
     Column (
         modifier = Modifier
@@ -52,13 +55,13 @@ fun RateContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = rate!!.rateName)
+            Text(text = mainState.lastSelectedRate!!.rateName)
             Image(
                 imageVector = ImageVector.vectorResource(R.drawable.close),
                 contentDescription = null
             )
         }
-        if (String.format("%.2f", rate!!.parkingPrice) == String.format("%.2f", rate!!.onRoadPrice)) {
+        if (String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -68,7 +71,7 @@ fun RateContent(
                     text = "Стоимость в час"
                 )
                 Text(
-                    text = "${String.format("%.2f", rate!!.parkingPrice * 60)} P/час"
+                    text = "${String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice * 60)} P/час"
                 )
             }
             Row(
@@ -80,12 +83,12 @@ fun RateContent(
                     text = "Итого"
                 )
                 Text(
-                    text = "${String.format("%.2f", rate!!.parkingPrice * rentHours * 60)} P"
+                    text = "${String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice * mainState.rentHours * 60)} P"
                 )
             }
             Column {
                 Slider(
-                    value = rentHours.toFloat(),
+                    value = mainState.rentHours.toFloat(),
                     steps = 2,
                     valueRange = 2f..8f,
                     onValueChange = {
@@ -113,22 +116,22 @@ fun RateContent(
                     Text(
                         text = "2 часа",
                         fontSize = 12.sp,
-                        color = if (rentHours.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
+                        color = if (mainState.rentHours.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
                     )
                     Text(
                         text = "4 часа",
                         fontSize = 12.sp,
-                        color = if (rentHours.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
+                        color = if (mainState.rentHours.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
                     )
                     Text(
                         text = "6 часов",
                         fontSize = 12.sp,
-                        color = if (rentHours.toFloat() == 6f) Color.Black else Color(0xFFC2C2C2)
+                        color = if (mainState.rentHours.toFloat() == 6f) Color.Black else Color(0xFFC2C2C2)
                     )
                     Text(
                         text = "8 часов",
                         fontSize = 12.sp,
-                        color = if (rentHours.toFloat() == 8f) Color.Black else Color(0xFFC2C2C2)
+                        color = if (mainState.rentHours.toFloat() == 8f) Color.Black else Color(0xFFC2C2C2)
                     )
                 }
             }
@@ -153,7 +156,7 @@ fun RateContent(
                     )
                 }
                 Text(
-                    text = "${String.format("%.2f", rate!!.onRoadPrice)} P/мин"
+                    text = "${String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)} P/мин"
                 )
             }
             Row(
@@ -175,7 +178,7 @@ fun RateContent(
                     )
                 }
                 Text(
-                    text = "${String.format("%.2f", rate!!.parkingPrice)} P/мин"
+                    text = "${String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice)} P/мин"
                 )
             }
         }
@@ -183,13 +186,13 @@ fun RateContent(
             onClick = {
                 mainViewModel.updatePage("reservationPage")
                 mainViewModel.updateSession(
-                    mainViewModel.pedestrianRouter.value!!.requestRoutes(
-                        mainViewModel.points.value,
+                    mainState.pedestrianRouter!!.requestRoutes(
+                        mainState.points,
                         mainViewModel.options,
                         mainViewModel.routeListener
                     )
                 )
-                if (String.format("%.2f", rate!!.parkingPrice) == String.format("%.2f", rate!!.onRoadPrice)) {
+                if (String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)) {
                     mainViewModel.updateIsFixed(true)
                 } else {
                     mainViewModel.updateIsFixed(false)

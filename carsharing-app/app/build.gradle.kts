@@ -1,4 +1,5 @@
 import java.io.FileInputStream
+import java.net.URI
 import java.util.Properties
 
 plugins {
@@ -73,10 +74,15 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
 
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+
+    implementation("commons-net:commons-net:3.10.0")
+
     implementation("com.google.dagger:hilt-android:2.44")
     kapt("com.google.dagger:hilt-android-compiler:2.44")
 
     implementation("com.airbnb.android:lottie-compose:6.4.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
     implementation("com.yandex.android:maps.mobile:4.4.0-full")
 

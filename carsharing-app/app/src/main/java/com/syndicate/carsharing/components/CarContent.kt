@@ -71,8 +71,8 @@ import java.io.InputStream
 fun CarContent(
     mainViewModel: MainViewModel
 ) {
-    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
-    val transportInfo = placemark?.userData as Transport
+    val mainState by mainViewModel.uiState.collectAsState()
+    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     val context = LocalContext.current
     val file = File("${context.cacheDir.absolutePath}/${transportInfo.carImagePath}")

@@ -1,6 +1,5 @@
 package com.syndicate.carsharing
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,10 +12,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.util.SntpClient
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,6 +37,9 @@ import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import javax.inject.Inject
 
 
@@ -49,11 +49,18 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userStore: UserStore
 
+    @Inject
+    lateinit var mainViewModel: MainViewModel
+
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        SntpClient.initialize(null, null)
+
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_KEY)
         setContent {
-            CarsharingApp(userStore)
+            CarsharingApp(userStore, mainViewModel)
         }
     }
 }
@@ -61,20 +68,20 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CarsharingApp(
-    userStore: UserStore
+    userStore: UserStore,
+    mainViewModel: MainViewModel
 ) {
     CarsharingTheme {
         val navController = rememberNavController()
 
-        val mainViewModel: MainViewModel = viewModel()
         val scope = rememberCoroutineScope()
 
         val sheetState = rememberModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Hidden,
             confirmValueChange = {
                 if (it == ModalBottomSheetValue.Hidden) {
-                    if (mainViewModel.circle.value != null)
-                        mainViewModel.mapView.value!!.mapWindow.map.mapObjects.remove(mainViewModel.circle.value!!)
+                    if (mainViewModel.uiState.value.circle != null)
+                        mainViewModel.uiState.value.mapView!!.mapWindow.map.mapObjects.remove(mainViewModel.uiState.value.circle!!)
                     mainViewModel.updateCircle(null)
                 }
 
@@ -87,11 +94,11 @@ fun CarsharingApp(
             mainViewModel.updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
             mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
 
-            if (mainViewModel.isReserving.value)
+            if (mainViewModel.uiState.value.isReserving)
                 mainViewModel.updatePage("reservationPage")
-            else if (mainViewModel.isChecking.value)
+            else if (mainViewModel.uiState.value.isChecking)
                 mainViewModel.updatePage("checkPage")
-            else if (mainViewModel.isRenting.value)
+            else if (mainViewModel.uiState.value.isRenting)
                 mainViewModel.updatePage("rentPage")
             else
                 mainViewModel.updatePage("car")
@@ -119,7 +126,8 @@ fun CarsharingApp(
                                 popUpTo(0)
                             }
                         },
-                        userStore = userStore
+                        userStore = userStore,
+                        mainViewModel = mainViewModel
                     )
                 }
                 composable("signIn") {

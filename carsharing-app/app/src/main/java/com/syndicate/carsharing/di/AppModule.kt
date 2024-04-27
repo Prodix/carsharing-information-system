@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.syndicate.carsharing.UserStore
+import com.syndicate.carsharing.viewmodels.MainViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,5 +24,11 @@ object AppModule {
         return PreferenceDataStoreFactory.create(
             produceFile = { context.preferencesDataStoreFile("settings") }
         )
+    }
+
+    @Provides
+    @Singleton
+    fun provideMainViewModel(userStore: UserStore) : MainViewModel {
+        return MainViewModel(userStore)
     }
 }

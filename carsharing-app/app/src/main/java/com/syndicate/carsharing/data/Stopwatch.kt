@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 class Stopwatch {
 
     private var _seconds: MutableState<Int> = mutableIntStateOf(0)
+    private var _hours: MutableState<Int> = mutableIntStateOf(0)
     private var _minutes: MutableState<Int> = mutableIntStateOf(0)
     private var _isStarted: MutableState<Boolean> = mutableStateOf(false)
 
@@ -21,6 +22,12 @@ class Stopwatch {
         get() = _minutes.value
         set(value) {
             _minutes.value = value
+        }
+
+    var hours: Int
+        get() = _hours.value
+        set(value) {
+            _hours.value = value
         }
 
     var isStarted: Boolean
@@ -42,6 +49,7 @@ class Stopwatch {
     fun clear() {
         _seconds.value = 0;
         _minutes.value = 0;
+        _hours.value = 0;
     }
 
     suspend fun start() {
@@ -51,23 +59,33 @@ class Stopwatch {
             if (_seconds.value == 60) {
                 _seconds.value = 0
                 _minutes.value++
+                if (_minutes.value == 60) {
+                    _minutes.value = 0
+
+                }
             }
             delay(1000L)
         }
     }
 
     override fun toString(): String {
-        return "${(if (_minutes.value < 10) 0 else "")}${_minutes.value}:${(if (_seconds.value < 10) 0 else "")}${_seconds.value}"
+        return "${(if (_hours.value != 0) "${(if (_hours.value < 10) 0 else "")}${_hours.value}:" else "")}${(if (_minutes.value < 10) 0 else "")}${_minutes.value}:${(if (_seconds.value < 10) 0 else "")}${_seconds.value}"
     }
 
     operator fun plus(stopwatch: Stopwatch): Any {
         val resultStopwatch = Stopwatch()
         resultStopwatch.minutes = this.minutes + stopwatch.minutes
         resultStopwatch.seconds = this.seconds + stopwatch.seconds
+        resultStopwatch.hours = this.hours + stopwatch.hours
 
         if (resultStopwatch.seconds >= 60) {
             resultStopwatch.minutes += resultStopwatch.seconds / 60
             resultStopwatch.seconds %= 60
+        }
+
+        if (resultStopwatch.minutes >= 60) {
+            resultStopwatch.hours += resultStopwatch.minutes / 60
+            resultStopwatch.minutes %= 60
         }
 
         return resultStopwatch

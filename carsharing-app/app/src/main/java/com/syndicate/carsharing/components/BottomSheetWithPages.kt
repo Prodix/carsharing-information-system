@@ -38,18 +38,16 @@ fun BottomSheetWithPages(
     sheetComposableList: Map<String, @Composable () -> Unit>,
     mainViewModel: MainViewModel
 ) {
-    val page by mainViewModel.page.collectAsState()
-    val scrimColor by mainViewModel.scrimColor.collectAsState()
-    val isGesturesEnabled by mainViewModel.isGesturesEnabled.collectAsState()
+    val mainState by mainViewModel.uiState.collectAsState()
 
     ModalBottomSheetLayout(
         sheetState = sheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        scrimColor = scrimColor,
-        sheetGesturesEnabled = isGesturesEnabled,
+        scrimColor = mainState.scrimColor,
+        sheetGesturesEnabled = mainState.isGesturesEnabled,
         sheetContent = {
             Box {
-                sheetComposableList[page]?.invoke()
+                sheetComposableList[mainState.page]?.invoke()
             }
         }
     ) {
@@ -62,7 +60,7 @@ fun BottomSheetWithPages(
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)
                 .then(
-                    if (!isGesturesEnabled) {
+                    if (!mainState.isGesturesEnabled) {
                         Modifier
                             .clickable(
                                 indication = null,

@@ -45,19 +45,14 @@ fun ResultContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val timer = mainViewModel.timer.collectAsState()
-    val stopwatchOnRoad by mainViewModel.stopwatchOnRoad.collectAsState()
-    val stopwatchOnParking by mainViewModel.stopwatchOnParking.collectAsState()
-    val stopwatchOnChecking by mainViewModel.stopwatchChecking.collectAsState()
-    val rate by mainViewModel.lastSelectedRate.collectAsState()
-    val placemark by mainViewModel.lastSelectedPlacemark.collectAsState()
-    val transportInfo = placemark?.userData as Transport
+    val mainState by mainViewModel.uiState.collectAsState()
+    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     mainViewModel.updateRenting(false)
 
     LaunchedEffect(key1 = context) {
         mainViewModel.viewModelScope.launch {
-            timer.value.stop()
+            mainState.timer.stop()
         }
     }
 
@@ -155,7 +150,7 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время в пути")
-            Text(text = stopwatchOnRoad.toString())
+            Text(text = mainState.stopwatchOnRoad.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -164,7 +159,7 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Время ожидания")
-            Text(text = stopwatchOnParking.toString())
+            Text(text = mainState.stopwatchOnParking.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -173,7 +168,7 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Платный осмотр")
-            Text(text = stopwatchOnChecking.toString())
+            Text(text = mainState.stopwatchChecking.toString())
         }
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -182,10 +177,10 @@ fun ResultContent(
                 .fillMaxWidth()
         ) {
             Text(text = "Итого")
-            Text(text = "${String.format("%.2f", rate!!.onRoadPrice * 
-                    (stopwatchOnRoad.minutes + (if (stopwatchOnRoad.minutes > 0 || stopwatchOnRoad.seconds > 0) 1 else 0)) 
-                    + rate!!.parkingPrice * (stopwatchOnParking.minutes + (if (stopwatchOnParking.minutes > 0 || stopwatchOnParking.seconds > 0) 1 else 0))
-                + 10 * (if (stopwatchOnChecking.minutes > 0 || stopwatchOnChecking.seconds > 0) stopwatchOnChecking.minutes + 1 else 0)
+            Text(text = "${String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice * 
+                    (mainState.stopwatchOnRoad.minutes + (if (mainState.stopwatchOnRoad.minutes > 0 || mainState.stopwatchOnRoad.seconds > 0) 1 else 0)) 
+                    + mainState.lastSelectedRate!!.parkingPrice * (mainState.stopwatchOnParking.minutes + (if (mainState.stopwatchOnParking.minutes > 0 || mainState.stopwatchOnParking.seconds > 0) 1 else 0))
+                + 10 * (if (mainState.stopwatchChecking.minutes > 0 || mainState.stopwatchChecking.seconds > 0) mainState.stopwatchChecking.minutes + 1 else 0)
             )} Р")
         }
     }

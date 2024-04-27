@@ -7,11 +7,14 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.preferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.User
+import com.syndicate.carsharing.viewmodels.MainViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.nefilim.kjwt.JWT
 import kotlinx.coroutines.flow.Flow
@@ -41,11 +44,73 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
         val IS_VERIFIED = booleanPreferencesKey("is_verified")
         val SELFIE_ID = intPreferencesKey("selfie_id")
         val TOKEN = stringPreferencesKey("token")
+        val RESERVING = booleanPreferencesKey("is_reserving")
+        val CHECKING = booleanPreferencesKey("is_checking")
+        val RENTING = booleanPreferencesKey("is_renting")
+        val LAST_RATE = stringPreferencesKey("last_rate")
     }
 
     fun getToken(): Flow<String> {
         return context.dataStore.data.map { preferences ->
             preferences[TOKEN] ?: ""
+        }
+    }
+
+    fun getLastSelectedRate(): Flow<Rate> {
+        val mapper = jacksonObjectMapper()
+        return context.dataStore.data.map { preferences ->
+            mapper.readValue<Rate>(preferences[LAST_RATE] ?: mapper.writeValueAsString(Rate()))
+        }
+    }
+
+    suspend fun setLastSelectedRate(rate: Rate) {
+        val mapper = jacksonObjectMapper()
+        context.dataStore.edit { preferences ->
+            preferences[LAST_RATE] = mapper.writeValueAsString(rate)
+        }
+    }
+
+    suspend fun clearCarStates() {
+        context.dataStore.edit { preferences ->
+            preferences[RENTING] = false
+            preferences[RESERVING] = false
+            preferences[CHECKING] = false
+        }
+    }
+
+    fun getReserving(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[RESERVING] ?: false
+        }
+    }
+
+    suspend fun setReserving(isReserving: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[RESERVING] = isReserving
+        }
+    }
+
+    fun getRenting(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[RENTING] ?: false
+        }
+    }
+
+    suspend fun setRenting(isRenting: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[RENTING] = isRenting
+        }
+    }
+
+    fun getChecking(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[CHECKING] ?: false
+        }
+    }
+
+    suspend fun setChecking(isChecking: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[CHECKING] = isChecking
         }
     }
 

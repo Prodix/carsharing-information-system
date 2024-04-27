@@ -39,10 +39,7 @@ import com.yandex.mapkit.map.CircleMapObject
 fun RadarContent(
     mainViewModel: MainViewModel
 ) {
-    val circle by mainViewModel.circle.collectAsState()
-    val walkMinutes by mainViewModel.walkMinutes.collectAsState()
-    val currentLocation by mainViewModel.currentLocation.collectAsState()
-
+    val mainState by mainViewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -60,13 +57,13 @@ fun RadarContent(
         )
         Column {
             Slider(
-                value = walkMinutes.toFloat(),
+                value = mainState.walkMinutes.toFloat(),
                 steps = 2,
                 valueRange = 1f..4f,
                 onValueChange = {
                     mainViewModel.updateMem(it)
                     mainViewModel.updateWalkMinutes(it.toInt())
-                    circle?.geometry = Circle(currentLocation, 400f * it)
+                    mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * it)
                 },
                 colors = SliderDefaults.colors(
                     activeTickColor = Color(0xFF6699CC),
@@ -90,22 +87,22 @@ fun RadarContent(
                 Text(
                     text = "5 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.toFloat() == 1f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.walkMinutes.toFloat() == 1f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "10 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.walkMinutes.toFloat() == 2f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "15 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.toFloat() == 3f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.walkMinutes.toFloat() == 3f) Color.Black else Color(0xFFC2C2C2)
                 )
                 Text(
                     text = "20 мин",
                     fontSize = 12.sp,
-                    color = if (walkMinutes.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
+                    color = if (mainState.walkMinutes.toFloat() == 4f) Color.Black else Color(0xFFC2C2C2)
                 )
             }
         }
