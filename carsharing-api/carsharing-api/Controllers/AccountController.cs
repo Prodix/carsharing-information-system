@@ -234,10 +234,12 @@ public class AccountController : Controller
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });
             
         var user = DecryptToken(token);
+
+        var logs = _db.TransportLog.Where(x => x.UserId == user.Id).ToList();
             
         return new ContentResult()
         {
-            Content = JsonConvert.SerializeObject(_db.TransportLog.Where(x => x.UserId == user.Id).ToList()),
+            Content = JsonConvert.SerializeObject(logs.OrderBy(x => x.Id)),
             ContentType = "application/json"
         };
     }

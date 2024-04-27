@@ -11,5 +11,11 @@ public enum Action
     [PgName("rent")]
     RENT,
     [PgName("cancel_rent")]
-    CANCEL_RENT
+    CANCEL_RENT,
+    [PgName("check")]
+    CHECK,
+    [PgName("lock")]
+    LOCK,
+    [PgName("unlock")]
+    UNLOCK
 }
