@@ -1,12 +1,15 @@
 package com.syndicate.carsharing.components
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.widget.Toast
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -59,11 +62,15 @@ import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.runtime.image.ImageProvider
+import io.ktor.client.call.body
+import io.ktor.client.request.post
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -77,12 +84,12 @@ enum class DragAnchors {
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun ReservationContent(
-    mainViewModel: MainViewModel,
-    modalBottomSheetState: ModalBottomSheetState
+    mainViewModel: MainViewModel
 ) {
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val mainState by mainViewModel.uiState.collectAsState()
     val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
@@ -187,8 +194,27 @@ fun ReservationContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
-            mainViewModel.updateReserving(false)
-            mainViewModel.updatePage("checkPage")
+            scope.launch {
+                val response = HttpClient.client.post(
+                    "${HttpClient.url}/transport/check?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                ) {
+                    headers["Authorization"] = "Bearer $token"
+                }.body<DefaultResponse>()
+
+                if (response.status_code != 200) {
+                    AlertDialog.Builder(context)
+                        .setMessage(response.message)
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                } else {
+                    mainState.timer.changeStartTime(0,5,0)
+                    scope.launch(Dispatchers.IO) {
+                        mainState.timer.start()
+                    }
+                    mainViewModel.updateReserving(false)
+                    mainViewModel.updatePage("checkPage")
+                }
+            }
         }
         Text(
             text = "Откройте двери, чтобы перейти к осмотру автомобиля"
@@ -201,6 +227,24 @@ fun ReservationContent(
         ) {
             Row(
                 modifier = Modifier
+                    .clickable {
+                        scope.launch {
+                            val response = HttpClient.client.post(
+                                "${HttpClient.url}/transport/flash?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                            ) {
+                                headers["Authorization"] = "Bearer $token"
+                            }.body<DefaultResponse>()
+
+                            if (response.status_code != 200) {
+                                AlertDialog.Builder(context)
+                                    .setMessage(response.message)
+                                    .setPositiveButton("ok") { _, _ -> run { } }
+                                    .show()
+                            } else {
+                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                     .withShadow(
                         Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
                         RoundedCornerShape(15.dp)
@@ -229,6 +273,24 @@ fun ReservationContent(
 
             Row(
                 modifier = Modifier
+                    .clickable {
+                        scope.launch {
+                            val response = HttpClient.client.post(
+                                "${HttpClient.url}/transport/beep?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                            ) {
+                                headers["Authorization"] = "Bearer $token"
+                            }.body<DefaultResponse>()
+
+                            if (response.status_code != 200) {
+                                AlertDialog.Builder(context)
+                                    .setMessage(response.message)
+                                    .setPositiveButton("ok") { _, _ -> run { } }
+                                    .show()
+                            } else {
+                                Toast.makeText(context, response.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                     .withShadow(
                         Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
                         RoundedCornerShape(15.dp)
@@ -270,12 +332,25 @@ fun ReservationContent(
         }
         Button(
             onClick = {
-                mainViewModel.updateReserving(false)
-                mainViewModel.updateSession(null)
-                mainState.lastSelectedPlacemark!!.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
-                mainState.timer.stop()
                 scope.launch {
-                    modalBottomSheetState.hide()
+                    val response = HttpClient.client.post(
+                        "${HttpClient.url}/transport/cancel_reserve?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                    ) {
+                        headers["Authorization"] = "Bearer $token"
+                    }.body<DefaultResponse>()
+
+                    if (response.status_code != 200) {
+                        AlertDialog.Builder(context)
+                            .setMessage(response.message)
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                    } else {
+                        mainViewModel.updateReserving(false)
+                        mainViewModel.updateSession(null)
+                        mainState.lastSelectedPlacemark!!.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
+                        mainState.timer.stop()
+                        mainState.modalBottomSheetState!!.hide()
+                    }
                 }
             },
             modifier = Modifier

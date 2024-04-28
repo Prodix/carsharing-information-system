@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberBasicTooltipState
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,13 +32,16 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import org.apache.commons.net.ntp.NTPUDPClient
 import java.net.InetAddress
 import java.time.OffsetDateTime
 
-@kotlin.OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+@kotlin.OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class,
+    ExperimentalMaterialApi::class
+)
 @OptIn(UnstableApi::class)
 @Composable
 fun SplashScreen(
@@ -45,16 +49,11 @@ fun SplashScreen(
     userStore: UserStore,
     mainViewModel: MainViewModel
 ) {
-    val user by userStore.getUser().collectAsState(initial = User())
-    val token by userStore.getToken().collectAsState(initial = "")
-    val isReserving by mainViewModel.userStore.getReserving().collectAsState(initial = false)
-    val isRenting by mainViewModel.userStore.getRenting().collectAsState(initial = false)
-    val isChecking by mainViewModel.userStore.getChecking().collectAsState(initial = false)
-    val lastSelectedRate by mainViewModel.userStore.getLastSelectedRate().collectAsState(initial = Rate())
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(key1 = Unit) {
-        delay(1500)
+        val user = mainViewModel.userStore.getUser().first()
+        val token = mainViewModel.userStore.getToken().first()
 
         if (user.email != "") {
             val log = HttpClient.client.get(
@@ -64,7 +63,16 @@ fun SplashScreen(
             }.body<List<TransportLog>>()
 
             if (log.isNotEmpty()) {
-                val lastAction = log.last()
+                val lastAction = log.filter { x ->
+                    x.action == "RESERVE"               ||
+                    x.action == "RENT"                  ||
+                    x.action == "UNLOCK"                ||
+                    x.action == "LOCK"                  ||
+                    x.action == "CANCEL_RENT"           ||
+                    x.action == "CANCEL_CHECK"          ||
+                    x.action == "CANCEL_RESERVE"        ||
+                    x.action == "CHECK"
+                }.last()
 
                 userStore.clearCarStates()
 
@@ -74,22 +82,45 @@ fun SplashScreen(
                     "UNLOCK" -> userStore.setRenting(true)
                     "LOCK" -> userStore.setRenting(true)
                     "CHECK" -> userStore.setChecking(true)
+                    "CANCEL_RENT" -> userStore.setRenting(false)
+                    "CANCEL_CHECK" -> userStore.setChecking(false)
+                    "CANCEL_RESERVE" -> userStore.setReserving(false)
                     else -> { }
                 }
+
+                val isReserving = mainViewModel.userStore.getReserving().first()
+                val isRenting = mainViewModel.userStore.getRenting().first()
+                val isChecking = mainViewModel.userStore.getChecking().first()
+                val rentHours = mainViewModel.userStore.getRentHours().first()
+                val lastSelectedRate = mainViewModel.userStore.getLastSelectedRate().first()
 
                 mainViewModel.updateRenting(isRenting)
                 mainViewModel.updateReserving(isReserving)
                 mainViewModel.updateChecking(isChecking)
                 mainViewModel.updateSelectedRate(lastSelectedRate)
+                mainViewModel.updateRentHours(rentHours)
+                mainViewModel.updateIsClosed(lastAction.action == "LOCK")
 
-                scope.launch(Dispatchers.IO) {
-                    val ntpTime = fromUnixMilli(NTPUDPClient().getTime(InetAddress.getByName("time.google.com")).returnTime)
+                scope.launch {
+                    var ntpTime: OffsetDateTime = OffsetDateTime.MIN
+                    scope.launch(Dispatchers.IO) {
+                        ntpTime = fromUnixMilli(NTPUDPClient().getTime(InetAddress.getByName("time.google.com")).returnTime)
+                    }
+                    while (ntpTime == OffsetDateTime.MIN) {
+                        delay(10)
+                    }
                     if (isReserving) {
                         if (lastAction.dateTime.dayOfYear == ntpTime.dayOfYear) {
                             val time = ntpTime.toEpochSecond() - lastAction.dateTime.toEpochSecond()
                             if (time / 60 < 20) {
                                 mainViewModel.viewModelScope.launch(Dispatchers.IO) {
-                                    mainViewModel.uiState.value.timer.changeStartTime(0, 20 - (time / 60).toInt(), 60 - (time % 60).toInt())
+                                    mainViewModel.uiState.value.timer.changeStartTime(0, 19 - (time / 60).toInt(), 60 - (time % 60).toInt())
+                                    mainViewModel.uiState.value.timer.onTimerEnd = {
+                                        mainViewModel.updateReserving(false)
+                                        mainViewModel.uiState.value.mainViewScope!!.launch {
+                                            mainViewModel.uiState.value.modalBottomSheetState!!.hide()
+                                        }
+                                    }
                                     mainViewModel.uiState.value.timer.start()
                                 }
                             }
@@ -105,26 +136,53 @@ fun SplashScreen(
                                             mainViewModel.uiState.value.stopwatchChecking.start()
                                         }
                                     }
-                                    mainViewModel.uiState.value.timer.changeStartTime(0, 5 - (time / 60).toInt(), 60 - (time % 60).toInt())
+                                    mainViewModel.uiState.value.timer.changeStartTime(0, 5 - (if (time < 60) 1 else (time / 60).toInt()), 60 - (time % 60).toInt())
                                     mainViewModel.uiState.value.timer.start()
                                 }
                             } else if (time / 60 < 35) {
                                 mainViewModel.uiState.value.stopwatchChecking.minutes = ((time - 300) / 60).toInt()
                                 mainViewModel.uiState.value.stopwatchChecking.seconds = ((time - 300) % 60).toInt()
                                 mainViewModel.viewModelScope.launch(Dispatchers.IO) {
+                                    mainViewModel.uiState.value.stopwatchChecking.timeToStop = Triple(0,30,0)
+                                    mainViewModel.uiState.value.stopwatchChecking.action = {
+                                        mainViewModel.uiState.value.stopwatchChecking.stop()
+                                        mainViewModel.updateChecking(false)
+                                        mainViewModel.uiState.value.mainViewScope!!.launch {
+                                            mainViewModel.uiState.value.modalBottomSheetState!!.hide()
+                                        }
+                                    }
                                     mainViewModel.uiState.value.stopwatchChecking.start()
                                 }
-                                //TODO: Добавить действие при достижении 30 минут
                             }
                         }
                     } else if (isRenting) {
                         if (ntpTime.dayOfYear - lastAction.dateTime.dayOfYear < 2) {
                             val time = ntpTime.toEpochSecond() - lastAction.dateTime.toEpochSecond()
+                            val reversed = log.reversed()
+                            for (i in reversed.indices) {
+                                if (reversed[i].action == "CHECK") {
+                                    mainViewModel.userStore.saveCheckingTime((reversed[i - 1].dateTime.toEpochSecond() - reversed[i].dateTime.toEpochSecond()).toInt())
+                                    break
+                                }
+                            }
                             if (lastAction.action == "RENT") {
-                                mainViewModel.viewModelScope.launch(Dispatchers.IO) {
-                                    mainViewModel.uiState.value.stopwatchOnRoad.minutes = (time / 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnRoad.seconds = (time % 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnRoad.start()
+                                mainViewModel.viewModelScope.launch {
+                                    if (rentHours != 0) {
+                                        val seconds = (rentHours * 3600) - time
+                                        mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
+                                        mainViewModel.uiState.value.timer.onTimerEnd = {
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
+                                            mainViewModel.uiState.value.mainViewScope!!.launch {
+                                                mainViewModel.uiState.value.modalBottomSheetState!!.hide()
+                                            }
+                                        }
+                                        mainViewModel.uiState.value.timer.start()
+                                    } else {
+                                        mainViewModel.uiState.value.stopwatchOnRoad.minutes = (time / 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnRoad.seconds = (time % 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnRoad.start()
+                                    }
                                 }
                             } else if (lastAction.action == "LOCK") {
                                 var rentTime: Long = 0L
@@ -147,12 +205,25 @@ fun SplashScreen(
                                         return@forEach
                                     }
                                 }
-                                mainViewModel.viewModelScope.launch(Dispatchers.IO) {
-                                    mainViewModel.uiState.value.stopwatchOnRoad.minutes = (rentTime / 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnRoad.seconds = (rentTime % 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnParking.minutes = (parkingTime / 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnParking.seconds = (parkingTime % 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnParking.start()
+                                mainViewModel.viewModelScope.launch {
+                                    if (rentHours != 0) {
+                                        val seconds = (rentHours * 3600) - summaryTime
+                                        mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
+                                        mainViewModel.uiState.value.timer.onTimerEnd = {
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
+                                            mainViewModel.uiState.value.mainViewScope!!.launch {
+                                                mainViewModel.uiState.value.modalBottomSheetState!!.hide()
+                                            }
+                                        }
+                                        mainViewModel.uiState.value.timer.start()
+                                    } else {
+                                        mainViewModel.uiState.value.stopwatchOnRoad.minutes = (rentTime / 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnRoad.seconds = (rentTime % 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnParking.minutes = (parkingTime / 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnParking.seconds = (parkingTime % 60).toInt()
+                                        mainViewModel.uiState.value.stopwatchOnParking.start()
+                                    }
                                 }
                             } else if (lastAction.action == "UNLOCK") {
                                 var rentTime: Long = 0L
@@ -175,12 +246,27 @@ fun SplashScreen(
                                         return@forEach
                                     }
                                 }
-                                mainViewModel.viewModelScope.launch(Dispatchers.IO) {
-                                    mainViewModel.uiState.value.stopwatchOnRoad.minutes = (rentTime / 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnRoad.seconds = (rentTime % 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnParking.minutes = (parkingTime / 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnParking.seconds = (parkingTime % 60).toInt()
-                                    mainViewModel.uiState.value.stopwatchOnRoad.start()
+                                mainViewModel.viewModelScope.launch {
+                                    if (rentHours != 0) {
+                                        val seconds = (rentHours * 3600) - summaryTime
+                                        mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
+                                        mainViewModel.uiState.value.timer.onTimerEnd = {
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
+                                            mainViewModel.uiState.value.mainViewScope!!.launch {
+                                                mainViewModel.uiState.value.modalBottomSheetState!!.hide()
+                                            }
+                                        }
+                                        mainViewModel.uiState.value.timer.start()
+                                    } else {
+                                        mainViewModel.viewModelScope.launch {
+                                            mainViewModel.uiState.value.stopwatchOnRoad.minutes = (rentTime / 60).toInt()
+                                            mainViewModel.uiState.value.stopwatchOnRoad.seconds = (rentTime % 60).toInt()
+                                            mainViewModel.uiState.value.stopwatchOnParking.minutes = (parkingTime / 60).toInt()
+                                            mainViewModel.uiState.value.stopwatchOnParking.seconds = (parkingTime % 60).toInt()
+                                            mainViewModel.uiState.value.stopwatchOnRoad.start()
+                                        }
+                                    }
                                 }
                             }
                         }

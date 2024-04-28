@@ -1,6 +1,7 @@
 package com.syndicate.carsharing.components
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,10 +39,13 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import io.ktor.client.call.body
+import io.ktor.client.request.post
 import kotlinx.coroutines.launch
 
 @SuppressLint("StateFlowValueCalledInComposition")
@@ -51,10 +55,14 @@ fun RentContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val mainState by mainViewModel.uiState.collectAsState()
     val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
-
     mainViewModel.updateRenting(true)
+
+    val isClosed = remember {
+        mutableStateOf(mainState.isClosed)
+    }
 
     LaunchedEffect(key1 = context) {
         if (!mainState.stopwatchOnParking.isStarted &&
@@ -70,10 +78,6 @@ fun RentContent(
                 }
             }
         }
-    }
-
-    val isClosed = remember {
-        mutableStateOf(false)
     }
     Column (
         modifier = Modifier
@@ -163,19 +167,34 @@ fun RentContent(
             isClosed = isClosed,
             states = Pair("Разблокировать автомобиль", "Заблокировать автомобиль"),
         ) {
-            if (!mainState.isFixed) {
-                scope.launch {
-                    if (isClosed.value) {
-                        mainState.stopwatchOnRoad.stop()
-                        mainState.stopwatchOnParking.start()
-                    } else {
-                        mainState.stopwatchOnParking.stop()
-                        mainState.stopwatchOnRoad.start()
+            scope.launch {
+                val response = HttpClient.client.post(
+                    "${HttpClient.url}/transport/${(if (isClosed.value) "lock" else "unlock")}?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                ) {
+                    headers["Authorization"] = "Bearer $token"
+                }.body<DefaultResponse>()
+
+                if (response.status_code != 200) {
+                    AlertDialog.Builder(context)
+                        .setMessage(response.message)
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                } else {
+                    if (!mainState.isFixed) {
+                        scope.launch {
+                            if (isClosed.value) {
+                                mainState.stopwatchOnRoad.stop()
+                                mainState.stopwatchOnParking.start()
+                            } else {
+                                mainState.stopwatchOnParking.stop()
+                                mainState.stopwatchOnRoad.start()
+                            }
+                        }
                     }
                 }
             }
         }
-        if (!mainState.isFixed) {
+        if (mainState.rentHours == 0) {
             Text(
                 text = "Закройте двери, чтобы перейти в режим ожидания"
             )
@@ -208,10 +227,25 @@ fun RentContent(
             }
             Button(
                 onClick = {
-                    mainViewModel.updatePage("resultPage")
-                    mainState.stopwatchOnRoad.stop()
-                    mainState.stopwatchOnParking.stop()
-                    mainState.stopwatchChecking.stop()
+                    scope.launch {
+                        val response = HttpClient.client.post(
+                            "${HttpClient.url}/transport/cancel_rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                        ) {
+                            headers["Authorization"] = "Bearer $token"
+                        }.body<DefaultResponse>()
+
+                        if (response.status_code != 200) {
+                            AlertDialog.Builder(context)
+                                .setMessage(response.message)
+                                .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                        } else {
+                            mainViewModel.updatePage("resultPage")
+                            mainState.stopwatchOnRoad.stop()
+                            mainState.stopwatchOnParking.stop()
+                            mainState.stopwatchChecking.stop()
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

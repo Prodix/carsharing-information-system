@@ -17,6 +17,7 @@ import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.masstransit.PedestrianRouter
 import com.yandex.mapkit.transport.masstransit.Session
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -32,6 +33,8 @@ data class MainModel (
     val stopwatchChecking: Stopwatch = Stopwatch(),
     val stopwatchOnParking: Stopwatch = Stopwatch(),
     var mapView: MapView? = null,
+    var modalBottomSheetState: ModalBottomSheetState? = null,
+    var isClosed: Boolean = true,
     var pedestrianRouter: PedestrianRouter? = null,
     val isChecking: Boolean = false,
     val isFixed: Boolean = false,
@@ -62,7 +65,7 @@ data class MainModel (
     val transport: List<Transport> = listOf(),
     val lastSelectedPlacemark: PlacemarkMapObject? = null,
     val transportPlacemarkList: List<PlacemarkMapObject> = listOf<PlacemarkMapObject>(),
-    val sheetState: ModalBottomSheetState? = null,
-    val tapListener: MapObjectTapListener? = null
+    val tapListener: MapObjectTapListener? = null,
+    val mainViewScope: CoroutineScope? = null
 )
 

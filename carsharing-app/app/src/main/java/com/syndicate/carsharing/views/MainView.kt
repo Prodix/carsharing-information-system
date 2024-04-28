@@ -79,6 +79,7 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
 import com.yandex.runtime.image.ImageProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
@@ -92,7 +93,6 @@ import kotlin.system.exitProcess
 fun Main(
     navigation: NavHostController,
     mainViewModel: MainViewModel = hiltViewModel(),
-    sheetState: ModalBottomSheetState,
     listener: MapObjectTapListener
 ) {
     lateinit var userPlacemark: PlacemarkMapObject
@@ -100,6 +100,8 @@ fun Main(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+    mainViewModel.updateScope(scope)
 
     // TODO: Добавить проверку интернета и геолокации
     fun enableLocation() {
@@ -141,7 +143,7 @@ fun Main(
                     )
                 }
 
-                if (!sheetState.isVisible)
+                if (!mainState.modalBottomSheetState!!.isVisible)
                     mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.walkMinutes)
 
                 if (!userPlacemark.isVisible) {
@@ -284,16 +286,21 @@ fun Main(
                     mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
                     { }
                     mainViewModel.updateCircle(mainState.mapView!!.mapWindow.map.mapObjects.addCircle(Circle(mainState.currentLocation, 400f * mainState.walkMinutes)))
-                    mainState.circle?.fillColor = Color(0x4A92D992).toArgb()
-                    mainState.circle?.strokeColor = Color(0xFF99CC99).toArgb()
-                    mainState.circle?.strokeWidth = 1.5f
-                    sheetState.show()
+                    scope.launch {
+                        while (mainState.circle == null) {
+                            delay(100)
+                        }
+                        mainState.circle?.fillColor = Color(0x4A92D992).toArgb()
+                        mainState.circle?.strokeColor = Color(0xFF99CC99).toArgb()
+                        mainState.circle?.strokeWidth = 1.5f
+                    }
+                    mainState.modalBottomSheetState!!.show()
                 }
             },
             onClickFilter = {
                 mainViewModel.updatePage("filter")
                 scope.launch {
-                    sheetState.show()
+                    mainState.modalBottomSheetState!!.show()
                 }
             }
         )
@@ -302,11 +309,11 @@ fun Main(
             modifier = Modifier
                 .padding(16.dp)
                 .align(Alignment.TopStart),
-            sheetState = sheetState,
+            sheetState = mainState.modalBottomSheetState!!,
             onClick = {
                 mainViewModel.updatePage("mainMenu")
                 scope.launch {
-                    sheetState.show()
+                    mainState.modalBottomSheetState!!.show()
                 }
             }
         )
@@ -320,13 +327,12 @@ fun Main(
             BalanceMenu(
                 modifier = Modifier
                     .padding(16.dp),
-                sheetState = sheetState
+                sheetState = mainState.modalBottomSheetState!!
             )
             TimerBox(
                 modifier = Modifier
                     .padding(end = 16.dp),
-                mainViewModel = mainViewModel,
-                sheetState = sheetState
+                mainViewModel = mainViewModel
             )
         }
 
@@ -334,7 +340,7 @@ fun Main(
             modifier = Modifier
                 .padding(16.dp)
                 .align(Alignment.CenterEnd),
-            sheetState = sheetState
+            sheetState = mainState.modalBottomSheetState!!
         ) {
             mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
             { }
@@ -364,8 +370,7 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "reservationPage" to { ReservationContent(
-            mainViewModel = mainViewModel,
-            modalBottomSheetState = sheetState
+            mainViewModel = mainViewModel
         )},
         "checkPage" to { CheckContent(
             mainViewModel = mainViewModel,
@@ -380,7 +385,6 @@ fun Main(
     )
 
     BottomSheetWithPages(
-        sheetState = sheetState,
         sheetComposableList = bottomSheetPages,
         mainViewModel = mainViewModel
     )

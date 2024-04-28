@@ -37,6 +37,8 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
@@ -51,6 +53,13 @@ fun ResultContent(
     mainViewModel.updateRenting(false)
 
     LaunchedEffect(key1 = context) {
+        launch(Dispatchers.IO) {
+            val time = mainViewModel.userStore.getCheckingTime().first()
+            if (time / 60 > 5) {
+                mainState.stopwatchChecking.minutes = time / 60 - 5
+                mainState.stopwatchChecking.seconds = time % 60
+            }
+        }
         mainViewModel.viewModelScope.launch {
             mainState.timer.stop()
         }

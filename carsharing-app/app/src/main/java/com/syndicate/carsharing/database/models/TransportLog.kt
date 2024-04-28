@@ -19,5 +19,6 @@ data class TransportLog (
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
     @JsonDeserialize(using = DateDeserializer::class)
     @JsonSerialize(using = OffsetDateTimeSerializer::class)
-    val dateTime: OffsetDateTime
+    val dateTime: OffsetDateTime,
+    @JsonProperty("RateId") val rateId: Int
 )

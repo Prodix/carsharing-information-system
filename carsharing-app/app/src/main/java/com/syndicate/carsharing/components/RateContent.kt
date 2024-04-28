@@ -1,6 +1,7 @@
 package com.syndicate.carsharing.components
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.DpSize
@@ -29,9 +31,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.geometry.Circle
+import io.ktor.client.call.body
+import io.ktor.client.request.post
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 //TODO: Подгрузка инфы из базы
@@ -43,7 +50,9 @@ fun RateContent(
     mainViewModel: MainViewModel
 ) {
     val mainState by mainViewModel.uiState.collectAsState()
+    val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Column (
         modifier = Modifier
@@ -197,7 +206,22 @@ fun RateContent(
                 } else {
                     mainViewModel.updateIsFixed(false)
                 }
-                mainViewModel.updateReserving(true)
+                scope.launch {
+                    val response = HttpClient.client.post(
+                        "${HttpClient.url}/transport/reserve?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                    ) {
+                        headers["Authorization"] = "Bearer $token"
+                    }.body<DefaultResponse>()
+
+                    if (response.status_code != 200) {
+                        AlertDialog.Builder(context)
+                            .setMessage(response.message)
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                    } else {
+                        mainViewModel.updateReserving(true)
+                    }
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {

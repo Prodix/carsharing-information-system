@@ -108,6 +108,14 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateIsClosed(isClosed: Boolean) {
+        _uiState.update {
+            it.copy(
+                isClosed = isClosed
+            )
+        }
+    }
+
     /*fun updateSheetState(sheetState: ModalBottomSheetState, scope: CoroutineScope) {
         _sheetState.update {
             sheetState
@@ -154,6 +162,9 @@ class MainViewModel @Inject constructor(
     }
 
     fun updateRentHours(hours: Int) {
+        viewModelScope.launch {
+            userStore.saveRentHours(hours)
+        }
         _uiState.update {
             it.copy(
                 rentHours = hours
@@ -161,7 +172,28 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateSheetState(modalBottomSheetState: ModalBottomSheetState) {
+        _uiState.update {
+            it.copy(
+                modalBottomSheetState = modalBottomSheetState
+            )
+        }
+    }
+
+    fun updateScope(scope: CoroutineScope) {
+        _uiState.update {
+            it.copy(
+                mainViewScope = scope
+            )
+        }
+    }
+
     fun updateIsFixed(isFixed: Boolean) {
+        if (!isFixed) {
+            viewModelScope.launch {
+                userStore.saveRentHours(0)
+            }
+        }
         _uiState.update {
             it.copy(
                 isFixed = isFixed

@@ -12,6 +12,14 @@ class Stopwatch {
     private var _minutes: MutableState<Int> = mutableIntStateOf(0)
     private var _isStarted: MutableState<Boolean> = mutableStateOf(false)
 
+    private var _timeToStop: Triple<Int, Int, Int> = Triple(-1,-1,-1)
+
+    var timeToStop: Triple<Int, Int, Int>
+        get() = _timeToStop
+        set(value) {
+            _timeToStop = value
+        }
+
     var seconds: Int
         get() = _seconds.value
         set(value) {
@@ -35,6 +43,8 @@ class Stopwatch {
         set(value) {
             _isStarted.value = value
         }
+
+    var action: () -> Unit = { }
 
     fun stop() {
         _isStarted.value = false
@@ -61,8 +71,10 @@ class Stopwatch {
                 _minutes.value++
                 if (_minutes.value == 60) {
                     _minutes.value = 0
-
                 }
+            }
+            if (Triple(_hours.value, _minutes.value, _seconds.value) == timeToStop) {
+                action()
             }
             delay(1000L)
         }

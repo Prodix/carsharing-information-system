@@ -34,14 +34,13 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun BottomSheetWithPages(
-    sheetState: ModalBottomSheetState,
     sheetComposableList: Map<String, @Composable () -> Unit>,
     mainViewModel: MainViewModel
 ) {
     val mainState by mainViewModel.uiState.collectAsState()
 
     ModalBottomSheetLayout(
-        sheetState = sheetState,
+        sheetState = mainState.modalBottomSheetState!!,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         scrimColor = mainState.scrimColor,
         sheetGesturesEnabled = mainState.isGesturesEnabled,

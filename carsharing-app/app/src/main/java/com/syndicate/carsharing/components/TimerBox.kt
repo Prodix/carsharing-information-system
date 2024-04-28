@@ -24,8 +24,7 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 @Composable
 fun TimerBox(
     modifier: Modifier,
-    mainViewModel: MainViewModel,
-    sheetState: ModalBottomSheetState
+    mainViewModel: MainViewModel
 ) {
     val mainState by mainViewModel.uiState.collectAsState()
 
@@ -33,7 +32,12 @@ fun TimerBox(
         text = if (mainState.timer.isStarted) mainState.timer.toString() else if (mainState.stopwatchChecking.isStarted) mainState.stopwatchChecking.toString() else (mainState.stopwatchOnRoad + mainState.stopwatchOnParking).toString(),
         modifier = modifier
             .then(
-                if ((mainState.timer.isStarted || mainState.stopwatchOnRoad.isStarted || mainState.stopwatchOnParking.isStarted || mainState.stopwatchChecking.isStarted) && sheetState.targetValue != ModalBottomSheetValue.Expanded) {
+                if ((mainState.timer.isStarted ||
+                            mainState.stopwatchOnRoad.isStarted ||
+                            mainState.stopwatchOnParking.isStarted ||
+                                    mainState.stopwatchChecking.isStarted
+                            ) && mainState.modalBottomSheetState!!.targetValue !=
+                    ModalBottomSheetValue.Expanded) {
                     Modifier.alpha(1f)
                 } else {
                     Modifier.alpha(0f)

@@ -76,7 +76,7 @@ fun CarsharingApp(
 
         val scope = rememberCoroutineScope()
 
-        val sheetState = rememberModalBottomSheetState(
+        mainViewModel.updateSheetState(rememberModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Hidden,
             confirmValueChange = {
                 if (it == ModalBottomSheetValue.Hidden) {
@@ -88,7 +88,7 @@ fun CarsharingApp(
                 true
             },
             skipHalfExpanded = true
-        )
+        ))
 
         val listener: MapObjectTapListener = MapObjectTapListener { placemark, point: Point ->
             mainViewModel.updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
@@ -104,7 +104,7 @@ fun CarsharingApp(
                 mainViewModel.updatePage("car")
 
             scope.launch {
-                sheetState.show()
+                mainViewModel.uiState.value.modalBottomSheetState!!.show()
             }
             true
         }
@@ -144,7 +144,6 @@ fun CarsharingApp(
                     Main(
                         navigation = navController,
                         mainViewModel = mainViewModel,
-                        sheetState = sheetState,
                         listener = listener
                     )
                 }

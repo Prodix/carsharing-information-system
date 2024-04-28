@@ -1,6 +1,7 @@
 package com.syndicate.carsharing.components
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -65,10 +66,13 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.util.Date
@@ -81,6 +85,7 @@ fun CheckContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val mainState by mainViewModel.uiState.collectAsState()
     val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
@@ -266,9 +271,27 @@ fun CheckContent(
         }
         Button(
             onClick = {
-                mainState.stopwatchChecking.stop()
-                mainViewModel.updatePage("rentPage")
-                mainViewModel.updateChecking(false)
+                scope.launch {
+                    val response = HttpClient.client.post(
+                        "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                    ) {
+                        headers["Authorization"] = "Bearer $token"
+                    }.body<DefaultResponse>()
+
+                    if (response.status_code != 200) {
+                        AlertDialog.Builder(context)
+                            .setMessage(response.message)
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                    } else {
+                        mainState.stopwatchChecking.stop()
+                        mainState.stopwatchOnRoad.stop()
+                        mainState.stopwatchOnParking.stop()
+                        mainState.timer.stop()
+                        mainViewModel.updatePage("rentPage")
+                        mainViewModel.updateChecking(false)
+                    }
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()

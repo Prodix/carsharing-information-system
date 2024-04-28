@@ -46,13 +46,52 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
         val TOKEN = stringPreferencesKey("token")
         val RESERVING = booleanPreferencesKey("is_reserving")
         val CHECKING = booleanPreferencesKey("is_checking")
+        val CHECKING_TIME = intPreferencesKey("checking_time")
         val RENTING = booleanPreferencesKey("is_renting")
         val LAST_RATE = stringPreferencesKey("last_rate")
+        val RENT_HOURS = intPreferencesKey("rent_hours")
+        val IS_CAR_LOCKED = booleanPreferencesKey("is_car_locked")
     }
 
     fun getToken(): Flow<String> {
         return context.dataStore.data.map { preferences ->
             preferences[TOKEN] ?: ""
+        }
+    }
+
+    fun getCheckingTime(): Flow<Int> {
+        return context.dataStore.data.map { preferences ->
+            preferences[CHECKING_TIME] ?: 0
+        }
+    }
+
+    suspend fun saveCheckingTime(seconds: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[CHECKING_TIME] = seconds
+        }
+    }
+
+    fun getIsLocked(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[IS_CAR_LOCKED] ?: false
+        }
+    }
+
+    suspend fun saveIsCarLocked(isLocked: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_CAR_LOCKED] = isLocked
+        }
+    }
+
+    fun getRentHours(): Flow<Int> {
+        return context.dataStore.data.map { preferences ->
+            preferences[RENT_HOURS] ?: 0
+        }
+    }
+
+    suspend fun saveRentHours(hours: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[RENT_HOURS] = hours
         }
     }
 

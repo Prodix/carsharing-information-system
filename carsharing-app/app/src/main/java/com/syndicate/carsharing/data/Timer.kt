@@ -114,7 +114,6 @@ class Timer {
                 _seconds.value -= 1
             }
             delay(1000L)
-            Log.d("timer", this.toString())
         }
     }
 

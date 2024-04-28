@@ -9,6 +9,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
 
 class DateDeserializer(vc: Class<Any?>?) : StdDeserializer<OffsetDateTime>(vc) {
 
@@ -21,9 +22,10 @@ class DateDeserializer(vc: Class<Any?>?) : StdDeserializer<OffsetDateTime>(vc) {
         return OffsetDateTime.parse(date, DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            .appendOffset("+HH:mm", "+00:00")
+            .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true)
+            .appendOffset("+HH:mm", "")
             .toFormatter()
-        ).withOffsetSameInstant(ZoneOffset.UTC)
+        )
 
     }
 
