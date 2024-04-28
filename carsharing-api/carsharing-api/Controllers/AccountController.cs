@@ -227,8 +227,6 @@ public class AccountController : Controller
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });
         
         var token = Request.Headers.Authorization.ToString()[7..];
-        
-        Console.WriteLine(token);
             
         if (!VerifyToken(token))
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });

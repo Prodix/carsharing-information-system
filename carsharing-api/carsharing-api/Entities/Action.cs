@@ -17,5 +17,11 @@ public enum Action
     [PgName("lock")]
     LOCK,
     [PgName("unlock")]
-    UNLOCK
+    UNLOCK,
+    [PgName("beep")]
+    BEEP,
+    [PgName("flash")]
+    FLASH,
+    [PgName("cancel_check")]
+    CANCEL_CHECK
 }

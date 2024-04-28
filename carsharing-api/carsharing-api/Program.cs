@@ -1,5 +1,6 @@
 using carsharing_api.Context;
 using carsharing_api.Entities;
+using carsharing_api.Services;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Action = carsharing_api.Entities.Action;
@@ -35,6 +36,8 @@ public class Program
         {
             options.UseNpgsql(dataSource).UseSnakeCaseNamingConvention();
         });
+        
+        builder.Services.AddHostedService<ProcessCancelationService>();
 
         var app = builder.Build();
 

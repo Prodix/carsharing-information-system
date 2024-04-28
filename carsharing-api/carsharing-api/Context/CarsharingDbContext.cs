@@ -19,6 +19,7 @@ public class CarsharingDbContext : DbContext
     public DbSet<DriverLicense> DriverLicense { get; set; }
     public DbSet<EmailCode> EmailCode { get; set; }
     public DbSet<TransportLog> TransportLog { get; set; }
+    public DbSet<RentHistory> RentHistory { get; set; }
     public DbSet<Passport> Passport { get; set; }
     public DbSet<Selfie> Selfie { get; set; }
     public DbSet<User> User { get; set; }
