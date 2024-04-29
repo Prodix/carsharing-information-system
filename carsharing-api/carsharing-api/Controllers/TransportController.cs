@@ -288,6 +288,9 @@ public class TransportController : Controller
 
         var rate = _db.Rate.First(x => x.Id == rateId);
 
+        if (rate.RateName == "Фикс")
+            return new JsonResult(new { message = "У вас фиксированная аренда", status_code = 409 });
+
         var currentTime = _ntpClient.GetUtc();
         
         var elapsedTime = Math.Abs(((DateTimeOffset)currentTime).ToUnixTimeSeconds() - ((DateTimeOffset)rentRecord.DateTime).ToUnixTimeSeconds());
@@ -356,18 +359,23 @@ public class TransportController : Controller
             }
         }
 
-        var rent = _db.Rate.First(x => x.Id == rateId);
-
         if (rate.RateName != "Фикс")
         {
+            var price = rate.OnRoadPrice * (roadTime / 60 + 1) + rate.ParkingPrice * (parkingTime > 0 ? parkingTime / 60 + 1 : 0) +
+                        (checkSeconds > 0 ? checkSeconds / 60 + 1 : 0) * 10;
+            
             _db.RentHistory.Add(new RentHistory()
             {
                 TransportId = transportId,
                 RateId = rateId,
                 UserId = user.Id,
                 RentTime = currentTime - rentRecord.DateTime,
-                Price = rate.OnRoadPrice * (roadTime / 60 + 1) + rate.ParkingPrice * (parkingTime / 60 + 1) + (checkSeconds > 0 ? checkSeconds / 60 + 1 : 0) * 10
+                Price = price
             });
+
+            user.Balance -= price;
+                            
+            _db.User.Update(user);
 
             _db.SaveChanges();
         }

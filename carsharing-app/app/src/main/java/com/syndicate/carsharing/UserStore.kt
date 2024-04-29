@@ -12,13 +12,23 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.User
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.nefilim.kjwt.JWT
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -124,6 +134,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
     }
 
     suspend fun setReserving(isReserving: Boolean) {
+        updateToken()
         context.dataStore.edit { preferences ->
             preferences[RESERVING] = isReserving
         }
@@ -136,6 +147,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
     }
 
     suspend fun setRenting(isRenting: Boolean) {
+        updateToken()
         context.dataStore.edit { preferences ->
             preferences[RENTING] = isRenting
         }
@@ -148,6 +160,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
     }
 
     suspend fun setChecking(isChecking: Boolean) {
+        updateToken()
         context.dataStore.edit { preferences ->
             preferences[CHECKING] = isChecking
         }
@@ -169,27 +182,45 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
         }
     }
 
-    suspend fun saveUser(user: User) {
-        context.dataStore.edit {preferences ->
-            preferences[ID] = user.id
-            preferences[EMAIL] = user.email
-            preferences[PASSWORD] = user.password
-            preferences[USER_ROLE] = user.userRole
-            preferences[PASSPORT_ID] = user.passportId ?: 0
-            preferences[DRIVER_LICENSE_ID] = user.driverLicenseId ?: 0
-            preferences[BALANCE] = user.balance
-            preferences[IS_VERIFIED] = user.isVerified
-            preferences[SELFIE_ID] = user.selfieId ?: 0
-        }
-    }
-
     suspend fun saveToken(token: String) {
         context.dataStore.edit { preferences ->
             preferences[TOKEN] = token
         }
+        updateToken()
     }
 
-    fun decryptToken(token: String): User {
+    suspend fun updateToken() {
+        val token = getToken().first()
+        var user = getUser().first()
+        val response = HttpClient.client.post(
+            "${HttpClient.url}/account/signin"
+        ) {
+            setBody(
+                MultiPartFormDataContent(
+                    formData {
+                        append("email", user.email)
+                    }
+                ))
+            headers["Authorization"] = "Bearer $token"
+        }.body<DefaultResponse>()
+        if (response.status_code == 200) {
+            user = decryptToken(response.token as String)
+            context.dataStore.edit { preferences ->
+                preferences[TOKEN] = response.token as String
+                preferences[ID] = user.id
+                preferences[EMAIL] = user.email
+                preferences[PASSWORD] = user.password
+                preferences[USER_ROLE] = user.userRole
+                preferences[PASSPORT_ID] = user.passportId ?: 0
+                preferences[DRIVER_LICENSE_ID] = user.driverLicenseId ?: 0
+                preferences[BALANCE] = user.balance
+                preferences[IS_VERIFIED] = user.isVerified
+                preferences[SELFIE_ID] = user.selfieId ?: 0
+            }
+        }
+    }
+
+    private fun decryptToken(token: String): User {
         var user: User? = null
         JWT.decode(token).tap {
             val algorithm = "AES/CBC/PKCS5Padding"

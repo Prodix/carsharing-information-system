@@ -132,11 +132,7 @@ fun Document(
                                             }
                                         ))
                                 }
-                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
-                                    headers["Authorization"] = "Bearer $token"
-                                }.body<DefaultResponse>()
-                                userStore.saveToken(response.token as String)
-                                userStore.saveUser(userStore.decryptToken(token))
+                                userStore.updateToken()
                                 navigation.navigate("documentIntro/false/true")
                             }
                         }
@@ -154,11 +150,7 @@ fun Document(
                                             }
                                         ))
                                 }
-                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
-                                    headers["Authorization"] = "Bearer $token"
-                                }.body<DefaultResponse>()
-                                userStore.saveToken(response.token as String)
-                                userStore.saveUser(userStore.decryptToken(token))
+                                userStore.updateToken()
                                 navigation.navigate("documentIntro/false/false")
                             }
                         }
@@ -176,11 +168,7 @@ fun Document(
                                             }
                                         ))
                                 }
-                                val response = HttpClient.client.post("${HttpClient.url}/account/signin") {
-                                    headers["Authorization"] = "Bearer $token"
-                                }.body<DefaultResponse>()
-                                userStore.saveToken(response.token as String)
-                                userStore.saveUser(userStore.decryptToken(token))
+                                userStore.updateToken()
                                 AlertDialog.Builder(context)
                                     .setMessage("Ваш аккаунт будет верифицирован в течение 3 рабочих дней")
                                     .setPositiveButton("ok") { _, _ -> run { } }

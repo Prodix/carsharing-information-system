@@ -35,6 +35,7 @@ import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import kotlinx.coroutines.Dispatchers

@@ -67,16 +67,18 @@ public class ProcessCancelationService : BackgroundService
                 }
                 else if (transportLogs[0].Action is Action.UNLOCK or Action.LOCK or Action.RENT)
                 {
-                    var rent = _db.Rate.First(x => x.Id == transportLogs[0].RateId);
+                    var rate = _db.Rate.First(x => x.Id == transportLogs[0].RateId);
                     
-                    if (rent.RateName != "Фикс") 
+                    if (rate.RateName != "Фикс") 
                         continue;
 
-                    var rentHours = _db.RentHistory.Where(x => x.UserId == userLogs.Key)
+                    var lastRent = _db.RentHistory.Where(x => x.UserId == userLogs.Key)
                         .ToList()
                         .OrderBy(x => x.Id)
                         .Reverse()
-                        .ToList()[0].RentTime.Hours;
+                        .ToList()[0];
+
+                    var rentHours = lastRent.RentTime.Hours;
                     
                     foreach (var log in transportLogs)
                     {
@@ -92,6 +94,12 @@ public class ProcessCancelationService : BackgroundService
                                 TransportId = log.TransportId,
                                 UserId = log.UserId
                             });
+
+                            var user = _db.User.First(x => x.Id == log.UserId);
+                            user.Balance -= lastRent.Price;
+                            
+                            _db.User.Update(user);
+                            
                             await _db.SaveChangesAsync();
                         }
 

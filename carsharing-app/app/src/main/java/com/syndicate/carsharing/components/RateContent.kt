@@ -15,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,11 +35,13 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
+import com.syndicate.carsharing.database.models.User
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.geometry.Circle
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 //TODO: Подгрузка инфы из базы
@@ -50,9 +53,13 @@ fun RateContent(
     mainViewModel: MainViewModel
 ) {
     val mainState by mainViewModel.uiState.collectAsState()
-    val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    LaunchedEffect(key1 = Unit) {
+        mainViewModel.updateUser()
+        mainViewModel.updateRentHours(2)
+    }
 
     Column (
         modifier = Modifier
@@ -193,7 +200,25 @@ fun RateContent(
         }
         Button(
             onClick = {
-                mainViewModel.updatePage("reservationPage")
+                if (mainState.user.balance < 1000.0) {
+                    AlertDialog.Builder(context)
+                        .setMessage("На вашем балансе должна быть минимум 1000 Рублей")
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                    return@Button
+                }
+                if (String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)) {
+                    if (mainState.user.balance < mainState.lastSelectedRate!!.parkingPrice * mainState.rentHours * 60) {
+                        AlertDialog.Builder(context)
+                            .setMessage("На вашем балансе недостаточно средств для аренды")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@Button
+                    }
+                    mainViewModel.updateIsFixed(true)
+                } else {
+                    mainViewModel.updateIsFixed(false)
+                }
                 mainViewModel.updateSession(
                     mainState.pedestrianRouter!!.requestRoutes(
                         mainState.points,
@@ -201,16 +226,11 @@ fun RateContent(
                         mainViewModel.routeListener
                     )
                 )
-                if (String.format("%.2f", mainState.lastSelectedRate!!.parkingPrice) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)) {
-                    mainViewModel.updateIsFixed(true)
-                } else {
-                    mainViewModel.updateIsFixed(false)
-                }
                 scope.launch {
                     val response = HttpClient.client.post(
                         "${HttpClient.url}/transport/reserve?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
                     ) {
-                        headers["Authorization"] = "Bearer $token"
+                        headers["Authorization"] = "Bearer ${mainState.token}"
                     }.body<DefaultResponse>()
 
                     if (response.status_code != 200) {
@@ -220,6 +240,7 @@ fun RateContent(
                                 .show()
                     } else {
                         mainViewModel.updateReserving(true)
+                        mainViewModel.updatePage("reservationPage")
                     }
                 }
             },

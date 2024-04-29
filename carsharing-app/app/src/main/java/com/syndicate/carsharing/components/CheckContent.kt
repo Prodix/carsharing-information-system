@@ -273,6 +273,10 @@ fun CheckContent(
         Button(
             onClick = {
                 scope.launch {
+                    mainState.stopwatchChecking.stop()
+                    mainState.stopwatchOnRoad.stop()
+                    mainState.stopwatchOnParking.stop()
+                    mainState.timer.stop()
                     val response = HttpClient.client.post(
                         "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}${if (rentHours != 0) "&rentHours=$rentHours" else ""}"
                     ) {
@@ -285,12 +289,11 @@ fun CheckContent(
                             .setPositiveButton("ok") { _, _ -> run { } }
                             .show()
                     } else {
-                        mainState.stopwatchChecking.stop()
-                        mainState.stopwatchOnRoad.stop()
-                        mainState.stopwatchOnParking.stop()
-                        mainState.timer.stop()
-                        mainViewModel.updatePage("rentPage")
                         mainViewModel.updateChecking(false)
+                        if (mainState.lastSelectedRate!!.parkingPrice == mainState.lastSelectedRate!!.onRoadPrice) {
+                            mainViewModel.updateIsFixed(true)
+                        }
+                        mainViewModel.updatePage("rentPage")
                     }
                 }
             },

@@ -186,17 +186,15 @@ fun Main(
         mainViewModel.updatePlacemarks(listOf())
     }
     
-    LaunchedEffect(key1 = mainState.mapView) {
+    LaunchedEffect(key1 = Unit) {
         while (true) {
-            val oldList = mainState.transport
             val oldListNumbers = mainState.transport.map { x -> x.id }
-            mainViewModel.getTransport()
-            val newList = mainState.transport
-            val newListNumbers = mainState.transport.map { x -> x.id }
+            val newList = mainViewModel.getNewTransport()
+            val newListNumbers = newList.map { x -> x.id }
 
             if (mainState.transportPlacemarkList.isEmpty()) {
                 val list = mutableListOf<PlacemarkMapObject>()
-                for (i in mainState.transport) {
+                for (i in newList) {
                     val placemarkMapObject = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark().apply {
                         geometry = Point(i.latitude, i.longitude)
                         setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
@@ -206,6 +204,7 @@ fun Main(
                     list.add(placemarkMapObject)
                 }
                 mainViewModel.updatePlacemarks(list.toList())
+                mainViewModel.updateTransport(newList)
             } else {
                 val replacedList = mainState.transportPlacemarkList.toMutableList()
 
@@ -221,7 +220,7 @@ fun Main(
                             replacedList.remove(i)
                         }
                     } else {
-                        for (i in mainState.transport.filter { x -> x.id in difference }) {
+                        for (i in newList.filter { x -> x.id in difference }) {
                             val placemarkMapObject = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark().apply {
                                 geometry = Point(i.latitude, i.longitude)
                                 setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
@@ -231,6 +230,7 @@ fun Main(
                             replacedList.add(placemarkMapObject)
                         }
                     }
+                    mainViewModel.updateTransport(newList)
                 }
 
                 for (i in newList) {
@@ -244,7 +244,7 @@ fun Main(
                 mainViewModel.updatePlacemarks(replacedList.toList())
             }
 
-            delay(3000)
+            delay(1000)
         }
     }
 
@@ -327,7 +327,7 @@ fun Main(
             BalanceMenu(
                 modifier = Modifier
                     .padding(16.dp),
-                sheetState = mainState.modalBottomSheetState!!
+                mainViewModel = mainViewModel
             )
             TimerBox(
                 modifier = Modifier

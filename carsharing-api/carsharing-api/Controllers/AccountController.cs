@@ -59,9 +59,8 @@ public class AccountController : Controller
         if (Request.Headers.ContainsKey("Authorization"))
         {
             var oldToken = Request.Headers.Authorization.ToString()[7..];
-            Console.WriteLine(oldToken);
             return VerifyToken(oldToken) 
-                ? new JsonResult(new { token = RefreshToken(oldToken) }) 
+                ? new JsonResult(new { token = RefreshToken(oldToken), message = "Токен обновлён", status_code = 200 }) 
                 : new JsonResult(new { message = "Неверный токен", status_code = 401 });
         }
 

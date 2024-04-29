@@ -56,6 +56,7 @@ fun SplashScreen(
         val token = mainViewModel.userStore.getToken().first()
 
         if (user.email != "") {
+            mainViewModel.updateUser()
             val log = HttpClient.client.get(
                 "${HttpClient.url}/account/history/get"
             ) {
@@ -94,10 +95,20 @@ fun SplashScreen(
                 val rentHours = mainViewModel.userStore.getRentHours().first()
                 val lastSelectedRate = mainViewModel.userStore.getLastSelectedRate().first()
 
+                if (!isReserving && !isRenting && !isChecking) {
+                    mainViewModel.updateSelectedRate(Rate())
+                } else {
+                    mainViewModel.updateSelectedRate(lastSelectedRate)
+                    if (lastSelectedRate.onRoadPrice == lastSelectedRate.parkingPrice) {
+                        mainViewModel.updateIsFixed(true)
+                    } else {
+                        mainViewModel.updateIsFixed(false)
+                    }
+                }
+
                 mainViewModel.updateRenting(isRenting)
                 mainViewModel.updateReserving(isReserving)
                 mainViewModel.updateChecking(isChecking)
-                mainViewModel.updateSelectedRate(lastSelectedRate)
                 mainViewModel.updateRentHours(rentHours)
                 mainViewModel.updateIsClosed(lastAction.action == "LOCK")
 
@@ -119,6 +130,7 @@ fun SplashScreen(
                                         mainViewModel.uiState.value.mainViewScope!!.launch {
                                             mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                         }
+                                        mainViewModel.updateIsFixed(false)
                                         mainViewModel.updateReserving(false)
                                     }
                                     mainViewModel.uiState.value.timer.start()
@@ -132,6 +144,7 @@ fun SplashScreen(
                             if (time / 60 < 5) {
                                 mainViewModel.viewModelScope.launch(Dispatchers.IO) {
                                     mainViewModel.uiState.value.timer.onTimerEnd = {
+                                        mainViewModel.updateIsFixed(false)
                                         mainViewModel.viewModelScope.launch(Dispatchers.IO) {
                                             mainViewModel.uiState.value.stopwatchChecking.start()
                                         }
@@ -148,6 +161,7 @@ fun SplashScreen(
                                         mainViewModel.uiState.value.mainViewScope!!.launch {
                                             mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                         }
+                                        mainViewModel.updateIsFixed(false)
                                         mainViewModel.uiState.value.stopwatchChecking.stop()
                                         mainViewModel.updateChecking(false)
                                     }
@@ -174,6 +188,7 @@ fun SplashScreen(
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateIsFixed(false)
                                             mainViewModel.updateRenting(false)
                                             mainViewModel.updateRentHours(0)
                                         }
@@ -213,6 +228,7 @@ fun SplashScreen(
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateIsFixed(false)
                                             mainViewModel.updateRenting(false)
                                             mainViewModel.updateRentHours(0)
                                         }
@@ -254,6 +270,7 @@ fun SplashScreen(
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateIsFixed(false)
                                             mainViewModel.updateRenting(false)
                                             mainViewModel.updateRentHours(0)
                                         }

@@ -40,6 +40,7 @@ import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
@@ -71,6 +72,7 @@ fun RentContent(
             mainState.stopwatchOnParking.clear()
             if (mainState.isFixed) {
                 mainState.timer.changeStartTime(mainState.rentHours, 0, 0)
+                mainState.timer.start()
             } else {
                 mainState.timer.stop()
                 mainViewModel.viewModelScope.launch {
@@ -234,16 +236,18 @@ fun RentContent(
                             headers["Authorization"] = "Bearer $token"
                         }.body<DefaultResponse>()
 
+                        mainViewModel.updateUser()
+
                         if (response.status_code != 200) {
                             AlertDialog.Builder(context)
                                 .setMessage(response.message)
                                 .setPositiveButton("ok") { _, _ -> run { } }
                                 .show()
                         } else {
-                            mainViewModel.updatePage("resultPage")
                             mainState.stopwatchOnRoad.stop()
                             mainState.stopwatchOnParking.stop()
                             mainState.stopwatchChecking.stop()
+                            mainViewModel.updatePage("resultPage")
                         }
                     }
                 },

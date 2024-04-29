@@ -43,6 +43,8 @@ import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -217,6 +219,20 @@ class MainViewModel @Inject constructor(
         //TODO: Написать заполнение тегов
     }
 
+    fun updateUser() {
+        viewModelScope.launch {
+            userStore.updateToken()
+            val user = userStore.getUser().first()
+            val token = userStore.getToken().first()
+            _uiState.update {
+                it.copy(
+                    user = user,
+                    token = token
+                )
+            }
+        }
+    }
+
     fun updateSession(session: Session?) {
         if (session == null) {
             _uiState.value.route?.let { _uiState.value.mapView!!.mapWindow.map.mapObjects.remove(it) }
@@ -335,7 +351,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    suspend fun getTransport() {
+    suspend fun getNewTransport(): List<Transport> {
         val response = HttpClient.client.request(
             "${HttpClient.url}/transport/get"
         ) {
@@ -343,11 +359,21 @@ class MainViewModel @Inject constructor(
         }
 
         if (response.status.value == 200) {
-            _uiState.update {
-                it.copy(
-                    transport = response.body()
-                )
+            val rate = userStore.getLastSelectedRate().first()
+            return response.body<List<Transport>>().filter { x ->
+                (!x.isReserved && (!_uiState.value.isReserving && !_uiState.value.isRenting && !_uiState.value.isChecking)) ||
+                        (x.id == rate.transportId && rate.id != 0)
             }
+        }
+
+        return listOf()
+    }
+
+    fun updateTransport(transport: List<Transport>) {
+        _uiState.update {
+            it.copy(
+                transport = transport
+            )
         }
     }
 

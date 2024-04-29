@@ -271,7 +271,6 @@ fun SignUp(
                                 .show()
                         } else {
                             userStore.saveToken(response.token as String)
-                            userStore.saveUser(userStore.decryptToken(response.token))
                             navigation.navigate("code/true/${signUpState.email}")
                         }
                     }

@@ -63,6 +63,7 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
@@ -347,6 +348,7 @@ fun ReservationContent(
                     } else {
                         mainViewModel.updateReserving(false)
                         mainViewModel.updateSession(null)
+                        mainViewModel.updateSelectedRate(Rate())
                         mainState.lastSelectedPlacemark!!.setIcon(ImageProvider.fromResource(context, R.drawable.carpoint))
                         mainState.timer.stop()
                         mainState.modalBottomSheetState!!.hide()

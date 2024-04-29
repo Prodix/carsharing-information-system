@@ -8,6 +8,7 @@ import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
+import com.syndicate.carsharing.database.models.User
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CircleMapObject
@@ -41,6 +42,8 @@ data class MainModel (
     val points: List<RequestPoint> = listOf(RequestPoint(), RequestPoint()),
     var session: Session? = null,
     var route: PolylineMapObject? = null,
+    var user: User = User(),
+    var token: String = "",
     val listTags: List<Tag> = listOf(
         Tag(
             "child1",
