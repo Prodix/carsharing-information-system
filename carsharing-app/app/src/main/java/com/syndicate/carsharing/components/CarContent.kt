@@ -176,7 +176,7 @@ fun CarContent(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Image(
-                        imageVector = ImageVector.vectorResource(R.drawable.child_icon),
+                        imageVector = ImageVector.vectorResource(if (function.functionData == "CHILD_CHAIR") R.drawable.child_icon else R.drawable.transponder),
                         contentDescription = null,
                         colorFilter = ColorFilter.tint(Color(0xFF6699CC))
                     )

@@ -27,6 +27,7 @@ data class MainModel (
     val currentLocation: Point = Point(),
     val page: String = "radarIntro",
     val rentHours: Int = 2,
+    val isFiltered: Boolean = false,
     val scrimColor: Color = Color.Transparent,
     val carType: Float = 1f,
     val timer: Timer = Timer(),
@@ -44,20 +45,7 @@ data class MainModel (
     var route: PolylineMapObject? = null,
     var user: User = User(),
     var token: String = "",
-    val listTags: List<Tag> = listOf(
-        Tag(
-            "child1",
-            false
-        ),
-        Tag(
-            "child2",
-            false
-        ),
-        Tag(
-            "child3",
-            false
-        ),
-    ),
+    val listTags: List<Tag> = listOf(),
     val circle: CircleMapObject? = null,
     val mem: Float = 1f,
     val isGesturesEnabled: Boolean = true,

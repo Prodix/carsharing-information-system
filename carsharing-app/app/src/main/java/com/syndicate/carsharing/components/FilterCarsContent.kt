@@ -115,7 +115,6 @@ fun FilterCarsContent(
         ) {
 
             for (i in mainState.listTags.indices) {
-                //TODO: Написать условие выбора иконки
                 FilterChip(
                     selected = mainState.listTags[i].isSelected,
                     shape = RoundedCornerShape(10.dp),
@@ -124,7 +123,7 @@ fun FilterCarsContent(
                     },
                     leadingIcon = {
                         Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.child_icon),
+                            imageVector = ImageVector.vectorResource(id = if (mainState.listTags[i].tag == "CHILD_CHAIR") R.drawable.child_icon else R.drawable.transponder),
                             contentDescription = null,
                             tint = if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
                         )
@@ -137,28 +136,53 @@ fun FilterCarsContent(
                     border = BorderStroke(1.dp, if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E))
                 ) {
                     Text(
-                        text = "Детское кресло",
+                        text = if (mainState.listTags[i].tag == "CHILD_CHAIR") "Детское кресло" else "Транспондер",
                         color = if (mainState.listTags[i].isSelected) Color(0xFF6699CC) else Color(0xFF9E9E9E)
                     )
                 }
             }
         }
-        Button(
-            onClick = {
-                //TODO: Сделать фильтрацию автомобилей
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF6699CC),
-                contentColor = Color.White,
-                disabledContainerColor = Color.Transparent,
-                disabledContentColor = Color(0xFFB5B5B5)
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp),
-            shape = RoundedCornerShape(10.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(text = "Фильтр по моделям")
+            Button(
+                onClick = {
+                    mainViewModel.updateFiltered(true)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6699CC),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.Transparent,
+                    disabledContentColor = Color(0xFFB5B5B5)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .weight(2f),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(text = "Фильтр по моделям")
+            }
+            if (mainState.isFiltered) {
+                Button(
+                    onClick = {
+                        mainViewModel.updateFiltered(false)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF6699CC),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Transparent,
+                        disabledContentColor = Color(0xFFB5B5B5)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .weight(1f),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(text = "Сбросить")
+                }
+            }
         }
     }
 }

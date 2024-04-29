@@ -186,6 +186,19 @@ public class TransportController : Controller
         return new JsonResult(new { message = "Проверка успешно начата!", status_code = 200 });
     }
     
+    [HttpGet]
+    [Route("/api/transport/functions/get")]
+    public IActionResult GetFunctions()
+    {
+        var functions = _db.Function.ToList().DistinctBy(x => x.FunctionData);
+        
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(functions),
+            ContentType = "application/json"
+        };
+    }
+    
     [HttpPost]
     [Route("/api/transport/rent")]
     public IActionResult RentCar(int transportId, int rateId, double? rentHours)

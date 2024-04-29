@@ -16,6 +16,7 @@ import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.Function
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.yandex.mapkit.RequestPoint
@@ -97,6 +98,14 @@ class MainViewModel @Inject constructor(
 
     init {
         fillTags()
+    }
+
+    fun updateFiltered(isFiltered: Boolean) {
+        _uiState.update {
+            it.copy(
+                isFiltered = isFiltered
+            )
+        }
     }
 
     fun updateChecking(isChecking: Boolean) {
@@ -216,7 +225,19 @@ class MainViewModel @Inject constructor(
     }
 
     fun fillTags() {
-        //TODO: Написать заполнение тегов
+        viewModelScope.launch {
+            val response = HttpClient.client.request(
+                "${HttpClient.url}/transport/functions/get"
+            ) {
+                method = HttpMethod.Get
+            }.body<List<Function>>().map { x -> Tag(x.functionData, false) }
+
+            _uiState.update {
+                it.copy(
+                    listTags = response
+                )
+            }
+        }
     }
 
     fun updateUser() {
@@ -358,10 +379,23 @@ class MainViewModel @Inject constructor(
             method = HttpMethod.Get
         }
 
+        val filterType = when (_uiState.value.carType) {
+            1f -> "BASE"
+            2f -> "COMFORT"
+            3f -> "BUSINESS"
+            else -> ""
+        }
+
+        val selectedTags = _uiState.value.listTags
+            .filter { x -> x.isSelected }
+            .map { x -> x.tag }
+
         if (response.status.value == 200) {
             val rate = userStore.getLastSelectedRate().first()
             return response.body<List<Transport>>().filter { x ->
-                (!x.isReserved && (!_uiState.value.isReserving && !_uiState.value.isRenting && !_uiState.value.isChecking)) ||
+                ((if (_uiState.value.isFiltered) x.transportType == filterType && (if (selectedTags.isNotEmpty()) x.functions.map { y -> y.functionData }.intersect(
+                    selectedTags.toSet()
+                ).isNotEmpty() else true) else true) && !x.isReserved && (!_uiState.value.isReserving && !_uiState.value.isRenting && !_uiState.value.isChecking)) ||
                         (x.id == rate.transportId && rate.id != 0)
             }
         }
