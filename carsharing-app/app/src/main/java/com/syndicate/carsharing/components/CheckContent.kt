@@ -87,6 +87,7 @@ fun CheckContent(
     val scope = rememberCoroutineScope()
     val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val mainState by mainViewModel.uiState.collectAsState()
+    val rentHours by mainViewModel.userStore.getRentHours().collectAsState(initial = 0)
     val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
 
     val damagesNameList = remember {
@@ -273,7 +274,7 @@ fun CheckContent(
             onClick = {
                 scope.launch {
                     val response = HttpClient.client.post(
-                        "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                        "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}${if (rentHours != 0) "&rentHours=$rentHours" else ""}"
                     ) {
                         headers["Authorization"] = "Bearer $token"
                     }.body<DefaultResponse>()

@@ -58,13 +58,13 @@ fun RentContent(
     val token by mainViewModel.userStore.getToken().collectAsState(initial = "")
     val mainState by mainViewModel.uiState.collectAsState()
     val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
-    mainViewModel.updateRenting(true)
 
     val isClosed = remember {
         mutableStateOf(mainState.isClosed)
     }
 
-    LaunchedEffect(key1 = context) {
+    LaunchedEffect(key1 = Unit) {
+        mainViewModel.updateRenting(true)
         if (!mainState.stopwatchOnParking.isStarted &&
             !mainState.stopwatchOnRoad.isStarted &&
             !mainState.timer.isStarted) {

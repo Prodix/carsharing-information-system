@@ -116,10 +116,10 @@ fun SplashScreen(
                                 mainViewModel.viewModelScope.launch(Dispatchers.IO) {
                                     mainViewModel.uiState.value.timer.changeStartTime(0, 19 - (time / 60).toInt(), 60 - (time % 60).toInt())
                                     mainViewModel.uiState.value.timer.onTimerEnd = {
-                                        mainViewModel.updateReserving(false)
                                         mainViewModel.uiState.value.mainViewScope!!.launch {
                                             mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                         }
+                                        mainViewModel.updateReserving(false)
                                     }
                                     mainViewModel.uiState.value.timer.start()
                                 }
@@ -145,11 +145,11 @@ fun SplashScreen(
                                 mainViewModel.viewModelScope.launch(Dispatchers.IO) {
                                     mainViewModel.uiState.value.stopwatchChecking.timeToStop = Triple(0,30,0)
                                     mainViewModel.uiState.value.stopwatchChecking.action = {
-                                        mainViewModel.uiState.value.stopwatchChecking.stop()
-                                        mainViewModel.updateChecking(false)
                                         mainViewModel.uiState.value.mainViewScope!!.launch {
                                             mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                         }
+                                        mainViewModel.uiState.value.stopwatchChecking.stop()
+                                        mainViewModel.updateChecking(false)
                                     }
                                     mainViewModel.uiState.value.stopwatchChecking.start()
                                 }
@@ -171,11 +171,11 @@ fun SplashScreen(
                                         val seconds = (rentHours * 3600) - time
                                         mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
                                         mainViewModel.uiState.value.timer.onTimerEnd = {
-                                            mainViewModel.updateRenting(false)
-                                            mainViewModel.updateRentHours(0)
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
                                         }
                                         mainViewModel.uiState.value.timer.start()
                                     } else {
@@ -210,11 +210,11 @@ fun SplashScreen(
                                         val seconds = (rentHours * 3600) - summaryTime
                                         mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
                                         mainViewModel.uiState.value.timer.onTimerEnd = {
-                                            mainViewModel.updateRenting(false)
-                                            mainViewModel.updateRentHours(0)
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
                                         }
                                         mainViewModel.uiState.value.timer.start()
                                     } else {
@@ -251,11 +251,11 @@ fun SplashScreen(
                                         val seconds = (rentHours * 3600) - summaryTime
                                         mainViewModel.uiState.value.timer.changeStartTime((seconds / 3600).toInt(), (seconds % 3600 / 60).toInt(), (seconds % 60).toInt())
                                         mainViewModel.uiState.value.timer.onTimerEnd = {
-                                            mainViewModel.updateRenting(false)
-                                            mainViewModel.updateRentHours(0)
                                             mainViewModel.uiState.value.mainViewScope!!.launch {
                                                 mainViewModel.uiState.value.modalBottomSheetState!!.hide()
                                             }
+                                            mainViewModel.updateRenting(false)
+                                            mainViewModel.updateRentHours(0)
                                         }
                                         mainViewModel.uiState.value.timer.start()
                                     } else {

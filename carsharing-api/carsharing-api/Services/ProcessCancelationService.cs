@@ -65,7 +65,7 @@ public class ProcessCancelationService : BackgroundService
                     });
                     await _db.SaveChangesAsync();
                 }
-                else if (transportLogs[0].Action is Action.UNLOCK or Action.LOCK)
+                else if (transportLogs[0].Action is Action.UNLOCK or Action.LOCK or Action.RENT)
                 {
                     var rent = _db.Rate.First(x => x.Id == transportLogs[0].RateId);
                     
@@ -81,8 +81,8 @@ public class ProcessCancelationService : BackgroundService
                     foreach (var log in transportLogs)
                     {
                         if (log.Action is not Action.RENT) continue;
-
-                        if ((time - log.DateTime).Hours < rentHours)
+                        
+                        if ((time - log.DateTime).Hours >= rentHours)
                         {
                             _db.TransportLog.Add(new TransportLog()
                             {

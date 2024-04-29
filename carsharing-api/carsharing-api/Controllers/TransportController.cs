@@ -188,7 +188,7 @@ public class TransportController : Controller
     
     [HttpPost]
     [Route("/api/transport/rent")]
-    public IActionResult RentCar(int transportId, int rateId)
+    public IActionResult RentCar(int transportId, int rateId, double? rentHours)
     {
         if (!Request.Headers.ContainsKey("Authorization"))
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });
@@ -214,6 +214,20 @@ public class TransportController : Controller
             {
                 return new JsonResult(new { message = "Вы не бронируете этот транспорт", status_code = 401 });
             }
+        }
+
+        var rate = _db.Rate.First(x => x.Id == rateId);
+
+        if (rate.RateName == "Фикс")
+        {
+            _db.RentHistory.Add(new RentHistory()
+            {
+                TransportId = transportId,
+                UserId = user.Id,
+                RateId = rateId,
+                RentTime = TimeSpan.FromHours((double)rentHours!),
+                Price = rate.OnRoadPrice * (double)rentHours * 60
+            });
         }
 
         _db.TransportLog.Add(new TransportLog()
@@ -341,17 +355,23 @@ public class TransportController : Controller
                 break;
             }
         }
-        
-        _db.RentHistory.Add(new RentHistory()
-        {
-            TransportId = transportId,
-            RateId = rateId,
-            UserId = user.Id,
-            RentTime = currentTime - rentRecord.DateTime,
-            Price = rate.OnRoadPrice * (roadTime / 60 + 1) + rate.ParkingPrice * (parkingTime / 60 + 1) + (checkSeconds > 0 ? checkSeconds / 60 + 1 : 0) * 10
-        });
 
-        _db.SaveChanges();
+        var rent = _db.Rate.First(x => x.Id == rateId);
+
+        if (rate.RateName != "Фикс")
+        {
+            _db.RentHistory.Add(new RentHistory()
+            {
+                TransportId = transportId,
+                RateId = rateId,
+                UserId = user.Id,
+                RentTime = currentTime - rentRecord.DateTime,
+                Price = rate.OnRoadPrice * (roadTime / 60 + 1) + rate.ParkingPrice * (parkingTime / 60 + 1) + (checkSeconds > 0 ? checkSeconds / 60 + 1 : 0) * 10
+            });
+
+            _db.SaveChanges();
+        }
+        
 
         return new JsonResult(new { message = "Аренда успешно закончена!", status_code = 200 });
     }
