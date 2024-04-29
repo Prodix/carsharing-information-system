@@ -25,31 +25,24 @@ import com.syndicate.carsharing.utility.Shadow
 @OptIn(ExperimentalMaterialApi::class)
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
-fun UserCursorButton(
+fun IconButton(
     modifier: Modifier = Modifier,
-    sheetState: ModalBottomSheetState,
     onClick: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier = modifier
-            .then(
-                if (sheetState.targetValue == ModalBottomSheetValue.Expanded) {
-                    Modifier.alpha(0f)
-                } else {
-                    Modifier
-                        .withShadow(
-                            Shadow(
-                                offsetX = 0.dp,
-                                offsetY = 0.dp,
-                                radius = 4.dp,
-                                color = Color(0, 0, 0, 40)
-                            ),
-                            RoundedCornerShape(10.dp)
-                        )
-                        .background(Color.White, RoundedCornerShape(10.dp))
-                        .alpha(1f)
-                }
-            )
+            .withShadow(
+                Shadow(
+                    offsetX = 0.dp,
+                    offsetY = 0.dp,
+                    radius = 4.dp,
+                    color = Color(0, 0, 0, 40)
+                ),
+            RoundedCornerShape(10.dp)
+        )
+        .background(Color.White, RoundedCornerShape(10.dp))
+        .alpha(1f)
             .padding(10.dp)
             .clickable(
                 interactionSource = MutableInteractionSource(),
@@ -58,6 +51,6 @@ fun UserCursorButton(
                 onClick()
             }
     ) {
-        Image(imageVector = ImageVector.vectorResource(id = R.drawable.usercursor), contentDescription = null)
+        content()
     }
 }

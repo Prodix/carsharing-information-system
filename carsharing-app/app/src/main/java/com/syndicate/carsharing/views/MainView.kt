@@ -6,9 +6,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,35 +17,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
-import androidx.compose.material.Text
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.syndicate.carsharing.BuildConfig
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.UserStore
 import com.syndicate.carsharing.components.BalanceMenu
 import com.syndicate.carsharing.components.BottomMenu
 import com.syndicate.carsharing.components.BottomSheetWithPages
@@ -55,14 +47,12 @@ import com.syndicate.carsharing.components.FilterCarsContent
 import com.syndicate.carsharing.components.LeftMenu
 import com.syndicate.carsharing.components.MainMenuContent
 import com.syndicate.carsharing.components.ProfileContent
-import com.syndicate.carsharing.components.RadarContent
-import com.syndicate.carsharing.components.RadarFindingContent
 import com.syndicate.carsharing.components.RateContent
 import com.syndicate.carsharing.components.RentContent
 import com.syndicate.carsharing.components.ReservationContent
 import com.syndicate.carsharing.components.ResultContent
 import com.syndicate.carsharing.components.TimerBox
-import com.syndicate.carsharing.components.UserCursorButton
+import com.syndicate.carsharing.components.IconButton
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.modifiers.withShadow
 import com.syndicate.carsharing.utility.Shadow
@@ -79,7 +69,6 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
 import com.yandex.runtime.image.ImageProvider
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
@@ -266,45 +255,6 @@ fun Main(
 
         }
 
-        BottomMenu(
-            modifier = Modifier
-                .padding(25.dp)
-                .withShadow(
-                    Shadow(
-                        offsetX = 0.dp,
-                        offsetY = 0.dp,
-                        radius = 4.dp,
-                        color = Color(0, 0, 0, 40)
-                    ),
-                    RoundedCornerShape(16.dp)
-                )
-                .background(Color.White, RoundedCornerShape(16.dp))
-                .align(Alignment.BottomCenter),
-            onClickRadar = {
-                mainViewModel.updatePage("radarIntro")
-                scope.launch {
-                    mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                    { }
-                    mainViewModel.updateCircle(mainState.mapView!!.mapWindow.map.mapObjects.addCircle(Circle(mainState.currentLocation, 400f * mainState.walkMinutes)))
-                    scope.launch {
-                        while (mainState.circle == null) {
-                            delay(100)
-                        }
-                        mainState.circle?.fillColor = Color(0x4A92D992).toArgb()
-                        mainState.circle?.strokeColor = Color(0xFF99CC99).toArgb()
-                        mainState.circle?.strokeWidth = 1.5f
-                    }
-                    mainState.modalBottomSheetState!!.show()
-                }
-            },
-            onClickFilter = {
-                mainViewModel.updatePage("filter")
-                scope.launch {
-                    mainState.modalBottomSheetState!!.show()
-                }
-            }
-        )
-
         LeftMenu(
             modifier = Modifier
                 .padding(16.dp)
@@ -336,24 +286,42 @@ fun Main(
             )
         }
 
-        UserCursorButton(
+        Column(
             modifier = Modifier
                 .padding(16.dp)
-                .align(Alignment.CenterEnd),
-            sheetState = mainState.modalBottomSheetState!!
+                .align(Alignment.CenterEnd)
+                .then(
+                    if (mainState.modalBottomSheetState!!.targetValue == ModalBottomSheetValue.Expanded)
+                        Modifier.alpha(0f)
+                    else
+                        Modifier
+                ),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-            { }
+            IconButton(
+                modifier = Modifier,
+                onClick = {
+                    mainState.mapView!!.mapWindow.map.move(CameraPosition(Point(mainState.currentLocation.latitude, mainState.currentLocation.longitude), 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
+                    { }
+                }
+            ) {
+                Image(imageVector = ImageVector.vectorResource(id = R.drawable.usercursor), contentDescription = null)
+            }
+            IconButton(
+                modifier = Modifier,
+                onClick = {
+                    mainViewModel.updatePage("filter")
+                    scope.launch {
+                        mainState.modalBottomSheetState!!.show()
+                    }
+                }
+            ) {
+                Image(imageVector = ImageVector.vectorResource(id = R.drawable.filter), contentDescription = null)
+            }
         }
     }
 
     val bottomSheetPages: Map<String, @Composable () -> Unit> = mapOf(
-        "radarIntro" to { RadarContent(
-            mainViewModel = mainViewModel
-        )},
-        "radar" to { RadarFindingContent(
-            mainViewModel = mainViewModel
-        )},
         "filter" to { FilterCarsContent(
             mainViewModel = mainViewModel
         )},
