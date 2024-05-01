@@ -38,6 +38,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -80,6 +81,8 @@ import com.syndicate.carsharing.UserStore
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.User
+import com.syndicate.carsharing.shared_components.AutoShareButton
+import com.syndicate.carsharing.shared_components.AutoShareTextField
 import com.syndicate.carsharing.viewmodels.SignUpViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.nefilim.kjwt.JWT
@@ -97,7 +100,6 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 @SuppressLint("UnrememberedMutableInteractionSource")
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SignUp(
     navigation: NavHostController,
@@ -149,8 +151,7 @@ fun SignUp(
             )
             Text(
                 text = "AutoShare",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
                 color = Color(0xFF6699CC)
             )
             Spacer(
@@ -159,8 +160,7 @@ fun SignUp(
             )
             Text(
                 text = "Регистрация аккаунта",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleLarge
             )
             Spacer(
                 modifier = Modifier
@@ -168,132 +168,80 @@ fun SignUp(
             )
             Text(
                 text = "Заполните поля ниже",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.displaySmall,
                 modifier = Modifier
                     .height(43.dp)
             )
-            OutlinedTextField(
+            AutoShareTextField(
                 value = signUpState.email,
                 onValueChange = { value -> signUpViewModel.changeEmail(value) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                textStyle = TextStyle(
-                    fontSize = 16.sp
-                ),
-                placeholder = { Text(text = "Email") },
-                singleLine = true,
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedPlaceholderColor = Color(0xFFB5B5B5),
-                    unfocusedPlaceholderColor = Color(0xFFB5B5B5),
-                    unfocusedBorderColor = Color(0xFFB5B5B5),
-                    focusedBorderColor = Color(0xFFB5B5B5),
-                    errorBorderColor = Color(0xFFBB3E3E),
-                    errorCursorColor = Color(0xFFBB3E3E),
-                    errorSupportingTextColor = Color(0xFFBB3E3E)
-                ),
                 isError = signUpState.emailNote != "",
-                supportingText = {
-                    if (signUpState.emailNote != "") {
-                        Text(
-                            text = signUpState.emailNote,
-                            fontSize = 12.sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        )
-                    }
+                placeholder = "Email"
+            ) {
+                if (signUpState.emailNote != "") {
+                    Text(
+                        text = signUpState.emailNote,
+                        style = MaterialTheme.typography.displaySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
                 }
-            )
+            }
             Spacer(
                 modifier = Modifier
                     .size(16.dp)
             )
-            OutlinedTextField(
+            AutoShareTextField(
                 value = signUpState.password,
                 onValueChange = { value -> signUpViewModel.changePassword(value) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                textStyle = TextStyle(
-                    fontSize = 16.sp
-                ),
-                visualTransformation = PasswordVisualTransformation(),
-                placeholder = { Text(text = "Пароль") },
-                singleLine = true,
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedPlaceholderColor = Color(0xFFB5B5B5),
-                    unfocusedPlaceholderColor = Color(0xFFB5B5B5),
-                    unfocusedBorderColor = Color(0xFFB5B5B5),
-                    focusedBorderColor = Color(0xFFB5B5B5),
-                    errorBorderColor = Color(0xFFBB3E3E),
-                    errorCursorColor = Color(0xFFBB3E3E),
-                    errorSupportingTextColor = Color(0xFFBB3E3E)
-                ),
-                isError = signUpState.passwordNote != "",
-                supportingText = {
-                    if (signUpState.passwordNote != "") {
-                        Text(
-                            text = signUpState.passwordNote,
-                            fontSize = 12.sp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        )
-                    }
+                isPassword = true,
+                placeholder = "Пароль",
+                isError = signUpState.passwordNote != ""
+            ) {
+                if (signUpState.passwordNote != "") {
+                    Text(
+                        text = signUpState.passwordNote,
+                        style = MaterialTheme.typography.displaySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    )
                 }
-            )
+            }
             Spacer(
                 modifier = Modifier
                     .size(16.dp)
             )
-            Button(
-                onClick = {
-                    val mapper = jacksonObjectMapper()
-                    scope.launch {
-                        val response = HttpClient.client.post(
-                            "${HttpClient.url}/account/signup"
-                        ) {
-                            setBody(
-                                MultiPartFormDataContent(
-                                    formData {
-                                        append("email", signUpState.email)
-                                        append("password", signUpState.password)
-                                    }
-                                ))
-                        }.body<DefaultResponse>()
-                        if (response.status_code != 200) {
-                            AlertDialog.Builder(context)
-                                .setMessage(response.message)
-                                .setPositiveButton("ok") { _, _ -> run { } }
-                                .show()
-                        } else {
-                            userStore.saveToken(response.token as String)
-                            navigation.navigate("code/true/${signUpState.email}")
-                        }
-                    }
-                },
-                content = { Text(
-                    text = "Зарегистрироваться",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .padding(vertical = 10.dp)
-                ) },
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6699CC),
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.Transparent,
-                    disabledContentColor = Color(0xFFB5B5B5)
-                ),
+            AutoShareButton(
+                text = "Зарегистрироваться",
                 border = if (signUpState.emailNote == "" && signUpState.passwordNote == "" && signUpState.password != "" && signUpState.email != "") null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
                 enabled = signUpState.emailNote == "" && signUpState.passwordNote == "" && signUpState.password != "" && signUpState.email != ""
-            )
+            ) {
+                scope.launch {
+                    val response = HttpClient.client.post(
+                        "${HttpClient.url}/account/signup"
+                    ) {
+                        setBody(
+                            MultiPartFormDataContent(
+                                formData {
+                                    append("email", signUpState.email)
+                                    append("password", signUpState.password)
+                                }
+                            ))
+                    }.body<DefaultResponse>()
+                    if (response.status_code != 200) {
+                        AlertDialog.Builder(context)
+                            .setMessage(response.message)
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                    } else {
+                        userStore.saveToken(response.token as String)
+                        HttpClient.client.post(
+                            "${HttpClient.url}/account/generate_code?email=${signUpState.email}"
+                        )
+                        navigation.navigate("code/true/${signUpState.email}")
+                    }
+                }
+            }
             Spacer(
                 modifier = Modifier
                     .size(16.dp)
@@ -307,13 +255,14 @@ fun SignUp(
             ) {
                 Text(
                     text = "Есть аккаунт? ",
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.displaySmall,
                     color = Color(0xFFB5B5B5)
                 )
                 Text(
                     text = "Войти",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.Bold
+                    )
                 )
             }
         }

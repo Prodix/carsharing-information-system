@@ -29,7 +29,12 @@ class Stopwatch {
     var minutes: Int
         get() = _minutes.value
         set(value) {
-            _minutes.value = value
+            if (value >= 60) {
+                _hours.value = value / 60
+                _minutes.value = value % 60
+            } else {
+                _minutes.value = value
+            }
         }
 
     var hours: Int
@@ -71,12 +76,14 @@ class Stopwatch {
                 _minutes.value++
                 if (_minutes.value == 60) {
                     _minutes.value = 0
+                    _hours.value++
                 }
             }
             if (Triple(_hours.value, _minutes.value, _seconds.value) == timeToStop) {
                 action()
             }
-            delay(1000L)
+            if (_isStarted.value)
+                delay(1000L)
         }
     }
 

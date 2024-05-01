@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
-class CodeViewModel @Inject constructor(val userStore: UserStore) : ViewModel() {
+class CodeViewModel @Inject constructor(
+    val userStore: UserStore,
+    val mainViewModel: MainViewModel
+) : ViewModel() {
     private val _uiState = MutableStateFlow(CodeModel())
     val uiState = _uiState.asStateFlow()
 

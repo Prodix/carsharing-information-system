@@ -84,7 +84,7 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.4.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
-    implementation("com.yandex.android:maps.mobile:4.4.0-full")
+    implementation("com.yandex.android:maps.mobile:4.6.1-full")
 
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 

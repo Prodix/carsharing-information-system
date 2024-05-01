@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +39,7 @@ import androidx.navigation.NavHostController
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.User
+import com.syndicate.carsharing.shared_components.AutoShareButton
 import com.syndicate.carsharing.viewmodels.CodeViewModel
 import com.syndicate.carsharing.viewmodels.DocumentViewModel
 import io.ktor.client.call.body
@@ -48,6 +50,8 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Date
@@ -65,8 +69,6 @@ fun Document(
     val context = LocalContext.current
 
     val userStore = documentViewModel.userStore
-    val token by userStore.getToken().collectAsState(initial = "")
-    val user by userStore.getUser().collectAsState(initial = User())
 
     matrix.postRotate(90f)
 
@@ -81,7 +83,6 @@ fun Document(
                 .fillMaxSize(),
             contentScale = ContentScale.FillWidth,
             alignment = Alignment.Center
-
         )
         Row(
             modifier = Modifier
@@ -96,101 +97,94 @@ fun Document(
                 .align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            Button(
-                onClick = {
-                    navigation.popBackStack()
-                },
+            AutoShareButton(
+                text = "Переснять",
+                isNegative = true,
                 modifier = Modifier
-                    .height(50.dp)
-                    .weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFAF0F0)
-                ),
-                shape = RoundedCornerShape(15.dp)
+                    .weight(1f)
             ) {
-                Text(
-                    text = "Переснять",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color(0xFFBB3E3E)
-                )
+                navigation.popBackStack()
             }
-            Button(
-                onClick = {
-                    when (fileName) {
-                        "passport" -> {
-                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/passport.jpeg")
-                            scope.launch {
-                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=passport&token=${token}") {
-                                    setBody(
-                                        MultiPartFormDataContent(
-                                            formData {
-                                                append("image", file.readBytes(), Headers.build {
-                                                    append(HttpHeaders.ContentType, "image/jpeg")
-                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_passport.jpeg\"")
-                                                })
-                                            }
-                                        ))
-                                }
-                                userStore.updateToken()
-                                navigation.navigate("documentIntro/false/true")
+            AutoShareButton(
+                text = "Готово",
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                when (fileName) {
+                    "passport" -> {
+                        val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/passport.jpeg")
+                        scope.launch {
+                            val user = userStore.getUser().first()
+                            val token = userStore.getToken().first()
+                            HttpClient.client.post("${HttpClient.url}/account/upload/?type=passport") {
+                                setBody(
+                                    MultiPartFormDataContent(
+                                        formData {
+                                            append("image", file.readBytes(), Headers.build {
+                                                append(HttpHeaders.ContentType, "image/jpeg")
+                                                append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_passport.jpeg\"")
+                                            })
+                                        }
+                                    ))
+                                headers["Authorization"] = "Bearer $token"
                             }
-                        }
-                        "selfie" -> {
-                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/selfie.jpeg")
-                            scope.launch {
-                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=selfie&token=${token}") {
-                                    setBody(
-                                        MultiPartFormDataContent(
-                                            formData {
-                                                append("image", file.readBytes(), Headers.build {
-                                                    append(HttpHeaders.ContentType, "image/jpeg")
-                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_selfie.jpeg\"")
-                                                })
-                                            }
-                                        ))
-                                }
-                                userStore.updateToken()
-                                navigation.navigate("documentIntro/false/false")
-                            }
-                        }
-                        else -> {
-                            val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/license.jpeg")
-                            scope.launch {
-                                HttpClient.client.post("${HttpClient.url}/account/upload/?type=driver_license&token=${token}") {
-                                    setBody(
-                                        MultiPartFormDataContent(
-                                            formData {
-                                                append("image", file.readBytes(), Headers.build {
-                                                    append(HttpHeaders.ContentType, "image/jpeg")
-                                                    append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_license.jpeg\"")
-                                                })
-                                            }
-                                        ))
-                                }
-                                userStore.updateToken()
-                                AlertDialog.Builder(context)
-                                    .setMessage("Ваш аккаунт будет верифицирован в течение 3 рабочих дней")
-                                    .setPositiveButton("ok") { _, _ -> run { } }
-                                    .show()
-                                navigation.navigate("main")
+                            userStore.updateToken()
+                            navigation.navigate("documentIntro/false/true") {
+                                popUpTo(0)
                             }
                         }
                     }
-                },
-                modifier = Modifier
-                    .height(50.dp)
-                    .weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6699CC)
-                ),
-                shape = RoundedCornerShape(15.dp)
-            ) {
-                Text(
-                    text = "Готово",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                    "selfie" -> {
+                        val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/selfie.jpeg")
+                        scope.launch {
+                            val user = userStore.getUser().first()
+                            val token = userStore.getToken().first()
+                            HttpClient.client.post("${HttpClient.url}/account/upload/?type=selfie") {
+                                setBody(
+                                    MultiPartFormDataContent(
+                                        formData {
+                                            append("image", file.readBytes(), Headers.build {
+                                                append(HttpHeaders.ContentType, "image/jpeg")
+                                                append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_selfie.jpeg\"")
+                                            })
+                                        }
+                                    ))
+                                headers["Authorization"] = "Bearer $token"
+                            }
+                            userStore.updateToken()
+                            navigation.navigate("documentIntro/false/false") {
+                                popUpTo(0)
+                            }
+                        }
+                    }
+                    else -> {
+                        val file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/license.jpeg")
+                        scope.launch {
+                            val user = userStore.getUser().first()
+                            val token = userStore.getToken().first()
+                            HttpClient.client.post("${HttpClient.url}/account/upload/?type=driver_license") {
+                                setBody(
+                                    MultiPartFormDataContent(
+                                        formData {
+                                            append("image", file.readBytes(), Headers.build {
+                                                append(HttpHeaders.ContentType, "image/jpeg")
+                                                append(HttpHeaders.ContentDisposition, "filename=\"${user.id}_license.jpeg\"")
+                                            })
+                                        }
+                                    ))
+                                headers["Authorization"] = "Bearer $token"
+                            }
+                            userStore.updateToken()
+                            AlertDialog.Builder(context)
+                                .setMessage("Ваш аккаунт будет верифицирован в течение 3 рабочих дней")
+                                .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                            navigation.navigate("main") {
+                                popUpTo(0)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

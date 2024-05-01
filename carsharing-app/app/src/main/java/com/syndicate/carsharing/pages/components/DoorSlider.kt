@@ -1,7 +1,5 @@
-package com.syndicate.carsharing.components
+package com.syndicate.carsharing.pages.components
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -19,6 +17,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -32,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.IntOffset
@@ -40,8 +38,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.viewmodels.MainViewModel
-import kotlinx.coroutines.delay
+import com.syndicate.carsharing.pages.DragAnchors
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -52,9 +49,6 @@ fun DoorSlider(
     action: () -> Unit,
 ) {
     val density = LocalDensity.current
-    var lastTarget: DragAnchors? by remember {
-        mutableStateOf(null)
-    }
 
     var sliderSize by remember {
         mutableStateOf(IntSize.Zero)
@@ -158,6 +152,7 @@ fun DoorSlider(
             }
         }
         Text(
+            style = MaterialTheme.typography.displaySmall,
             text = if (isClosed.value) states.first else states.second,
             modifier = Modifier
                 .zIndex(9f)

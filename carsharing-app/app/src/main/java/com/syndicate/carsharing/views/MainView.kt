@@ -6,17 +6,16 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.os.Environment
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,8 +27,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
@@ -38,31 +35,32 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.google.android.gms.location.CurrentLocationRequest
+import com.google.android.gms.location.Granularity
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.syndicate.carsharing.MainActivity
 import com.syndicate.carsharing.R
-import com.syndicate.carsharing.components.BalanceMenu
-import com.syndicate.carsharing.components.BottomMenu
-import com.syndicate.carsharing.components.BottomSheetWithPages
-import com.syndicate.carsharing.components.CarContent
-import com.syndicate.carsharing.components.CheckContent
-import com.syndicate.carsharing.components.FilterCarsContent
-import com.syndicate.carsharing.components.LeftMenu
-import com.syndicate.carsharing.components.MainMenuContent
-import com.syndicate.carsharing.components.ProfileContent
-import com.syndicate.carsharing.components.RateContent
-import com.syndicate.carsharing.components.RentContent
-import com.syndicate.carsharing.components.ReservationContent
-import com.syndicate.carsharing.components.ResultContent
-import com.syndicate.carsharing.components.TimerBox
-import com.syndicate.carsharing.components.IconButton
+import com.syndicate.carsharing.views.components.BalanceMenu
+import com.syndicate.carsharing.views.components.BottomSheetWithPages
+import com.syndicate.carsharing.pages.CarContent
+import com.syndicate.carsharing.pages.CheckContent
+import com.syndicate.carsharing.pages.FilterCarsContent
+import com.syndicate.carsharing.views.components.LeftMenu
+import com.syndicate.carsharing.pages.MainMenuContent
+import com.syndicate.carsharing.pages.ProfileContent
+import com.syndicate.carsharing.pages.RateContent
+import com.syndicate.carsharing.pages.RentContent
+import com.syndicate.carsharing.pages.ReservationContent
+import com.syndicate.carsharing.pages.ResultContent
+import com.syndicate.carsharing.views.components.TimerBox
+import com.syndicate.carsharing.views.components.IconButton
 import com.syndicate.carsharing.database.models.Transport
-import com.syndicate.carsharing.modifiers.withShadow
-import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.Animation
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
-import com.yandex.mapkit.geometry.Circle
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.CameraPosition
 import com.yandex.mapkit.map.MapObjectTapListener
@@ -70,8 +68,11 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
 import com.yandex.runtime.image.ImageProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
+import java.lang.Exception
 import kotlin.system.exitProcess
 
 //TODO: Рисовать маршрут при нажатии на точку автомобиля
@@ -94,7 +95,7 @@ fun Main(
     mainViewModel.updateScope(scope)
 
     // TODO: Добавить проверку интернета и геолокации
-    fun enableLocation() {
+    suspend fun enableLocation() {
         if (ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -103,46 +104,85 @@ fun Main(
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val loc = location.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            mainViewModel.updateLocation(Point(loc?.latitude ?: 0.0, loc?.longitude ?: 0.0))
-
-            userPlacemark = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark()
-            userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
-            userPlacemark.geometry = mainState.currentLocation
-
-            if (mainState.currentLocation.latitude == 0.0 && mainState.currentLocation.longitude == 0.0) {
-                userPlacemark.isVisible = false
-            }
-            else {
-                mainState.mapView!!.setNoninteractive(true)
-                mainState.mapView!!.mapWindow.map.move(CameraPosition(mainState.currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                { mainState.mapView!!.setNoninteractive(false) }
-            }
-
-            location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
-                mainViewModel.updateLocation(Point(it.latitude, it.longitude))
-                userPlacemark.geometry = mainState.currentLocation
-                mainViewModel.updatePoints(0, RequestPoint(userPlacemark.geometry, RequestPointType.WAYPOINT, null, null))
-                if (mainState.session != null && mainState.isReserving) {
-                    mainViewModel.updateSession(
-                        mainState.pedestrianRouter!!.requestRoutes(
-                            mainState.points,
-                            mainViewModel.options,
-                            mainViewModel.routeListener
+            val source = CancellationTokenSource()
+            var loc = MainActivity.fusedLocationClient.getCurrentLocation(
+                CurrentLocationRequest.Builder()
+                    .setDurationMillis(1000)
+                    .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+                    .setMaxUpdateAgeMillis(Long.MAX_VALUE)
+                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .build(),
+                source.token
+            )
+            scope.launch(Dispatchers.IO) {
+                while (true) {
+                    if (loc.isComplete && loc.isSuccessful)  {
+                        val result = loc.result
+                        if (result == null) {
+                            loc = MainActivity.fusedLocationClient.getCurrentLocation(
+                                CurrentLocationRequest.Builder()
+                                    .setDurationMillis(1000)
+                                    .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+                                    .setMaxUpdateAgeMillis(Long.MAX_VALUE)
+                                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                                    .build(),
+                                source.token
+                            )
+                            continue
+                        }
+                        scope.launch {
+                            mainViewModel.updateLocation(Point(result.latitude, result.longitude))
+                            userPlacemark = mainState.mapView!!.mapWindow.map.mapObjects.addPlacemark()
+                            userPlacemark.setIcon(ImageProvider.fromResource(context, R.drawable.userpoint))
+                            userPlacemark.geometry = Point(result.latitude, result.longitude)
+                            mainState.mapView!!.setNoninteractive(true)
+                            mainState.mapView!!.mapWindow.map.move(
+                                CameraPosition(
+                                    Point(result.latitude, result.longitude),
+                                    13f,
+                                    0f,
+                                    0f
+                                ), Animation(Animation.Type.SMOOTH, 0.5f)
+                            )
+                            { mainState.mapView!!.setNoninteractive(false) }
+                            location.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f) {
+                                mainViewModel.updateLocation(Point(it.latitude, it.longitude))
+                                if (mainState.currentLocation.latitude != 0.0 && mainState.currentLocation.longitude != 0.0) {
+                                    userPlacemark.geometry = mainState.currentLocation
+                                    if (mainState.session != null && mainState.isReserving) {
+                                        mainViewModel.updateSession(
+                                            mainState.pedestrianRouter?.requestRoutes(
+                                                listOf(
+                                                    RequestPoint(userPlacemark.geometry, RequestPointType.WAYPOINT, null, null),
+                                                    RequestPoint(mainState.lastSelectedPlacemark!!.geometry, RequestPointType.WAYPOINT, null, null),
+                                                ),
+                                                mainViewModel.options,
+                                                true,
+                                                mainViewModel.routeListener
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        break
+                    }
+                    else if (loc.isComplete && !loc.isSuccessful) {
+                        loc = MainActivity.fusedLocationClient.getCurrentLocation(
+                            CurrentLocationRequest.Builder()
+                                .setDurationMillis(1000)
+                                .setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
+                                .setMaxUpdateAgeMillis(Long.MAX_VALUE)
+                                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                                .build(),
+                            source.token
                         )
-                    )
-                }
-
-                if (!mainState.modalBottomSheetState!!.isVisible)
-                    mainState.circle?.geometry = Circle(mainState.currentLocation, 400f * mainState.walkMinutes)
-
-                if (!userPlacemark.isVisible) {
-                    userPlacemark.isVisible = true
-                    mainState.mapView!!.setNoninteractive(true)
-                    mainState.mapView!!.mapWindow.map.move(CameraPosition(mainState.currentLocation, 13f, 0f, 0f), Animation(Animation.Type.SMOOTH, 0.5f))
-                    { mainState.mapView!!.setNoninteractive(false) }
+                    } else {
+                        delay(10)
+                    }
                 }
             }
+
         }
     }
 
@@ -167,11 +207,20 @@ fun Main(
                     .setPositiveButton("ok") { _, _ -> exitProcess(0) }
                     .show()
             } else {
-                enableLocation()
+                scope.launch {
+                    enableLocation()
+                }
             }
         }
 
     LaunchedEffect(key1 = Unit) {
+        launch(Dispatchers.IO) {
+            delay(10000)
+            val dir = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare")
+            if (dir.isDirectory) {
+                dir.deleteRecursively()
+            }
+        }
         activityResultLauncher.launch(locationPermissions)
         mainViewModel.updatePlacemarks(listOf())
     }
@@ -260,15 +309,14 @@ fun Main(
             modifier = Modifier
                 .padding(16.dp)
                 .align(Alignment.TopStart),
-            sheetState = mainState.modalBottomSheetState!!,
-            onClick = {
-                Toast.makeText(context, "В разработке", Toast.LENGTH_SHORT).show()
-                /*mainViewModel.updatePage("mainMenu")
-                scope.launch {
-                    mainState.modalBottomSheetState!!.show()
-                }*/
-            }
-        )
+            sheetState = mainState.sheetState!!
+        ) {
+            Toast.makeText(context, "В разработке", Toast.LENGTH_SHORT).show()
+            /*mainViewModel.updatePage("mainMenu")
+            scope.launch {
+                mainState.modalBottomSheetState!!.show()
+            }*/
+        }
 
         Column(
             modifier = Modifier
@@ -293,7 +341,7 @@ fun Main(
                 .padding(16.dp)
                 .align(Alignment.CenterEnd)
                 .then(
-                    if (mainState.modalBottomSheetState!!.targetValue == ModalBottomSheetValue.Expanded)
+                    if (mainState.sheetState!!.targetValue == ModalBottomSheetValue.Expanded)
                         Modifier.alpha(0f)
                     else
                         Modifier
@@ -314,7 +362,7 @@ fun Main(
                 onClick = {
                     mainViewModel.updatePage("filter")
                     scope.launch {
-                        mainState.modalBottomSheetState!!.show()
+                        mainState.sheetState!!.show()
                     }
                 }
             ) {

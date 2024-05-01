@@ -102,7 +102,6 @@ fun Camera(
                             it.setSurfaceProvider(previewView.surfaceProvider)
                         }
 
-                    //TODO: Почему фронталка?
                     val cameraSelector = if (fileName == "selfie") CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
 
                     imageCapture = ImageCapture.Builder()
@@ -188,9 +187,7 @@ private fun takePhoto(scope: CoroutineScope, navigation: NavHostController, name
             override fun onImageSaved(
                 outputFileResults: ImageCapture.OutputFileResults
             ) {
-                val msg = "Photo capture succeeded"
-                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                Log.d("Camera", msg)
+                Log.d("Camera", "Photo capture succeeded")
                 if (route == "back") {
                     file = File("${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)}/AutoShare/${name}")
                     scope.launch {
@@ -208,8 +205,9 @@ private fun takePhoto(scope: CoroutineScope, navigation: NavHostController, name
                         navigation.popBackStack()
                     }
                 }
-                else
+                else {
                     navigation.navigate(route)
+                }
 
             }
 

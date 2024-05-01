@@ -2,6 +2,8 @@ package com.syndicate.carsharing.models
 
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetState
 import androidx.compose.ui.graphics.Color
 import com.syndicate.carsharing.data.Stopwatch
 import com.syndicate.carsharing.data.Tag
@@ -19,23 +21,21 @@ import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.masstransit.PedestrianRouter
 import com.yandex.mapkit.transport.masstransit.Session
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterialApi::class)
-data class MainModel (
+data class MainModel(
     val tags: List<Tag>? = null,
     val currentLocation: Point = Point(),
     val page: String = "radarIntro",
     val rentHours: Int = 2,
     val isFiltered: Boolean = false,
-    val scrimColor: Color = Color.Transparent,
     val carType: Float = 1f,
     val timer: Timer = Timer(),
     val stopwatchOnRoad: Stopwatch = Stopwatch(),
     val stopwatchChecking: Stopwatch = Stopwatch(),
     val stopwatchOnParking: Stopwatch = Stopwatch(),
     var mapView: MapView? = null,
-    var modalBottomSheetState: ModalBottomSheetState? = null,
+    var sheetState: ModalBottomSheetState? = null,
     var isClosed: Boolean = true,
     var pedestrianRouter: PedestrianRouter? = null,
     val isChecking: Boolean = false,
@@ -46,10 +46,6 @@ data class MainModel (
     var user: User = User(),
     var token: String = "",
     val listTags: List<Tag> = listOf(),
-    val circle: CircleMapObject? = null,
-    val mem: Float = 1f,
-    val isGesturesEnabled: Boolean = true,
-    val walkMinutes: Int = 1,
     val isReserving: Boolean = false,
     val lastSelectedRate: Rate? = null,
     val isRenting: Boolean = false,

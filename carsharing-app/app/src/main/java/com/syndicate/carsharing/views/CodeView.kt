@@ -21,9 +21,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -52,6 +54,7 @@ import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.User
 import com.syndicate.carsharing.models.CodeModel
+import com.syndicate.carsharing.shared_components.AutoShareButton
 import com.syndicate.carsharing.viewmodels.CodeViewModel
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -59,9 +62,11 @@ import io.ktor.client.request.forms.formData
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -72,59 +77,45 @@ fun Code(
     email: String,
     isRegister: Boolean,
     navigation: NavHostController,
-    codeViewModel: CodeViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    codeViewModel: CodeViewModel = hiltViewModel()
 ) {
     val codeState = codeViewModel.uiState.collectAsState()
-
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val userStore = codeViewModel.userStore
-    val token by userStore.getToken().collectAsState(initial = "")
-    val user: User by userStore.getUser().collectAsState(initial = User())
 
     val timer = remember {
         mutableStateOf(Timer(0,5, 0))
     }
 
-    DisposableEffect(context) {
-
-        scope.launch {
-            while(token == "")
-                delay(100)
-            HttpClient.client.post(
-                "${HttpClient.url}/account/generate_code?token=${token}"
-            )
-        }
-
-        scope.launch {
+    LaunchedEffect(Unit) {
+        scope.launch(Dispatchers.IO) {
             timer.value.start()
         }
-
-        onDispose { timer.value.stop() }
     }
 
     Column(
         modifier = Modifier
+            .background(Color.White)
             .fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Подтверждение почты",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.titleLarge
         )
-        if (user.email != "") {
+        Spacer(modifier = Modifier
+            .size(10.dp))
+        if (email != "") {
             Text(
-                text = "На почту ${if (user.email.substring(0, user.email.indexOf('@')).length >= 5) "${user.email.substring(0..1)}***${user.email.substring(email.indexOf('@') - 2)}" else "${user.email[0]}*${user.email.substring(user.email.indexOf('@'))}"} был отправлен код",
-                fontSize = 12.sp,
+                text = "На почту ${if (email.substring(0, email.indexOf('@')).length >= 5) "${email.substring(0..1)}***${email.substring(email.indexOf('@') - 2)}" else "${email[0]}*${email.substring(email.indexOf('@'))}"} был отправлен код",
+                style = MaterialTheme.typography.displaySmall,
                 color = Color(0xFFB5B5B5)
             )
         }
         Spacer(modifier = Modifier
             .size(25.dp))
         CodeComposable(
+            email,
             codeState,
             codeViewModel,
             timer,
@@ -138,19 +129,18 @@ fun Code(
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun SendCodeComposable(
+    email: String,
     timer: State<Timer>,
     scope: CoroutineScope,
     codeViewModel: CodeViewModel
 ) {
-    val context = LocalContext.current
-    val userStore = codeViewModel.userStore
-    val token by userStore.getToken().collectAsState(initial = "")
-
     val isError by codeViewModel.isError.collectAsState()
 
     Text(
         text = if (!timer.value.isStarted) if (isError) "Неверный код, отправить код повторно" else "Отправить код повторно" else if (isError) "Неверный код, отправить код повторно через ${timer.value}" else "Отправить код повторно через ${timer.value}",
-        fontSize = 12.sp,
+        style = MaterialTheme.typography.displaySmall.copy(
+            fontSize = 12.sp
+        ),
         color = if (!timer.value.isStarted) Color(if (isError) 0xFFBB3E3E else 0xFF6699CC) else Color(if (isError) 0xFFBB3E3E else 0xFFB5B5B5),
         modifier = Modifier
             .clickable(
@@ -160,7 +150,7 @@ fun SendCodeComposable(
             ) {
                 scope.launch {
                     HttpClient.client.post(
-                        "${HttpClient.url}/account/generate_code?token=${token}"
+                        "${HttpClient.url}/account/generate_code?email=$email"
                     )
                 }
                 timer.value.restart()
@@ -175,6 +165,7 @@ fun SendCodeComposable(
 
 @Composable
 fun CodeComposable(
+    email: String,
     codeState: State<CodeModel>,
     codeViewModel: CodeViewModel,
     timer: State<Timer>,
@@ -184,7 +175,6 @@ fun CodeComposable(
 ) {
     val context = LocalContext.current
     val userStore = codeViewModel.userStore
-    val user: User by userStore.getUser().collectAsState(initial = User())
     val isError by codeViewModel.isError.collectAsState()
 
     BasicTextField(
@@ -224,7 +214,7 @@ fun CodeComposable(
                     ) {
                         Text(
                             text = codeState.value.code.text.getOrElse(it, {' '}).toString(),
-                            fontSize = 20.sp
+                            style = MaterialTheme.typography.displayMedium
                         )
                     }
                     Spacer(
@@ -236,54 +226,55 @@ fun CodeComposable(
         },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
-    SendCodeComposable(timer, scope, codeViewModel)
+    SendCodeComposable(email, timer, scope, codeViewModel)
     Spacer(modifier = Modifier
         .size(25.dp))
-    Button(
-        onClick = {
-            scope.launch {
-                val response = HttpClient.client.post(
-                    "${HttpClient.url}/account/signin?code=${codeState.value.code.text}"
-                ) {
-                    setBody(
-                        MultiPartFormDataContent(
-                            formData {
-                                append("email", user.email)
-                            }
-                        ))
-                }.body<DefaultResponse>()
-                if (response.status_code == 200) {
-                    if (isRegister) {
-                        userStore.saveToken(response.token as String)
-                        navigation.navigate("documentIntro/true/false")
+    AutoShareButton(
+        text = "Продолжить",
+        border = if (codeState.value.code.text.length == 5 || codeState.value.isValid == true) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
+        enabled = codeState.value.code.text.length == 5,
+        modifier = Modifier
+            .width(265.dp)
+    ) {
+        scope.launch {
+            val response = HttpClient.client.post(
+                "${HttpClient.url}/account/signin?code=${codeState.value.code.text}"
+            ) {
+                setBody(
+                    MultiPartFormDataContent(
+                        formData {
+                            append("email", email)
+                        }
+                    ))
+            }.body<DefaultResponse>()
+            if (response.status_code == 200) {
+                userStore.saveToken(response.token as String)
+                if (userStore.getUser().first().driverLicenseId == 0) {
+                    navigation.navigate("documentIntro/false/false") {
+                        popUpTo(0)
                     }
-                    else {
-                        navigation.navigate("main")
+                } else if (userStore.getUser().first().passportId == 0) {
+                    navigation.navigate("documentIntro/true/false") {
+                        popUpTo(0)
+                    }
+                } else if (userStore.getUser().first().selfieId == 0) {
+                    navigation.navigate("documentIntro/false/true") {
+                        popUpTo(0)
                     }
                 } else {
-                    codeViewModel.changeErrorStatus(true)
+                    initialize(
+                        mainViewModel = codeViewModel.mainViewModel,
+                        userStore = userStore,
+                        scope = scope
+                    )
+                    navigation.navigate("main") {
+                        popUpTo(0)
+                    }
                 }
+            } else {
+                codeViewModel.changeErrorStatus(true)
             }
-        },
-        modifier = Modifier
-            .width(265.dp),
-        shape = RoundedCornerShape(10.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF6699CC),
-            contentColor = Color.White,
-            disabledContainerColor = Color.Transparent,
-            disabledContentColor = Color(0xFFB5B5B5)
-        ),
-        border = if (codeState.value.code.text.length == 5 || codeState.value.isValid == true) null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
-        enabled = codeState.value.code.text.length == 5
-    ) {
-        Text(
-            text = "Продолжить",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .padding(vertical = 10.dp)
-        )
+        }
     }
 }
 

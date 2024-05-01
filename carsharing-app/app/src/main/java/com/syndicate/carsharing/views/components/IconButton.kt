@@ -1,4 +1,4 @@
-package com.syndicate.carsharing.components
+package com.syndicate.carsharing.views.components
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image

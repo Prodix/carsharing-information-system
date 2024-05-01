@@ -52,6 +52,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
         val DRIVER_LICENSE_ID = intPreferencesKey("driver_license_id")
         val BALANCE = doublePreferencesKey("balance")
         val IS_VERIFIED = booleanPreferencesKey("is_verified")
+        val IS_EMAIL_VERIFIED = booleanPreferencesKey("is_email_verified")
         val SELFIE_ID = intPreferencesKey("selfie_id")
         val TOKEN = stringPreferencesKey("token")
         val RESERVING = booleanPreferencesKey("is_reserving")
@@ -177,6 +178,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
                 driverLicenseId = preferences[DRIVER_LICENSE_ID] ?: 0,
                 balance = preferences[BALANCE] ?: 0.0,
                 isVerified = preferences[IS_VERIFIED] ?: false,
+                isEmailVerified = preferences[IS_EMAIL_VERIFIED] ?: false,
                 selfieId = preferences[SELFIE_ID] ?: 0
             )
         }
@@ -215,6 +217,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
                 preferences[DRIVER_LICENSE_ID] = user.driverLicenseId ?: 0
                 preferences[BALANCE] = user.balance
                 preferences[IS_VERIFIED] = user.isVerified
+                preferences[IS_EMAIL_VERIFIED] = user.isEmailVerified
                 preferences[SELFIE_ID] = user.selfieId ?: 0
             }
         }

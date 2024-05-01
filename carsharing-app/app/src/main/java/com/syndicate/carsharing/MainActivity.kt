@@ -3,11 +3,14 @@ package com.syndicate.carsharing
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -19,6 +22,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.syndicate.carsharing.views.Camera
@@ -26,6 +31,7 @@ import com.syndicate.carsharing.views.Code
 import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.Document
 import com.syndicate.carsharing.views.DocumentIntro
+import com.syndicate.carsharing.views.PermissionView
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
 import com.syndicate.carsharing.views.SplashScreen
@@ -37,9 +43,6 @@ import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import javax.inject.Inject
 
 
@@ -52,9 +55,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var mainViewModel: MainViewModel
 
+    companion object {
+        lateinit var fusedLocationClient: FusedLocationProviderClient
+    }
+
+
     @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         SntpClient.initialize(null, null)
 
@@ -76,23 +86,15 @@ fun CarsharingApp(
 
         val scope = rememberCoroutineScope()
 
-        mainViewModel.updateSheetState(rememberModalBottomSheetState(
-            initialValue = ModalBottomSheetValue.Hidden,
-            confirmValueChange = {
-                if (it == ModalBottomSheetValue.Hidden) {
-                    if (mainViewModel.uiState.value.circle != null)
-                        mainViewModel.uiState.value.mapView!!.mapWindow.map.mapObjects.remove(mainViewModel.uiState.value.circle!!)
-                    mainViewModel.updateCircle(null)
-                }
-
-                true
-            },
-            skipHalfExpanded = true
-        ))
+        mainViewModel.updateSheetState(
+            rememberModalBottomSheetState(
+                initialValue = ModalBottomSheetValue.Hidden,
+                skipHalfExpanded = true
+            )
+        )
 
         val listener: MapObjectTapListener = MapObjectTapListener { placemark, point: Point ->
             mainViewModel.updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
-            mainViewModel.updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
 
             if (mainViewModel.uiState.value.isReserving)
                 mainViewModel.updatePage("reservationPage")
@@ -104,7 +106,7 @@ fun CarsharingApp(
                 mainViewModel.updatePage("car")
 
             scope.launch {
-                mainViewModel.uiState.value.modalBottomSheetState!!.show()
+                mainViewModel.uiState.value.sheetState!!.show()
             }
             true
         }
@@ -128,6 +130,11 @@ fun CarsharingApp(
                         },
                         userStore = userStore,
                         mainViewModel = mainViewModel
+                    )
+                }
+                composable("permission") {
+                    PermissionView(
+                        navigation = navController
                     )
                 }
                 composable("signIn") {

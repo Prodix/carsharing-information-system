@@ -1,12 +1,9 @@
-package com.syndicate.carsharing.components
+package com.syndicate.carsharing.pages
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.telephony.TelephonyManager
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,24 +14,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.Text
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,29 +37,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.shared_components.AutoShareButton
+import com.syndicate.carsharing.shared_components.Loader
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Transport
@@ -72,9 +66,7 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 import java.util.Date
 import kotlin.random.Random
 
@@ -159,7 +151,21 @@ fun CheckContent(
             .padding(horizontal = 15.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        Box(modifier = Modifier
+            .fillMaxWidth()) {
+            Spacer(
+                modifier = Modifier
+                    .width(30.dp)
+                    .height(4.dp)
+                    .background(
+                        Color(0xFFB5B5B5),
+                        shape = CircleShape
+                    )
+                    .align(Alignment.Center)
+            )
+        }
         Text(
+            style = MaterialTheme.typography.titleMedium,
             text = "Недостатки, о которых мы уже знаем"
         )
         if (damagesNameList.value != null) {
@@ -236,73 +242,91 @@ fun CheckContent(
                         contentDescription = null
                     )
                     Text(
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.Black,
                         text = "Добавить фото"
                     )
                 }
             }
         }
         Text(
+            style = MaterialTheme.typography.displayMedium,
             text = "Если вы не обнаружили новые повреждения и ознакомились с правилами пользователя, то можно отправляться в путь",
             modifier = Modifier
                 .fillMaxWidth()
         )
-        Text(
-            text = "Правила пользователя",
+        BasicText(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            text = buildAnnotatedString {
+                withStyle(
+                    style = MaterialTheme.typography.displayMedium.toSpanStyle()
+                ) {
+                    append("Начиная аренду вы соглашаетесь с ")
+                }
+                withStyle(
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        textDecoration = TextDecoration.Underline,
+                        fontWeight = FontWeight.Bold
+                    ).toSpanStyle().copy(
+                        color = Color(0xFF6699CC)
+                    )
+                ) {
+                    append("правилами пользователя")
+                }
+            }
         )
         Column (
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp),
             modifier = Modifier
+                .padding(vertical = 10.dp)
                 .fillMaxWidth()
         ) {
             Text(
+                style = MaterialTheme.typography.displayMedium,
                 text = if (mainState.stopwatchChecking.isStarted)
                     "Платный осмотр"
                 else
                     "Время бесплатного осмотра закончится через"
             )
             Text(
+                style = MaterialTheme.typography.displayMedium,
                 text = if (mainState.stopwatchChecking.isStarted)
                     mainState.stopwatchChecking.toString()
                 else
                     mainState.timer.toString()
             )
         }
-        Button(
-            onClick = {
-                scope.launch {
-                    mainState.stopwatchChecking.stop()
-                    mainState.stopwatchOnRoad.stop()
-                    mainState.stopwatchOnParking.stop()
-                    mainState.timer.stop()
-                    val response = HttpClient.client.post(
-                        "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}${if (rentHours != 0) "&rentHours=$rentHours" else ""}"
-                    ) {
-                        headers["Authorization"] = "Bearer $token"
-                    }.body<DefaultResponse>()
-
-                    if (response.status_code != 200) {
-                        AlertDialog.Builder(context)
-                            .setMessage(response.message)
-                            .setPositiveButton("ok") { _, _ -> run { } }
-                            .show()
-                    } else {
-                        mainViewModel.updateChecking(false)
-                        if (mainState.lastSelectedRate!!.parkingPrice == mainState.lastSelectedRate!!.onRoadPrice) {
-                            mainViewModel.updateIsFixed(true)
-                        }
-                        mainViewModel.updatePage("rentPage")
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
+        AutoShareButton(
+            text = "Начать аренду"
         ) {
-            Text(
-                text = "Начать аренду"
-            )
+            scope.launch {
+                mainState.stopwatchChecking.stop()
+                mainState.stopwatchOnRoad.stop()
+                mainState.stopwatchOnParking.stop()
+                mainState.timer.stop()
+                val response = HttpClient.client.post(
+                    "${HttpClient.url}/transport/rent?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}${if (rentHours != 0) "&rentHours=$rentHours" else ""}"
+                ) {
+                    headers["Authorization"] = "Bearer $token"
+                }.body<DefaultResponse>()
+
+                if (response.status_code != 200) {
+                    AlertDialog.Builder(context)
+                        .setMessage(response.message)
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                } else {
+                    mainViewModel.updateChecking(false)
+                    if (mainState.lastSelectedRate!!.parkingPrice == mainState.lastSelectedRate!!.onRoadPrice) {
+                        mainViewModel.updateIsFixed(true)
+                    }
+                    mainViewModel.updatePage("rentPage")
+                }
+            }
         }
     }
 }

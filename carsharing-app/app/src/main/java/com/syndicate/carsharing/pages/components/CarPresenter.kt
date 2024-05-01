@@ -1,5 +1,10 @@
-package com.syndicate.carsharing.components
+package com.syndicate.carsharing.pages.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,69 +14,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
 import com.syndicate.carsharing.database.HttpClient
-import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
-import com.syndicate.carsharing.viewmodels.MainViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import com.syndicate.carsharing.shared_components.Loader
+
 
 @Composable
-fun ResultContent(
-    mainViewModel: MainViewModel
+fun CarPresenter(
+    transportInfo: Transport
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val mainState by mainViewModel.uiState.collectAsState()
-    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
-
-    mainViewModel.updateRenting(false)
-
-    LaunchedEffect(key1 = context) {
-        launch(Dispatchers.IO) {
-            val time = mainViewModel.userStore.getCheckingTime().first()
-            if (time / 60 > 5) {
-                mainState.stopwatchChecking.minutes = time / 60 - 5
-                mainState.stopwatchChecking.seconds = time % 60
-            }
-        }
-        mainViewModel.viewModelScope.launch {
-            mainState.timer.stop()
-        }
-    }
-
-    val isClosed = remember {
-        mutableStateOf(true)
-    }
-    Column (
-        modifier = Modifier
-            .padding(horizontal = 15.dp, vertical = 10.dp),
+    Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row (
@@ -80,7 +46,8 @@ fun ResultContent(
             modifier = Modifier.fillMaxWidth()
         ){
             Text(
-                text = transportInfo.carName
+                text = transportInfo.carName,
+                style = MaterialTheme.typography.titleMedium
             )
             Box(
                 modifier = Modifier
@@ -89,6 +56,7 @@ fun ResultContent(
                 Text(
                     modifier = Modifier
                         .padding(5.dp),
+                    style = MaterialTheme.typography.displayMedium,
                     text = "${transportInfo.carNumber[0]} ${transportInfo.carNumber.subSequence(1, 4)} ${transportInfo.carNumber.subSequence(4, 6)} ${transportInfo.carNumber.subSequence(6, transportInfo.carNumber.length)}"
                 )
             }
@@ -107,6 +75,7 @@ fun ResultContent(
                     contentDescription = null
                 )
                 Text(
+                    style = MaterialTheme.typography.displaySmall,
                     text = "${((transportInfo.gasLevel / (transportInfo.gasConsumption / 100.0))).toInt()} км • ${((transportInfo.gasLevel / transportInfo.tankCapacity.toDouble()) * 100).toInt()}%"
                 )
             }
@@ -119,6 +88,7 @@ fun ResultContent(
                     contentDescription = null
                 )
                 Text(
+                    style = MaterialTheme.typography.displaySmall,
                     text = when (transportInfo.transportType) {
                         "BASE" -> "Базовый"
                         "COMFORT" -> "Комфорт"
@@ -136,62 +106,35 @@ fun ResultContent(
                     contentDescription = null
                 )
                 Text(
+                    style = MaterialTheme.typography.displaySmall,
                     text = transportInfo.insuranceType
                 )
             }
         }
+
         SubcomposeAsyncImage(
             model = "${HttpClient.url}/transport/get/image?name=${transportInfo.carImagePath}",
             contentDescription = null,
             contentScale = ContentScale.FillWidth,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth()
         ) {
             val state = painter.state
-            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
-                Loader()
-            } else {
-                SubcomposeAsyncImageContent()
+            AnimatedContent(
+                targetState = state,
+                transitionSpec = {
+                    fadeIn(
+                        animationSpec = tween(2000)
+                    ) togetherWith fadeOut(animationSpec = tween(2000))
+                }, label = ""
+
+            ) {
+                if (it is AsyncImagePainter.State.Loading || it is AsyncImagePainter.State.Error) {
+                    Loader()
+                } else {
+                    SubcomposeAsyncImageContent()
+                }
             }
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Время в пути")
-            Text(text = mainState.stopwatchOnRoad.toString())
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Время ожидания")
-            Text(text = mainState.stopwatchOnParking.toString())
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Платный осмотр")
-            Text(text = mainState.stopwatchChecking.toString())
-        }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Text(text = "Итого")
-            Text(text = "${String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice * 
-                    (mainState.stopwatchOnRoad.minutes + (if (mainState.stopwatchOnRoad.minutes > 0 || mainState.stopwatchOnRoad.seconds > 0) 1 else 0)) 
-                    + mainState.lastSelectedRate!!.parkingPrice * (mainState.stopwatchOnParking.minutes + (if (mainState.stopwatchOnParking.minutes > 0 || mainState.stopwatchOnParking.seconds > 0) 1 else 0))
-                + 10 * (if (mainState.stopwatchChecking.minutes > 0 || mainState.stopwatchChecking.seconds > 0) mainState.stopwatchChecking.minutes + 1 else 0)
-            )} Р")
+
         }
     }
 }

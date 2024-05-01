@@ -1,9 +1,10 @@
-package com.syndicate.carsharing.components
+package com.syndicate.carsharing.pages
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +47,19 @@ fun MainMenuContent(
             .padding(horizontal = 15.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
+        Box(modifier = Modifier
+            .fillMaxWidth()) {
+            Spacer(
+                modifier = Modifier
+                    .width(30.dp)
+                    .height(4.dp)
+                    .background(
+                        Color(0xFFB5B5B5),
+                        shape = CircleShape
+                    )
+                    .align(Alignment.Center)
+            )
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -67,14 +82,12 @@ fun MainMenuContent(
             ) {
                 Text(
                     text = "email@gmail.com",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF5B5B5B)
                 )
                 Text(
                     text = "Рейтинг 75 баллов",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.displaySmall,
                     color = Color(0xFF6699CC)
                 )
             }
@@ -89,8 +102,7 @@ fun MainMenuContent(
         HorizontalDivider()
         Text(
             text = "Правила и соглашения",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.displayMedium,
             color = Color(0xFF5B5B5B),
             modifier = Modifier
                 .fillMaxWidth()
@@ -100,8 +112,7 @@ fun MainMenuContent(
         HorizontalDivider()
         Text(
             text = "Выбор темы",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.displayMedium,
             color = Color(0xFF5B5B5B),
             modifier = Modifier
                 .fillMaxWidth()
@@ -111,8 +122,7 @@ fun MainMenuContent(
         HorizontalDivider()
         Text(
             text = "Поддержка",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.displayMedium,
             color = Color(0xFF5B5B5B),
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,8 +136,7 @@ fun MainMenuContent(
                 .padding(top = 75.dp),
             text = "AutoShare",
             textAlign = TextAlign.Center,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.titleMedium,
             color = Color(0xFF6699CC)
         )
     }

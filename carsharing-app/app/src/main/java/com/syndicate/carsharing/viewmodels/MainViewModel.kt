@@ -3,54 +3,44 @@ package com.syndicate.carsharing.viewmodels
 import android.util.Log
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.syndicate.carsharing.MainActivity
-import com.syndicate.carsharing.R
 import com.syndicate.carsharing.UserStore
-import com.syndicate.carsharing.data.Stopwatch
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
-import com.syndicate.carsharing.data.Timer
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.Function
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
+import com.syndicate.carsharing.database.models.TransportLog
 import com.yandex.mapkit.RequestPoint
-import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CircleMapObject
-import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
-import com.yandex.mapkit.map.PolylineMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.masstransit.PedestrianRouter
 import com.yandex.mapkit.transport.masstransit.Route
 import com.yandex.mapkit.transport.masstransit.Session
 import com.yandex.mapkit.transport.masstransit.TimeOptions
-import com.yandex.runtime.image.ImageProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.ktor.client.call.body
-import io.ktor.client.request.parameter
+import io.ktor.client.request.get
 import io.ktor.client.request.request
-import io.ktor.client.statement.request
 import io.ktor.http.HttpMethod
-import io.ktor.http.parameters
-import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
-import javax.inject.Singleton
 
 @OptIn(ExperimentalMaterialApi::class)
 @HiltViewModel
@@ -92,12 +82,7 @@ class MainViewModel @Inject constructor(
         }
 
         override fun onMasstransitRoutesError(p0: com.yandex.runtime.Error) {
-
         }
-    }
-
-    init {
-        fillTags()
     }
 
     fun updateFiltered(isFiltered: Boolean) {
@@ -126,32 +111,6 @@ class MainViewModel @Inject constructor(
             )
         }
     }
-
-    /*fun updateSheetState(sheetState: ModalBottomSheetState, scope: CoroutineScope) {
-        _sheetState.update {
-            sheetState
-        }
-        _tapListener.update {
-            MapObjectTapListener { placemark, point: Point ->
-                updateLastSelectedPlacemark(placemark as PlacemarkMapObject)
-                updatePoints(1, RequestPoint(point, RequestPointType.WAYPOINT, null, null))
-
-                if (isReserving.value)
-                    updatePage("reservationPage")
-                else if (isChecking.value)
-                    updatePage("checkPage")
-                else if (isRenting.value)
-                    updatePage("rentPage")
-                else
-                    updatePage("car")
-
-                scope.launch {
-                    sheetState.show()
-                }
-                true
-            }
-        }
-    }*/
 
     fun updateSelectedRate(rate: Rate) {
         viewModelScope.launch {
@@ -183,10 +142,10 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun updateSheetState(modalBottomSheetState: ModalBottomSheetState) {
+    fun updateSheetState(sheetState: ModalBottomSheetState) {
         _uiState.update {
             it.copy(
-                modalBottomSheetState = modalBottomSheetState
+                sheetState = sheetState
             )
         }
     }
@@ -202,24 +161,12 @@ class MainViewModel @Inject constructor(
     fun updateIsFixed(isFixed: Boolean) {
         if (!isFixed) {
             viewModelScope.launch {
-                userStore.saveRentHours(0)
+                userStore.saveRentHours(2)
             }
         }
         _uiState.update {
             it.copy(
                 isFixed = isFixed
-            )
-        }
-    }
-
-    fun updatePoints(index: Int, point: RequestPoint) {
-
-        val list = _uiState.value.points.toMutableList()
-        list[index] = point
-
-        _uiState.update {
-            it.copy(
-                points = list.toList()
             )
         }
     }
@@ -292,22 +239,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun updateCircle(circle: CircleMapObject?) {
-        _uiState.update {
-            it.copy(
-                circle = circle
-            )
-        }
-    }
-
-    /*fun updateScrim(color: Color) {
-        _uiState.update {
-            it.copy(
-                scrimColor = color
-            )
-        }
-    }*/
-
     fun updateRouter(router: PedestrianRouter) {
         _uiState.update {
             it.copy(
@@ -320,30 +251,6 @@ class MainViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 carType = carType
-            )
-        }
-    }
-
-    fun updateMem(mem: Float) {
-        _uiState.update {
-            it.copy(
-                mem = mem
-            )
-        }
-    }
-
-    fun updateIsGesturesEnabled(isGesturesEnabled: Boolean) {
-        _uiState.update {
-            it.copy(
-                isGesturesEnabled = isGesturesEnabled
-            )
-        }
-    }
-
-    fun updateWalkMinutes(walkMinutes: Int) {
-        _uiState.update {
-            it.copy(
-                walkMinutes = walkMinutes
             )
         }
     }
@@ -391,13 +298,32 @@ class MainViewModel @Inject constructor(
             .map { x -> x.tag }
 
         if (response.status.value == 200) {
-            val rate = userStore.getLastSelectedRate().first()
-            return response.body<List<Transport>>().filter { x ->
+            val token = userStore.getToken().first()
+            val lastAction = HttpClient.client.get(
+                "${HttpClient.url}/account/history/get"
+            ) {
+                headers["Authorization"] = "Bearer $token"
+            }.body<List<TransportLog>>()
+                .filter { x -> x.action != "UNLOCK" && x.action != "LOCK" && x.action != "BEEP" && x.action != "FLASH" }
+                .maxByOrNull { x -> x.id }
+            val visibleTransport = response.body<List<Transport>>().filter { x ->
                 ((if (_uiState.value.isFiltered) x.transportType == filterType && (if (selectedTags.isNotEmpty()) x.functions.map { y -> y.functionData }.intersect(
                     selectedTags.toSet()
                 ).isNotEmpty() else true) else true) && !x.isReserved && (!_uiState.value.isReserving && !_uiState.value.isRenting && !_uiState.value.isChecking)) ||
-                        (x.id == rate.transportId && rate.id != 0)
+                        (if (lastAction?.action == "RENT" || lastAction?.action == "RESERVE" || lastAction?.action == "CHECK") x.id == lastAction?.transportId else false)
             }
+
+            if (visibleTransport.size == 1) {
+                val rate = visibleTransport[0].rates.firstOrNull {
+                        x -> x.id == lastAction?.rateId
+                }
+                if (rate != null) {
+                    updateSelectedRate(rate)
+                    updateIsFixed(rate.onRoadPrice == rate.parkingPrice)
+                }
+            }
+
+            return visibleTransport
         }
 
         return listOf()

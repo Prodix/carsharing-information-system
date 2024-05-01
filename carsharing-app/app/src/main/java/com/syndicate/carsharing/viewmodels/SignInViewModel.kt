@@ -1,13 +1,20 @@
 package com.syndicate.carsharing.viewmodels
 
 import androidx.lifecycle.ViewModel
+import com.syndicate.carsharing.UserStore
 import com.syndicate.carsharing.models.SignInModel
 import com.syndicate.carsharing.models.SignUpModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
-class SignInViewModel : ViewModel() {
+@HiltViewModel
+class SignInViewModel @Inject constructor(
+    val userStore: UserStore,
+    val mainViewModel: MainViewModel
+) : ViewModel()  {
 
     private val _uiState = MutableStateFlow(SignInModel())
     val uiState = _uiState.asStateFlow()

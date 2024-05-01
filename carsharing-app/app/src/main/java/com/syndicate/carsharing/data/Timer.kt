@@ -113,7 +113,8 @@ class Timer {
             } else {
                 _seconds.value -= 1
             }
-            delay(1000L)
+            if (_isStarted.value)
+                delay(1000L)
         }
     }
 

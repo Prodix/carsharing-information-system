@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.shared_components.AutoShareButton
 
 
 @Composable
@@ -78,8 +81,6 @@ fun DocumentIntro(
         ActivityResultContracts.RequestPermission()
     ) { }
 
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -120,63 +121,46 @@ fun DocumentIntro(
                 if (isPassport) {
                     Text(
                         text = "Фото паспорта",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Для подтверждения личности вам нужно сделать фотографию паспорта в развёрнутом виде - страница с фотографией и регистрацией!",
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.displayMedium,
                     )
                 } else if (isSelfie) {
                     Text(
                         text = "Фото лица",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Это последнее фото, которое потребуется для верификации вашей личности и подтверждения того, что вы имеете право управлять транспортом",
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.displayMedium,
                     )
                 } else {
                     Text(
                         text = "Фото водительского удостоверения",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Также для подтверждения права на управление транспортом вам нужно сфотографировать страницу с фотографией водительского удостоверения",
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.displayMedium,
                     )
                 }
-
-                Button(
-                    onClick = {
-                        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-
-                            if (isPassport)
-                                navigation.navigate("camera/passport")
-                            else if (isSelfie)
-                                navigation.navigate("camera/selfie")
-                            else
-                                navigation.navigate("camera/license")
-                        } else {
-                            launcher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF6699CC)
-                    ),
-                    shape = RoundedCornerShape(15.dp)
+                AutoShareButton(
+                    text = "Сделать фото"
                 ) {
-                    Text(
-                        text = "Сделать фото",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+
+                        if (isPassport)
+                            navigation.navigate("camera/passport")
+                        else if (isSelfie)
+                            navigation.navigate("camera/selfie")
+                        else
+                            navigation.navigate("camera/license")
+                    } else {
+                        launcher.launch(Manifest.permission.CAMERA)
+                    }
                 }
             }
         }
