@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -45,7 +46,11 @@ public class AccountController : Controller
         _db.SaveChanges();
         
         var token = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+                ))
             .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Email == email && x.Password == password).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
         
@@ -74,9 +79,16 @@ public class AccountController : Controller
                 return new JsonResult(new { message = "Неверный код", status_code = 409 });
             
             var tokenForCode = JwtBuilder.Create()
-                .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+                .WithAlgorithm(new RS256Algorithm(
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                        ? new X509Certificate2("cert.pfx", "123")
+                        : GetCertificate("CN=CarsharingCert")
+                ))
                 .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(user), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
                 .Encode();
+
+            user.IsEmailVerified = true;
+            _db.SaveChanges();
             
             return new JsonResult(new { token = tokenForCode, message = "Успешный вход", status_code = 200 });
         }
@@ -94,7 +106,11 @@ public class AccountController : Controller
         }
 
         var token = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+            ))
             .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Email == email && x.Password == password).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
         
@@ -103,8 +119,15 @@ public class AccountController : Controller
     
     [HttpPost]
     [Route("/api/account/upload")]
-    public IActionResult UploadFile(string type, string token)
+    public IActionResult UploadFile(string type)
     {
+        var token = "";
+        
+        if (Request.Headers.ContainsKey("Authorization"))
+        {
+            token = Request.Headers.Authorization.ToString()[7..];
+        }
+        
         if (!VerifyToken(token))
         {
             return StatusCode(409);
@@ -186,16 +209,29 @@ public class AccountController : Controller
 
     [HttpPost]
     [Route("/api/account/generate_code")]
-    public IActionResult GenerateCode(string token)
+    public IActionResult GenerateCode(string? email)
     {
-        //TODO: Отправка на почту
-        if (!VerifyToken(token))
+        var token = "";
+
+        if (email == null)
         {
-            return new JsonResult(new { message = "Неверный токен", status_code = 409 });
+            if (Request.Headers.ContainsKey("Authorization"))
+            {
+                token = Request.Headers.Authorization.ToString()[7..];
+            }
+            
+            //TODO: Отправка на почту
+            if (!VerifyToken(token))
+            {
+                return new JsonResult(new { message = "Неверный токен", status_code = 409 });
+            }
         }
 
-        var user = DecryptToken(token);
+        var user = email == null ? DecryptToken(token) : _db.User.FirstOrDefault(x => x.Email == email);
 
+        if (user == null)
+            return new JsonResult(new { message = "Пользователь не существует", status_code = 409 });
+        
         if (_db.EmailCode.Any(x => x.UserId == user.Id))
         {
             var record = _db.EmailCode.Where(x => x.UserId == user.Id).ToList()[0];
@@ -248,12 +284,39 @@ public class AccountController : Controller
         return _db.User.Any(x => x.Email == user.Email && x.Password == user.Password);
     }
 
+    [HttpGet]
+    [Route("/api/account/rent_history/get")]
+    public IActionResult GetRentHistory()
+    {
+        if (!Request.Headers.ContainsKey("Authorization"))
+            return new JsonResult(new { message = "Неверный токен", status_code = 401 });
+
+        var token = Request.Headers.Authorization.ToString()[7..];
+
+        if (!VerifyToken(token))
+            return new JsonResult(new { message = "Неверный токен", status_code = 401 });
+
+        var user = DecryptToken(token);
+        
+        var history = _db.RentHistory.Where(x => x.UserId == user.Id).ToList();
+        
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(history),
+            ContentType = "application/json"
+        };
+    }
+
     private string RefreshToken(string oldToken)
     {
         var user = DecryptToken(oldToken);
         
         var newToken = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+            ))
             .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Id == user.Id).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
 
@@ -263,7 +326,11 @@ public class AccountController : Controller
     private User DecryptToken(string token)
     {
         var json = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+            ))
             .MustVerifySignature()
             .Decode(token);
 

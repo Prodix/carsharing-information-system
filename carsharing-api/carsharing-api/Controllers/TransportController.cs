@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using carsharing_api.Context;
 using carsharing_api.Entities;
@@ -660,7 +661,11 @@ public class TransportController : Controller
         var user = DecryptToken(oldToken);
         
         var newToken = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+            ))
             .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Id == user.Id).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
 
@@ -670,7 +675,11 @@ public class TransportController : Controller
     private User DecryptToken(string token)
     {
         var json = JwtBuilder.Create()
-            .WithAlgorithm(new RS256Algorithm(GetCertificate("CN=CarsharingCert")))
+            .WithAlgorithm(new RS256Algorithm(
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) 
+                    ? new X509Certificate2("cert.pfx", "123")
+                    : GetCertificate("CN=CarsharingCert")
+            ))
             .MustVerifySignature()
             .Decode(token);
 

@@ -18,4 +18,5 @@ public class User
     public int? DriverLicenseId { get; set; }
     public int? SelfieId { get; set; }
     public bool IsVerified { get; set; }
+    public bool IsEmailVerified { get; set; }
 }

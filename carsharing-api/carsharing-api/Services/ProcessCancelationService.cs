@@ -25,87 +25,94 @@ public class ProcessCancelationService : BackgroundService
             
         while (!stoppingToken.IsCancellationRequested)
         {
-            var logs = _db.TransportLog.ToList();
-
-            foreach (var userLogs in logs.GroupBy(x => x.UserId))
+            try
             {
-                var transportLogs = userLogs.OrderBy(x => x.Id).Reverse().ToList();
-                var time = _ntpClient.GetUtc();
-                if (transportLogs[0].Action is Action.RESERVE or Action.BEEP or Action.FLASH)
-                {
-                    foreach (var log in transportLogs)
-                    {
-                        if (log.Action is not Action.RESERVE) continue;
+                var logs = _db.TransportLog.ToList();
 
-                        if ((time - log.DateTime).Minutes >= 20)
+                foreach (var userLogs in logs.GroupBy(x => x.UserId))
+                {
+                    var transportLogs = userLogs.OrderBy(x => x.Id).Reverse().ToList();
+                    var time = _ntpClient.GetUtc();
+                    if (transportLogs[0].Action is Action.RESERVE or Action.BEEP or Action.FLASH)
+                    {
+                        foreach (var log in transportLogs)
                         {
-                            _db.TransportLog.Add(new TransportLog()
+                            if (log.Action is not Action.RESERVE) continue;
+
+                            if ((time - log.DateTime).Minutes >= 20)
                             {
-                                Action = Action.CANCEL_RESERVE,
-                                DateTime = log.DateTime.AddMinutes(20),
-                                RateId = log.RateId,
-                                TransportId = log.TransportId,
-                                UserId = log.UserId
-                            });
-                            await _db.SaveChangesAsync();
+                                _db.TransportLog.Add(new TransportLog()
+                                {
+                                    Action = Action.CANCEL_RESERVE,
+                                    DateTime = log.DateTime.AddMinutes(20),
+                                    RateId = log.RateId,
+                                    TransportId = log.TransportId,
+                                    UserId = log.UserId
+                                });
+                                await _db.SaveChangesAsync();
+                            }
+
+                            break;
                         }
-
-                        break;
+                    } 
+                    else if (transportLogs[0].Action is Action.CHECK && (time - transportLogs[0].DateTime).Minutes >= 35)
+                    {
+                        _db.TransportLog.Add(new TransportLog()
+                        {
+                            Action = Action.CANCEL_CHECK,
+                            DateTime = transportLogs[0].DateTime.AddMinutes(35),
+                            RateId = transportLogs[0].RateId,
+                            TransportId = transportLogs[0].TransportId,
+                            UserId = transportLogs[0].UserId
+                        });
+                        await _db.SaveChangesAsync();
                     }
-                } 
-                else if (transportLogs[0].Action is Action.CHECK && (time - transportLogs[0].DateTime).Minutes >= 35)
-                {
-                    _db.TransportLog.Add(new TransportLog()
+                    else if (transportLogs[0].Action is Action.UNLOCK or Action.LOCK or Action.RENT)
                     {
-                        Action = Action.CANCEL_CHECK,
-                        DateTime = transportLogs[0].DateTime.AddMinutes(35),
-                        RateId = transportLogs[0].RateId,
-                        TransportId = transportLogs[0].TransportId,
-                        UserId = transportLogs[0].UserId
-                    });
-                    await _db.SaveChangesAsync();
-                }
-                else if (transportLogs[0].Action is Action.UNLOCK or Action.LOCK or Action.RENT)
-                {
-                    var rate = _db.Rate.First(x => x.Id == transportLogs[0].RateId);
-                    
-                    if (rate.RateName != "Фикс") 
-                        continue;
-
-                    var lastRent = _db.RentHistory.Where(x => x.UserId == userLogs.Key)
-                        .ToList()
-                        .OrderBy(x => x.Id)
-                        .Reverse()
-                        .ToList()[0];
-
-                    var rentHours = lastRent.RentTime.Hours;
-                    
-                    foreach (var log in transportLogs)
-                    {
-                        if (log.Action is not Action.RENT) continue;
+                        var rate = _db.Rate.First(x => x.Id == transportLogs[0].RateId);
                         
-                        if ((time - log.DateTime).Hours >= rentHours)
+                        if (rate.RateName != "Фикс") 
+                            continue;
+
+                        var lastRent = _db.RentHistory.Where(x => x.UserId == userLogs.Key)
+                            .ToList()
+                            .OrderBy(x => x.Id)
+                            .Reverse()
+                            .ToList()[0];
+
+                        var rentHours = lastRent.RentTime.Hours;
+                        
+                        foreach (var log in transportLogs)
                         {
-                            _db.TransportLog.Add(new TransportLog()
+                            if (log.Action is not Action.RENT) continue;
+                            
+                            if ((time - log.DateTime).Hours >= rentHours)
                             {
-                                Action = Action.CANCEL_RENT,
-                                DateTime = log.DateTime.AddHours(rentHours),
-                                RateId = log.RateId,
-                                TransportId = log.TransportId,
-                                UserId = log.UserId
-                            });
+                                _db.TransportLog.Add(new TransportLog()
+                                {
+                                    Action = Action.CANCEL_RENT,
+                                    DateTime = log.DateTime.AddHours(rentHours),
+                                    RateId = log.RateId,
+                                    TransportId = log.TransportId,
+                                    UserId = log.UserId
+                                });
 
-                            var user = _db.User.First(x => x.Id == log.UserId);
-                            user.Balance -= lastRent.Price;
-                            
-                            _db.User.Update(user);
-                            
-                            await _db.SaveChangesAsync();
+                                var user = _db.User.First(x => x.Id == log.UserId);
+                                user.Balance -= lastRent.Price;
+                                
+                                _db.User.Update(user);
+                                
+                                await _db.SaveChangesAsync();
+                            }
+
+                            break;
                         }
-
-                        break;
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
 
             await Task.Delay(1000);
