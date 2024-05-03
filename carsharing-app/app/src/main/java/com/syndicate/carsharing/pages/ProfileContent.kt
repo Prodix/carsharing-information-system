@@ -22,6 +22,9 @@ import androidx.compose.material.Text
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +39,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import coil3.compose.AsyncImagePainter
+import coil3.compose.SubcomposeAsyncImage
+import coil3.compose.SubcomposeAsyncImageContent
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.User
 import com.syndicate.carsharing.modifiers.withShadow
+import com.syndicate.carsharing.shared_components.AutoShareButton
+import com.syndicate.carsharing.shared_components.Loader
 import com.syndicate.carsharing.utility.Shadow
 import com.syndicate.carsharing.viewmodels.MainViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 
 //TODO: Добавить стили и функциональность кнопок
@@ -47,10 +60,17 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 fun ProfileContent(
     mainViewModel: MainViewModel
 ) {
+    val user by mainViewModel.userStore.getUser().collectAsState(initial = User())
+
+    LaunchedEffect(key1 = Unit) {
+        while (user.id == 0)
+            delay(10)
+    }
+
     Column(
         modifier = Modifier
             .padding(horizontal = 15.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Box(modifier = Modifier
             .fillMaxWidth()) {
@@ -71,19 +91,26 @@ fun ProfileContent(
             modifier = Modifier
                 .padding(bottom = 10.dp)
         ) {
-            Image(
-                ImageBitmap.imageResource(id = R.drawable.driver_license),
+            SubcomposeAsyncImage(
+                model = "${HttpClient.url}/account/get/selfie/?id=${user.selfieId}",
                 contentDescription = null,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
+            ) {
+                val state = painter.state
+                if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                    Loader()
+                } else {
+                    SubcomposeAsyncImageContent()
+                }
+            }
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "email@gmail.com",
+                    text = user.email,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF5B5B5B)
                 )
@@ -93,83 +120,52 @@ fun ProfileContent(
                     color = Color(0xFF6699CC)
                 )
             }
-            Spacer(
-                modifier = Modifier
-                    .weight(1f)
-            )
-            Image(
-                imageVector = ImageVector.vectorResource(id = R.drawable.close),
-                contentDescription = null
-            )
         }
-        Row {
-            Image(
-                imageVector = ImageVector.vectorResource(R.drawable.phone), 
-                contentDescription = null
-            )
-            Text(text = "Введите номер телефона")
-        }
-        Row {
-            Image(
-                imageVector = ImageVector.vectorResource(R.drawable.email),
-                contentDescription = null
-            )
-            Text(text = "Введите электронную почту")
-        }
-        Box(
+        Box (
             modifier = Modifier
-                .fillMaxWidth()
-                .height(85.dp)
                 .withShadow(
                     shadow = Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
                     shape = RoundedCornerShape(10.dp)
                 )
-        ) {
-            Box (
+                .fillMaxWidth()
+                .height(85.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                    color = Color.White
+                )
+        ){
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        color = Color.White,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .clip(RoundedCornerShape(10.dp))
-            ){
-                Column(
-                    modifier = Modifier
-                        .padding(15.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ){
-                    Text(text = "Ваш баланс")
-                    Text(text = "10000, 94 ₽")
-                }
+                    .align(Alignment.BottomEnd)
+            ) {
                 Image(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd),
                     imageVector = ImageVector.vectorResource(R.drawable.background_triangles),
                     contentDescription = null
                 )
             }
-        }
-        Button(
-            modifier = Modifier
-                .fillMaxWidth(),
-            onClick = { /*TODO*/ }
-        ) {
-            Text(text = "Пополнить баланс")
+            Column(
+                modifier = Modifier
+                    .padding(15.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ){
+                Text(
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        color = Color(0xFFC2C2C2),
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    text = "Ваш баланс"
+                )
+                Text(
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = Color(0xFF6699CC)
+                    ),
+                    text = "${String.format("%.2f", user.balance)} ₽"
+                )
+            }
         }
         HorizontalDivider()
         Text(
             text = "История поездок",
-            style = MaterialTheme.typography.displayMedium,
-            color = Color(0xFF5B5B5B),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(25.dp)
-                .wrapContentHeight(align = Alignment.CenterVertically)
-        )
-        HorizontalDivider()
-        Text(
-            text = "Банковские карты",
             style = MaterialTheme.typography.displayMedium,
             color = Color(0xFF5B5B5B),
             modifier = Modifier
@@ -189,7 +185,7 @@ fun ProfileContent(
         )
         HorizontalDivider()
         Text(
-            text = "Рейтинг водителя",
+            text = "Правила и соглашения",
             style = MaterialTheme.typography.displayMedium,
             color = Color(0xFF5B5B5B),
             modifier = Modifier

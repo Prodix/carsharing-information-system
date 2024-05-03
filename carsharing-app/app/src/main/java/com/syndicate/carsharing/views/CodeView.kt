@@ -249,16 +249,17 @@ fun CodeComposable(
             }.body<DefaultResponse>()
             if (response.status_code == 200) {
                 userStore.saveToken(response.token as String)
-                if (userStore.getUser().first().driverLicenseId == 0) {
-                    navigation.navigate("documentIntro/false/false") {
-                        popUpTo(0)
-                    }
-                } else if (userStore.getUser().first().passportId == 0) {
+
+                if (userStore.getUser().first().passportId == 0) {
                     navigation.navigate("documentIntro/true/false") {
                         popUpTo(0)
                     }
                 } else if (userStore.getUser().first().selfieId == 0) {
                     navigation.navigate("documentIntro/false/true") {
+                        popUpTo(0)
+                    }
+                } else if (userStore.getUser().first().driverLicenseId == 0) {
+                    navigation.navigate("documentIntro/false/false") {
                         popUpTo(0)
                     }
                 } else {

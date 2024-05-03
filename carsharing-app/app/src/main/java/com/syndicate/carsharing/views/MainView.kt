@@ -6951,11 +6951,10 @@ fun Main(
                 .align(Alignment.TopStart),
             sheetState = mainState.sheetState!!
         ) {
-            Toast.makeText(context, "В разработке", Toast.LENGTH_SHORT).show()
-            /*mainViewModel.updatePage("mainMenu")
+            mainViewModel.updatePage("profile")
             scope.launch {
-                mainState.modalBottomSheetState!!.show()
-            }*/
+                mainState.sheetState!!.show()
+            }
         }
 
         Column(
@@ -7016,9 +7015,6 @@ fun Main(
 
     val bottomSheetPages: Map<String, @Composable () -> Unit> = mapOf(
         "filter" to { FilterCarsContent(
-            mainViewModel = mainViewModel
-        )},
-        "mainMenu" to { MainMenuContent(
             mainViewModel = mainViewModel
         )},
         "profile" to { ProfileContent(
