@@ -116,6 +116,15 @@ public class AccountController : Controller
         
         return new JsonResult(new { token, message = "Успешный вход", status_code = 200 });
     }
+
+    [HttpGet]
+    [Route("/api/account/get/selfie")]
+    public async Task GetSelfie(int id)
+    {
+        var selfieName = _db.Selfie.Where(x => x.Id == id).ToList()[0].Path;
+        Response.Headers.ContentDisposition = "attachment";
+        await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selfie", selfieName));
+    }
     
     [HttpPost]
     [Route("/api/account/upload")]
