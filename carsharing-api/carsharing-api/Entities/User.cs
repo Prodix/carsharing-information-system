@@ -19,4 +19,5 @@ public class User
     public int? SelfieId { get; set; }
     public bool IsVerified { get; set; }
     public bool IsEmailVerified { get; set; }
+    public int Rating { get; set; }
 }

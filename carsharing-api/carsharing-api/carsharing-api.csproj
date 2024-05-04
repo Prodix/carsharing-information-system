@@ -59,6 +59,14 @@
       <Content Include="damages\2_lpkokgh.jpg">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <None Remove="Pages\agreement.html" />
+      <Content Include="pages\agreement.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <None Remove="Pages\rules.html" />
+      <Content Include="pages\rules.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>
