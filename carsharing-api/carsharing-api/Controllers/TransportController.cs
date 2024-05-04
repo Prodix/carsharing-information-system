@@ -240,7 +240,8 @@ public class TransportController : Controller
                 UserId = user.Id,
                 RateId = rateId,
                 RentTime = TimeSpan.FromHours((double)rentHours!),
-                Price = rate.OnRoadPrice * (double)rentHours * 60
+                Price = rate.OnRoadPrice * (double)rentHours * 60,
+                Date = DateOnly.FromDateTime(_ntpClient.GetUtc())
             });
         }
 
@@ -384,7 +385,8 @@ public class TransportController : Controller
                 RateId = rateId,
                 UserId = user.Id,
                 RentTime = currentTime - rentRecord.DateTime,
-                Price = price
+                Price = price,
+                Date = DateOnly.FromDateTime(_ntpClient.GetUtc())
             });
 
             user.Balance -= price;

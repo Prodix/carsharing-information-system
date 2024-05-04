@@ -4,10 +4,8 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import com.fasterxml.jackson.datatype.jsr310.ser.OffsetDateTimeSerializer
-import com.syndicate.carsharing.json.DateDeserializer
+import com.syndicate.carsharing.json.DateTimeDeserializer
 import java.time.OffsetDateTime
 
 data class TransportLog (
@@ -17,7 +15,7 @@ data class TransportLog (
     @JsonProperty("Action") val action: String,
     @JsonProperty("DateTime")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
-    @JsonDeserialize(using = DateDeserializer::class)
+    @JsonDeserialize(using = DateTimeDeserializer::class)
     @JsonSerialize(using = OffsetDateTimeSerializer::class)
     val dateTime: OffsetDateTime,
     @JsonProperty("RateId") val rateId: Int

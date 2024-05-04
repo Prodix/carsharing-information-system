@@ -1,5 +1,6 @@
 package com.syndicate.carsharing.pages
 
+import android.os.Bundle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -174,7 +175,12 @@ fun ProfileContent(
             }
         }
         Column {
-            Column {
+            Column(
+                modifier = Modifier
+                    .clickable {
+                        navigation.navigate("history")
+                    }
+            ) {
                 HorizontalDivider()
                 Text(
                     text = "История поездок",

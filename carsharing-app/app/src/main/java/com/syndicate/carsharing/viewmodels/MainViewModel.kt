@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.location.LocationListener
 import com.syndicate.carsharing.UserStore
 import com.syndicate.carsharing.models.MainModel
 import com.syndicate.carsharing.data.Tag
@@ -18,6 +19,7 @@ import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.database.models.TransportLog
 import com.yandex.mapkit.RequestPoint
+import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.geometry.Polyline
 import com.yandex.mapkit.map.CircleMapObject

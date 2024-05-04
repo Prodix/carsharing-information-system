@@ -11,4 +11,5 @@ public class RentHistory
     public int RateId { get; set; }
     public TimeSpan RentTime { get; set; }
     public double Price { get; set; }
+    public DateOnly Date { get; set; }
 }

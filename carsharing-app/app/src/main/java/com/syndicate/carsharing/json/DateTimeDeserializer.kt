@@ -8,15 +8,13 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 
-class DateDeserializer(vc: Class<Any?>?) : StdDeserializer<OffsetDateTime>(vc) {
+class DateTimeDeserializer(vc: Class<Any?>?) : StdDeserializer<OffsetDateTime>(vc) {
 
     constructor() : this(null)
 
     override fun deserialize(p0: JsonParser?, p1: DeserializationContext?): OffsetDateTime {
 
-        var date = p0!!.getValueAsString("")
-
-        date += "T00:00:00"
+        val date = p0!!.getValueAsString("")
 
         return OffsetDateTime.parse(date, DateTimeFormatterBuilder()
             .parseCaseInsensitive()
