@@ -13,4 +13,5 @@ data class User(
     @JsonProperty("IsVerified") val isVerified: Boolean = false,
     @JsonProperty("IsEmailVerified") val isEmailVerified: Boolean = false,
     @JsonProperty("SelfieId") val selfieId: Int? = null,
+    @JsonProperty("Rating") val rating: Int = 30,
 )

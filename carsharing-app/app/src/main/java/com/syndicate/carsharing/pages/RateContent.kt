@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Text
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,12 +38,19 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.shared_components.AutoShareButton
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.TransportLog
+import com.syndicate.carsharing.fromUnixMilli
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.yandex.mapkit.RequestPoint
 import com.yandex.mapkit.RequestPointType
 import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.ktor.client.request.post
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.apache.commons.net.ntp.NTPUDPClient
+import java.net.InetAddress
 
 //TODO: Подгрузка инфы из базы
 
@@ -254,55 +261,83 @@ fun RateContent(
         AutoShareButton(
             text = "Забронировать"
         ) {
-            if (mainState.user.balance < 1000.0) {
-                AlertDialog.Builder(context)
-                    .setMessage("На вашем балансе должна быть минимум 1000 Рублей")
-                    .setPositiveButton("ok") { _, _ -> run { } }
-                    .show()
-                return@AutoShareButton
-            }
-            if (String.format(
-                    "%.2f",
-                    mainState.lastSelectedRate!!.parkingPrice
-                ) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)
-            ) {
-                if (mainState.user.balance < mainState.lastSelectedRate!!.parkingPrice * mainState.rentHours * 60) {
-                    AlertDialog.Builder(context)
-                        .setMessage("На вашем балансе недостаточно средств для аренды")
-                        .setPositiveButton("ok") { _, _ -> run { } }
-                        .show()
-                    return@AutoShareButton
-                }
-                mainViewModel.updateIsFixed(true)
-            } else {
-                mainViewModel.updateIsFixed(false)
-            }
-            mainViewModel.updateSession(
-                mainState.pedestrianRouter?.requestRoutes(
-                    listOf(
-                        RequestPoint(mainState.currentLocation, RequestPointType.WAYPOINT, null, null),
-                        RequestPoint(mainState.lastSelectedPlacemark!!.geometry, RequestPointType.WAYPOINT, null, null),
-                    ),
-                    mainViewModel.options,
-                    true,
-                    mainViewModel.routeListener
-                )
-            )
-            scope.launch {
-                val response = HttpClient.client.post(
-                    "${HttpClient.url}/transport/reserve?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
-                ) {
-                    headers["Authorization"] = "Bearer ${mainState.token}"
-                }.body<DefaultResponse>()
+             scope.launch(Dispatchers.IO) outer@ {
+                val token = mainViewModel.userStore.getToken().first()
+                val user = mainViewModel.userStore.getUser().first()
+                val currentTime = NTPUDPClient().getTime(InetAddress.getByName("time.google.com")).returnTime
+                scope.launch inner@ {
 
-                if (response.status_code != 200) {
-                    AlertDialog.Builder(context)
-                        .setMessage(response.message)
-                        .setPositiveButton("ok") { _, _ -> run { } }
-                        .show()
-                } else {
-                    mainViewModel.updateReserving(true)
-                    mainViewModel.updatePage("reservationPage")
+                    val lastActionTime = HttpClient.client.get(
+                        "${HttpClient.url}/account/history/get"
+                    ) {
+                        headers["Authorization"] = "Bearer $token"
+                    }.body<List<TransportLog>>().filter { x ->
+                        x.userId == user.id
+                    }.maxBy { x -> x.id }.dateTime
+                    if (fromUnixMilli(currentTime).toEpochSecond() - lastActionTime.toEpochSecond() < 30 * 60) {
+                        AlertDialog.Builder(context)
+                            .setMessage("Арендовать автомобиль можно раз в 30 минут")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@inner
+                    }
+
+                    if (mainState.user.balance < 1000.0) {
+                        AlertDialog.Builder(context)
+                            .setMessage("На вашем балансе должна быть минимум 1000 Рублей")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@inner
+                    }
+                    if (!mainState.user.isVerified) {
+                        AlertDialog.Builder(context)
+                            .setMessage("Ваш аккаунт не верифицирован")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@inner
+                    }
+                    if (String.format(
+                            "%.2f",
+                            mainState.lastSelectedRate!!.parkingPrice
+                        ) == String.format("%.2f", mainState.lastSelectedRate!!.onRoadPrice)
+                    ) {
+                        if (mainState.user.balance < mainState.lastSelectedRate!!.parkingPrice * mainState.rentHours * 60) {
+                            AlertDialog.Builder(context)
+                                .setMessage("На вашем балансе недостаточно средств для аренды")
+                                .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                            return@inner
+                        }
+                        mainViewModel.updateIsFixed(true)
+                    } else {
+                        mainViewModel.updateIsFixed(false)
+                    }
+                    mainViewModel.updateSession(
+                        mainState.pedestrianRouter?.requestRoutes(
+                            listOf(
+                                RequestPoint(mainState.currentLocation, RequestPointType.WAYPOINT, null, null),
+                                RequestPoint(mainState.lastSelectedPlacemark!!.geometry, RequestPointType.WAYPOINT, null, null),
+                            ),
+                            mainViewModel.options,
+                            true,
+                            mainViewModel.routeListener
+                        )
+                    )
+                    val response = HttpClient.client.post(
+                        "${HttpClient.url}/transport/reserve?transportId=${mainState.lastSelectedRate!!.transportId}&rateId=${mainState.lastSelectedRate!!.id}"
+                    ) {
+                        headers["Authorization"] = "Bearer ${mainState.token}"
+                    }.body<DefaultResponse>()
+
+                    if (response.status_code != 200) {
+                        AlertDialog.Builder(context)
+                            .setMessage(response.message)
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                    } else {
+                        mainViewModel.updateReserving(true)
+                        mainViewModel.updatePage("reservationPage")
+                    }
                 }
             }
         }

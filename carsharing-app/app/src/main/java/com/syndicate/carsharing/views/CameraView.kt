@@ -21,8 +21,12 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -74,6 +78,7 @@ import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Camera(
     fileName: String,
@@ -127,7 +132,12 @@ fun Camera(
         )
         Box(
             modifier = Modifier
-                .padding(30.dp)
+                .padding(
+                    top = 30.dp,
+                    start = 30.dp,
+                    end = 30.dp,
+                    bottom = 30.dp + WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
+                )
                 .align(Alignment.BottomCenter)
         ) {
             Box(

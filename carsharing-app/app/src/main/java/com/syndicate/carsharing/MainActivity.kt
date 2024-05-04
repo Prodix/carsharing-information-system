@@ -5,14 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.rememberModalBottomSheetState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,12 +33,11 @@ import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.Document
 import com.syndicate.carsharing.views.DocumentIntro
 import com.syndicate.carsharing.views.PermissionView
+import com.syndicate.carsharing.views.WebView
 import com.syndicate.carsharing.views.SignIn
 import com.syndicate.carsharing.views.SignUp
 import com.syndicate.carsharing.views.SplashScreen
 import com.yandex.mapkit.MapKitFactory
-import com.yandex.mapkit.RequestPoint
-import com.yandex.mapkit.RequestPointType
 import com.yandex.mapkit.geometry.Point
 import com.yandex.mapkit.map.MapObjectTapListener
 import com.yandex.mapkit.map.PlacemarkMapObject
@@ -132,6 +128,17 @@ fun CarsharingApp(
                 navController = navController,
                 startDestination = "splash"
             ) {
+                composable(
+                    "web/{endpoint}",
+                    arguments = listOf(
+                        navArgument("endpoint") { type = NavType.StringType }
+                    )
+                ) {
+                    WebView(
+                        navigation = navController,
+                        documentName = it.arguments?.getString("endpoint") ?: "rules"
+                    )
+                }
                 composable("splash") {
                     SplashScreen(
                         navigateToDestination = {

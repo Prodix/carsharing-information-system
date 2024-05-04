@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -253,13 +254,16 @@ fun CheckContent(
         }
         Text(
             style = MaterialTheme.typography.displayMedium,
-            text = "Если вы не обнаружили новые повреждения и ознакомились с правилами пользователя, то можно отправляться в путь",
+            text = "Если вы осмотрели автомобиль и ознакомились с правилами пользователя, то можно отправляться в путь",
             modifier = Modifier
                 .fillMaxWidth()
         )
         BasicText(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    navigation.navigate("web/rules")
+                },
             text = buildAnnotatedString {
                 withStyle(
                     style = MaterialTheme.typography.displayMedium.toSpanStyle()

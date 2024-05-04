@@ -14,6 +14,7 @@ import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
@@ -41,15 +42,13 @@ fun IconButton(
                 ),
             RoundedCornerShape(10.dp)
         )
-        .background(Color.White, RoundedCornerShape(10.dp))
+        .clip(RoundedCornerShape(10.dp))
+        .background(Color.White)
+        .clickable {
+            onClick()
+        }
         .alpha(1f)
-            .padding(10.dp)
-            .clickable(
-                interactionSource = MutableInteractionSource(),
-                indication = null
-            ) {
-                onClick()
-            }
+        .padding(10.dp)
     ) {
         content()
     }

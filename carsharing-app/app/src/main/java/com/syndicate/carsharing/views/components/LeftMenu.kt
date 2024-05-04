@@ -14,6 +14,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
@@ -48,11 +49,12 @@ fun LeftMenu(
                 ),
                 RoundedCornerShape(10.dp)
             )
-            .background(Color.White, RoundedCornerShape(10.dp))
-            .padding(10.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White)
             .clickable {
                 onClick()
             }
+            .padding(10.dp)
     ) {
         Image(imageVector = ImageVector.vectorResource(id = R.drawable.profileicon), contentDescription = null)
     }

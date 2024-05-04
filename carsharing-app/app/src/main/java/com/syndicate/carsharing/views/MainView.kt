@@ -7,10 +7,12 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Environment
+import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,7 +53,6 @@ import com.syndicate.carsharing.pages.CarContent
 import com.syndicate.carsharing.pages.CheckContent
 import com.syndicate.carsharing.pages.FilterCarsContent
 import com.syndicate.carsharing.views.components.LeftMenu
-import com.syndicate.carsharing.pages.MainMenuContent
 import com.syndicate.carsharing.pages.ProfileContent
 import com.syndicate.carsharing.pages.RateContent
 import com.syndicate.carsharing.pages.RentContent
@@ -6945,7 +6946,9 @@ fun Main(
         LeftMenu(
             modifier = Modifier
                 .padding(
-                    top = 16.dp + WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding(),
+                    top = 16.dp + WindowInsets.statusBarsIgnoringVisibility
+                        .asPaddingValues()
+                        .calculateTopPadding(),
                     start = 16.dp
                 )
                 .align(Alignment.TopStart),
@@ -7018,7 +7021,8 @@ fun Main(
             mainViewModel = mainViewModel
         )},
         "profile" to { ProfileContent(
-            mainViewModel = mainViewModel
+            mainViewModel = mainViewModel,
+            navigation = navigation
         )},
         "car" to { CarContent(
             mainViewModel = mainViewModel

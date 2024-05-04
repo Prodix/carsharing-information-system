@@ -10,11 +10,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,6 +62,7 @@ import java.io.File
 import java.util.Date
 import kotlin.random.Random
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Document(
     fileName: String,
@@ -75,6 +81,9 @@ fun Document(
     Box(
         modifier = Modifier
             .background(Color(0xFFF9F9FB))
+            .padding(
+                top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding()
+            )
     ) {
         Image(
             bitmap = Bitmap.createBitmap(image, 0, 0, image.width, image.height, matrix, true).asImageBitmap(),
@@ -92,7 +101,12 @@ fun Document(
                     ambientColor = Color(0x336699CC)
                 )
                 .background(Color.White, RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp))
-                .padding(15.dp, 20.dp)
+                .padding(
+                    top = 20.dp,
+                    start = 15.dp,
+                    end = 15.dp,
+                    bottom = 20.dp + WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
+                )
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.spacedBy(15.dp)

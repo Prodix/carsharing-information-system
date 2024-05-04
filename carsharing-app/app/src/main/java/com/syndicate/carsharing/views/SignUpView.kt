@@ -18,22 +18,27 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imeNestedScroll
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -61,10 +66,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
@@ -99,6 +108,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+@OptIn(ExperimentalLayoutApi::class)
 @SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun SignUp(
@@ -106,22 +116,19 @@ fun SignUp(
     signUpViewModel: SignUpViewModel = hiltViewModel()
 ) {
     val signUpState by signUpViewModel.uiState.collectAsState()
-    val imeState = rememberImeState()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val userStore = signUpViewModel.userStore
 
-    LaunchedEffect(key1 = imeState.value) {
-        if (imeState.value){
-            scrollState.scrollTo(scrollState.maxValue)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(
+                top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding(),
+                bottom = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding()
+            )
             .verticalScroll(scrollState)
     ) {
         Image(
@@ -211,6 +218,35 @@ fun SignUp(
                 modifier = Modifier
                     .size(16.dp)
             )
+            BasicText(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        navigation.navigate("web/agreement")
+                    },
+                text = buildAnnotatedString {
+                    pushStyle(ParagraphStyle(textAlign = TextAlign.Center))
+                    withStyle(
+                        style = MaterialTheme.typography.displaySmall.toSpanStyle()
+                    ) {
+                        append("Регистрируясь, вы принимаете ")
+                    }
+                    withStyle(
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            textDecoration = TextDecoration.Underline,
+                            fontWeight = FontWeight.Bold
+                        ).toSpanStyle().copy(
+                            color = Color(0xFF6699CC)
+                        )
+                    ) {
+                        append("пользовательское соглашение")
+                    }
+                }
+            )
+            Spacer(
+                modifier = Modifier
+                    .size(16.dp)
+            )
             AutoShareButton(
                 text = "Зарегистрироваться",
                 border = if (signUpState.emailNote == "" && signUpState.passwordNote == "" && signUpState.password != "" && signUpState.email != "") null else BorderStroke(2.dp, Color(0xFFB5B5B5)),
@@ -265,29 +301,7 @@ fun SignUp(
                     )
                 )
             }
-        }
-
-    }
-}
-
-@Composable
-fun rememberImeState(): State<Boolean> {
-    val imeState = remember {
-        mutableStateOf(false)
-    }
-
-    val view = LocalView.current
-    DisposableEffect(view) {
-        val listener = ViewTreeObserver.OnGlobalLayoutListener {
-            val isKeyboardOpen = ViewCompat.getRootWindowInsets(view)
-                ?.isVisible(WindowInsetsCompat.Type.ime()) ?: true
-            imeState.value = isKeyboardOpen
-        }
-
-        view.viewTreeObserver.addOnGlobalLayoutListener(listener)
-        onDispose {
-            view.viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.ime))
         }
     }
-    return imeState
 }

@@ -40,6 +40,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.ActivityNavigator
+import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
+import androidx.navigation.Navigator
 import coil3.compose.AsyncImagePainter
 import coil3.compose.SubcomposeAsyncImage
 import coil3.compose.SubcomposeAsyncImageContent
@@ -55,16 +60,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 
-//TODO: Добавить стили и функциональность кнопок
 @Composable
 fun ProfileContent(
-    mainViewModel: MainViewModel
+    mainViewModel: MainViewModel,
+    navigation: NavHostController
 ) {
     val user by mainViewModel.userStore.getUser().collectAsState(initial = User())
 
     LaunchedEffect(key1 = Unit) {
         while (user.id == 0)
-            delay(10)
+            delay(100)
     }
 
     Column(
@@ -115,7 +120,12 @@ fun ProfileContent(
                     color = Color(0xFF5B5B5B)
                 )
                 Text(
-                    text = "Рейтинг 75 баллов",
+                    text = "Рейтинг ${user.rating} ${when {
+                        user.rating in 5..20 -> "баллов"
+                        user.rating % 10 == 1 -> "балл"
+                        user.rating % 10 in (2..4) -> "балла"
+                        else -> "баллов"
+                    }}",
                     style = MaterialTheme.typography.displaySmall,
                     color = Color(0xFF6699CC)
                 )
@@ -163,37 +173,71 @@ fun ProfileContent(
                 )
             }
         }
-        HorizontalDivider()
-        Text(
-            text = "История поездок",
-            style = MaterialTheme.typography.displayMedium,
-            color = Color(0xFF5B5B5B),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(25.dp)
-                .wrapContentHeight(align = Alignment.CenterVertically)
-        )
-        HorizontalDivider()
-        Text(
-            text = "Штрафы",
-            style = MaterialTheme.typography.displayMedium,
-            color = Color(0xFF5B5B5B),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(25.dp)
-                .wrapContentHeight(align = Alignment.CenterVertically)
-        )
-        HorizontalDivider()
-        Text(
-            text = "Правила и соглашения",
-            style = MaterialTheme.typography.displayMedium,
-            color = Color(0xFF5B5B5B),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(25.dp)
-                .wrapContentHeight(align = Alignment.CenterVertically)
-        )
-        HorizontalDivider()
+        Column {
+            Column {
+                HorizontalDivider()
+                Text(
+                    text = "История поездок",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = Color(0xFF5B5B5B),
+                    modifier = Modifier
+                        .padding(vertical = 20.dp)
+                        .fillMaxWidth()
+                        .height(25.dp)
+                        .wrapContentHeight(align = Alignment.CenterVertically)
+                )
+                HorizontalDivider()
+            }
+            Column {
+                Text(
+                    text = "Штрафы",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = Color(0xFF5B5B5B),
+                    modifier = Modifier
+                        .padding(vertical = 20.dp)
+                        .fillMaxWidth()
+                        .height(25.dp)
+                        .wrapContentHeight(align = Alignment.CenterVertically)
+                )
+                HorizontalDivider()
+            }
+            Column(
+                modifier = Modifier
+                    .clickable {
+                        navigation.navigate("web/agreement")
+                    }
+            ) {
+                Text(
+                    text = "Пользовательское соглашение",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = Color(0xFF5B5B5B),
+                    modifier = Modifier
+                        .padding(vertical = 20.dp)
+                        .fillMaxWidth()
+                        .height(25.dp)
+                        .wrapContentHeight(align = Alignment.CenterVertically)
+                )
+                HorizontalDivider()
+            }
+            Column(
+                modifier = Modifier
+                    .clickable {
+                        navigation.navigate("web/rules")
+                    }
+            ) {
+                Text(
+                    text = "Правила использования",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = Color(0xFF5B5B5B),
+                    modifier = Modifier
+                        .padding(vertical = 20.dp)
+                        .fillMaxWidth()
+                        .height(25.dp)
+                        .wrapContentHeight(align = Alignment.CenterVertically)
+                )
+                HorizontalDivider()
+            }
+        }
         Text(
             modifier = Modifier
                 .fillMaxWidth()

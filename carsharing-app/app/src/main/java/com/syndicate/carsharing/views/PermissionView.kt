@@ -4,9 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.shared_components.AutoShareButton
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PermissionView(
     navigation: NavHostController
@@ -25,7 +31,12 @@ fun PermissionView(
     Box(
         modifier = Modifier
             .background(Color.White)
-            .padding(20.dp)
+            .padding(
+                top = WindowInsets.statusBarsIgnoringVisibility.asPaddingValues().calculateTopPadding(),
+                bottom = WindowInsets.navigationBarsIgnoringVisibility.asPaddingValues().calculateBottomPadding(),
+                start = 20.dp,
+                end = 20.dp
+            )
             .fillMaxSize()
     ) {
         Column(
