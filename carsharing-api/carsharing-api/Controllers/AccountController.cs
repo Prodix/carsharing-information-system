@@ -22,6 +22,38 @@ public class AccountController : Controller
     {
         _db = db;
     }
+    
+    [HttpGet]
+    [Route("/api/account/penalty/get")]
+    public IActionResult GetPenalty(int id)
+    {
+        var penaltyList = _db.Penalty.ToList().Where(x => x.UserId == id).OrderBy(x => x.IsPaid);
+        
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(penaltyList),
+            ContentType = "application/json"
+        };
+    }
+    
+    [HttpPost]
+    [Route("/api/account/penalty/pay")]
+    public IActionResult PayPenalty(int id)
+    {
+        var penalty = _db.Penalty.FirstOrDefault(x => x.Id == id);
+        var user = _db.User.FirstOrDefault(x => x.Id == penalty.UserId);
+
+        if (user.Balance < penalty.Price)
+        {
+            return new JsonResult(new { message = "Недостаточно средств", status_code = 400 });
+        }
+        
+        user.Balance -= penalty.Price;
+        penalty.IsPaid = true;
+        _db.SaveChanges();
+        
+        return new JsonResult(new { message = "Штраф успешно оплачен", status_code = 200 });
+    }
 
     [HttpPost]
     [Route("/api/account/signup")]

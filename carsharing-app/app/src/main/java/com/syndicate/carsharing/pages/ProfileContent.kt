@@ -194,7 +194,12 @@ fun ProfileContent(
                 )
                 HorizontalDivider()
             }
-            Column {
+            Column(
+                modifier = Modifier
+                    .clickable {
+                        navigation.navigate("penalty")
+                    }
+            ) {
                 Text(
                     text = "Штрафы",
                     style = MaterialTheme.typography.displayMedium,

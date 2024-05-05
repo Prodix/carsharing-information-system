@@ -38,6 +38,7 @@ import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.Document
 import com.syndicate.carsharing.views.DocumentIntro
 import com.syndicate.carsharing.views.HistoryView
+import com.syndicate.carsharing.views.PenaltyView
 import com.syndicate.carsharing.views.PermissionView
 import com.syndicate.carsharing.views.WebView
 import com.syndicate.carsharing.views.SignIn
@@ -6806,6 +6807,11 @@ fun CarsharingApp(
                 }
                 composable("history") {
                     HistoryView(
+                        navigation = navController
+                    )
+                }
+                composable("penalty") {
+                    PenaltyView(
                         navigation = navController
                     )
                 }

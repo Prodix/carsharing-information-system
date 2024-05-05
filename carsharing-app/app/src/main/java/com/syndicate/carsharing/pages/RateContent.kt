@@ -38,6 +38,7 @@ import com.syndicate.carsharing.R
 import com.syndicate.carsharing.shared_components.AutoShareButton
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.Penalty
 import com.syndicate.carsharing.database.models.TransportLog
 import com.syndicate.carsharing.fromUnixMilli
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -266,7 +267,6 @@ fun RateContent(
                 val user = mainViewModel.userStore.getUser().first()
                 val currentTime = NTPUDPClient().getTime(InetAddress.getByName("time.google.com")).returnTime
                 scope.launch inner@ {
-
                     val lastActionTime = HttpClient.client.get(
                         "${HttpClient.url}/account/history/get"
                     ) {
@@ -282,16 +282,30 @@ fun RateContent(
                         return@inner
                     }
 
-                    if (mainState.user.balance < 1000.0) {
+                    if (!mainState.user.isVerified) {
                         AlertDialog.Builder(context)
-                            .setMessage("На вашем балансе должна быть минимум 1000 Рублей")
+                            .setMessage("Ваш аккаунт не верифицирован")
                             .setPositiveButton("ok") { _, _ -> run { } }
                             .show()
                         return@inner
                     }
-                    if (!mainState.user.isVerified) {
+
+                    val penalty = HttpClient.client.get(
+                        "${HttpClient.url}/account/penalty/get?id=${user.id}"
+                    ) {
+                        headers["Authorization"] = "Bearer $token"
+                    }.body<List<Penalty>>().filter { x -> !x.isPaid }
+
+                    if (penalty.isNotEmpty()) {
                         AlertDialog.Builder(context)
-                            .setMessage("Ваш аккаунт не верифицирован")
+                            .setMessage("У вас есть неоплаченные штрафы")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@inner
+                    }
+                    if (mainState.user.balance < 1000.0) {
+                        AlertDialog.Builder(context)
+                            .setMessage("На вашем балансе должна быть минимум 1000 Рублей")
                             .setPositiveButton("ok") { _, _ -> run { } }
                             .show()
                         return@inner

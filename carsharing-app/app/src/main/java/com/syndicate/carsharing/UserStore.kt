@@ -57,6 +57,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
         val TOKEN = stringPreferencesKey("token")
         val RESERVING = booleanPreferencesKey("is_reserving")
         val CHECKING = booleanPreferencesKey("is_checking")
+        val RATING = intPreferencesKey("rating")
         val CHECKING_TIME = intPreferencesKey("checking_time")
         val RENTING = booleanPreferencesKey("is_renting")
         val LAST_RATE = stringPreferencesKey("last_rate")
@@ -179,7 +180,8 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
                 balance = preferences[BALANCE] ?: 0.0,
                 isVerified = preferences[IS_VERIFIED] ?: false,
                 isEmailVerified = preferences[IS_EMAIL_VERIFIED] ?: false,
-                selfieId = preferences[SELFIE_ID] ?: 0
+                selfieId = preferences[SELFIE_ID] ?: 0,
+                rating = preferences[RATING] ?: 0,
             )
         }
     }
@@ -219,6 +221,7 @@ class UserStore @Inject constructor(@ApplicationContext private val context: Con
                 preferences[IS_VERIFIED] = user.isVerified
                 preferences[IS_EMAIL_VERIFIED] = user.isEmailVerified
                 preferences[SELFIE_ID] = user.selfieId ?: 0
+                preferences[RATING] = user.rating ?: 0
             }
         }
     }
