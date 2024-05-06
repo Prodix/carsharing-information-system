@@ -90,7 +90,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("io.coil-kt.coil3:coil-compose:3.0.0-alpha06")
-    implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("io.github.nefilim.kjwt:kjwt-core:0.9.0")
     implementation("io.coil-kt.coil3:coil-network-ktor:3.0.0-alpha06")
     implementation("androidx.compose.material:material:1.6.1")
