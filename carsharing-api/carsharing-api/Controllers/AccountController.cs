@@ -24,6 +24,53 @@ public class AccountController : Controller
     }
     
     [HttpGet]
+    [Route("/api/account/card/get")]
+    public IActionResult GetCards(int id)
+    {
+        var cardList = _db.Card.ToList().Where(x => x.UserId == id);
+        
+        return new ContentResult()
+        {
+            Content = JsonConvert.SerializeObject(cardList),
+            ContentType = "application/json"
+        };
+    }
+    
+    [HttpPost]
+    [Route("/api/account/card/add")]
+    public IActionResult AddCard(int userId, string cardNumber, string cvc, DateOnly expireDate)
+    {
+        if (expireDate < DateOnly.FromDateTime(DateTime.Now))
+            return new JsonResult(new { message = "Срок действия карты истек", status_code = 409 });
+        
+        var card = new Card
+        {
+            UserId = userId,
+            CardNumber = cardNumber,
+            Cvc = cvc,
+            ExpireDate = expireDate
+        };
+
+        _db.Card.Add(card);
+        _db.SaveChanges();
+        
+        return new JsonResult(new { message = "Карта успешно добавлена", status_code = 200 });
+    }
+    
+    [HttpPost]
+    [Route("/api/account/deposit")]
+    public IActionResult Deposit(int id, int amount)
+    {
+        var user = _db.User.First(x => x.Id == id);
+        user.Balance += amount;
+        
+        _db.User.Update(user);
+        _db.SaveChanges();
+        
+        return new JsonResult(new { message = "Баланс успешно пополнен", status_code = 200 });
+    }
+    
+    [HttpGet]
     [Route("/api/account/penalty/get")]
     public IActionResult GetPenalty(int id)
     {

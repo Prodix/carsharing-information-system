@@ -68,6 +68,7 @@ android {
 
 dependencies {
 
+    implementation("com.google.android.material:material:1.12.0")
     val camerax_version = "1.4.0-alpha03"
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")

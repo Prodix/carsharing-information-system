@@ -33,6 +33,7 @@ import com.google.android.gms.location.LocationServices
 import com.syndicate.carsharing.ui.theme.CarsharingTheme
 import com.syndicate.carsharing.viewmodels.MainViewModel
 import com.syndicate.carsharing.views.Camera
+import com.syndicate.carsharing.views.CardView
 import com.syndicate.carsharing.views.Code
 import com.syndicate.carsharing.views.Main
 import com.syndicate.carsharing.views.Document
@@ -6803,6 +6804,11 @@ fun CarsharingApp(
                     WebView(
                         navigation = navController,
                         documentName = it.arguments?.getString("endpoint") ?: "rules"
+                    )
+                }
+                composable("cards") {
+                    CardView(
+                        navigation = navController
                     )
                 }
                 composable("history") {

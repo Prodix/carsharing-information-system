@@ -138,6 +138,9 @@ fun ProfileContent(
                     shadow = Shadow(0.dp, 0.dp, 4.dp, Color(0x40000000)),
                     shape = RoundedCornerShape(10.dp)
                 )
+                .clickable {
+                    navigation.navigate("cards")
+                }
                 .fillMaxWidth()
                 .height(85.dp)
                 .clip(RoundedCornerShape(10.dp))

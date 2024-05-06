@@ -9,7 +9,7 @@ import io.ktor.serialization.jackson.jackson
 class HttpClient {
 
     companion object Client {
-        val url = "http://10.0.2.2:5052/api"
+        val url = "http://192.168.0.108:5052/api"
         val client = HttpClient(CIO) {
             install(ContentNegotiation) {
                 jackson()
