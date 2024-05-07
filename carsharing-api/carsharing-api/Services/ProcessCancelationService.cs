@@ -28,6 +28,18 @@ public class ProcessCancelationService : BackgroundService
             try
             {
                 var logs = _db.TransportLog.ToList();
+                var cards = _db.Card.ToList();
+
+                var date = DateOnly.FromDateTime(DateTime.UtcNow);
+                
+                foreach (var card in cards)
+                {
+                    if (card.ExpireDate.Month <= date.Month || card.ExpireDate.Year < date.Year)
+                    {
+                        _db.Card.Remove(card);
+                        await _db.SaveChangesAsync();
+                    }
+                }
 
                 foreach (var userLogs in logs.GroupBy(x => x.UserId))
                 {

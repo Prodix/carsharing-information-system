@@ -5,8 +5,6 @@ import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsIgnoringVisibility
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,10 +61,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.syndicate.carsharing.R
@@ -82,7 +77,6 @@ import io.ktor.client.request.post
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
@@ -117,6 +111,7 @@ fun CardView(
 
     LaunchedEffect(key1 = cardPagerState.currentPageOffsetFraction) {
         val offset = cardPagerState.getOffsetFractionForPage(cardPagerState.pageCount - 1)
+        Log.d("offset", "offset = $offset lastvalue = $lastValue")
         if (offset >= -1f) {
             if (offset > lastValue) {
                 val step = screenWidth * abs(abs(offset) - abs(lastValue)) / 2f
@@ -128,7 +123,7 @@ fun CardView(
                     textFieldPagerState.scrollBy(step)
             }
         }
-        lastValue = cardPagerState.getOffsetFractionForPage(cardPagerState.pageCount - 1)
+        lastValue = offset
     }
 
     Column(
@@ -189,8 +184,9 @@ fun CardView(
             beyondBoundsPageCount = 1
         ) {
             if (it == 1) {
-                TestContent(
-                    pagerState = textFieldPagerState,
+                AddCardContent(
+                    cardPager = cardPagerState,
+                    textFieldPager = textFieldPagerState,
                     cardState = cardState,
                     cardViewModel = cardViewModel
                 )
@@ -203,7 +199,7 @@ fun CardView(
                     OutlinedTextField(
                         value = cardState.money.toString(),
                         onValueChange = {
-                            cardViewModel.updateMoney(it.toInt())
+                            cardViewModel.updateMoney(if (it.isEmpty()) 0 else it.toInt())
                         },
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -239,6 +235,7 @@ fun CardView(
                                 .setMessage(response.message)
                                 .setPositiveButton("ok") { _, _ -> run { } }
                                 .show()
+                            cardViewModel.mainViewModel.updateUser()
                         }
                     }
                 }
@@ -249,11 +246,13 @@ fun CardView(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TestContent(
-    pagerState: PagerState,
+fun AddCardContent(
+    cardPager: PagerState,
+    textFieldPager: PagerState,
     cardState: CardModel,
     cardViewModel: CardViewModel
 ) {
+    val context = LocalContext.current
     var isOpen by remember {
         mutableStateOf(false)
     }
@@ -352,12 +351,25 @@ fun TestContent(
             scope.launch {
                 val user = cardViewModel.userStore.getUser().first()
                 val token = cardViewModel.userStore.getToken().first()
-                HttpClient.client.post(
+                val response = HttpClient.client.post(
                     "${HttpClient.url}/account/card/add?userId=${user.id}&cardNumber=${cardState.cardNumber}&cvc=${cardState.cvc}&expireDate=${cardState.expireDate.format(DateTimeFormatter.ISO_DATE)}"
                 ) {
                     headers["Authorization"] = "Bearer $token"
+                }.body<DefaultResponse>()
+                if (response.status_code != 200) {
+                    AlertDialog.Builder(context)
+                        .setMessage(response.message)
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                } else {
+                    AlertDialog.Builder(context)
+                        .setMessage(response.message)
+                        .setPositiveButton("ok") { _, _ -> run { } }
+                        .show()
+                    cardViewModel.updateCards()
+                    cardPager.scrollToPage(0)
+                    textFieldPager.scrollToPage(0)
                 }
-                pagerState.scrollToPage(0)
             }
         }
     }

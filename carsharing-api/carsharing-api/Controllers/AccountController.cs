@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 using carsharing_api.Context;
 using carsharing_api.Entities;
 using JWT.Algorithms;
@@ -38,23 +39,65 @@ public class AccountController : Controller
     
     [HttpPost]
     [Route("/api/account/card/add")]
-    public IActionResult AddCard(int userId, string cardNumber, string cvc, DateOnly expireDate)
+    public IActionResult AddCard(int userId, string? cardNumber, string? cvc, string? expireDate)
     {
-        if (expireDate < DateOnly.FromDateTime(DateTime.Now))
-            return new JsonResult(new { message = "Срок действия карты истек", status_code = 409 });
+        if (cardNumber == null || cvc == null || expireDate == null)
+            return new JsonResult(new { message = "Вы не ввели данные карты", status_code = 409 });
         
-        var card = new Card
-        {
-            UserId = userId,
-            CardNumber = cardNumber,
-            Cvc = cvc,
-            ExpireDate = expireDate
-        };
+        if (!Regex.IsMatch(cardNumber ?? "", @"^\d{16}$"))
+            return new JsonResult(new { message = "Вы указали некорректный номер карты", status_code = 409 });
 
-        _db.Card.Add(card);
-        _db.SaveChanges();
+        if (_db.Card.Any(x => x.CardNumber == cardNumber))
+            return new JsonResult(new { message = "Карта с таким номером уже существует", status_code = 409 });
         
-        return new JsonResult(new { message = "Карта успешно добавлена", status_code = 200 });
+        if (Regex.IsMatch(cardNumber ?? "", @"6[37].+") ||
+            (cardNumber?.StartsWith("62") ?? false) ||
+            (cardNumber?.StartsWith("4") ?? false) ||
+            (cardNumber?.StartsWith("2") ?? false) ||
+            (cardNumber?.StartsWith("60") ?? false) ||
+            Regex.IsMatch(cardNumber ?? "", @"5[12345].+") ||
+            Regex.IsMatch(cardNumber ?? "", @"3[47].+") ||
+            Regex.IsMatch(cardNumber ?? "", @"5[068].+") ||
+            Regex.IsMatch(cardNumber ?? "", @"3[068].+") ||
+            Regex.IsMatch(cardNumber ?? "", @"3[15].+"))
+        {
+            
+            if (!Regex.IsMatch(cvc ?? "", @"^\d{3}$"))
+                return new JsonResult(new { message = "Вы указали некорректный CVC", status_code = 409 });
+            
+            DateOnly date = DateOnly.MaxValue;
+            try
+            {
+                date = DateOnly.ParseExact(expireDate ?? "", "yyyy-MM-dd");
+            }
+            catch (Exception e)
+            {
+                return new JsonResult(new { message = "Вы указали некорректный срок действия карты", status_code = 409 });
+            }
+            
+            var currentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            
+            if (date.Month <= currentDate.Month || date.Year < currentDate.Year)
+                return new JsonResult(new { message = "Срок действия карты истек", status_code = 409 });
+            
+            var card = new Card
+            {
+                UserId = userId,
+                CardNumber = cardNumber!,
+                Cvc = cvc!,
+                ExpireDate = date
+            };
+
+            _db.Card.Add(card);
+            _db.SaveChanges();
+            
+            return new JsonResult(new { message = "Карта успешно добавлена", status_code = 200 });
+        }
+        else
+        {
+            return new JsonResult(new { message = "Вы указали некорректный номер карты", status_code = 409 });
+        }
+        
     }
     
     [HttpPost]
@@ -440,7 +483,7 @@ public class AccountController : Controller
             store.Open(OpenFlags.ReadOnly);
 
             X509Certificate2Collection certCollection = store.Certificates;
-            X509Certificate2Collection currentCerts = certCollection.Find(X509FindType.FindByTimeValid, DateTime.Now, false);
+            X509Certificate2Collection currentCerts = certCollection.Find(X509FindType.FindByTimeValid, DateTime.UtcNow, false);
             X509Certificate2Collection signingCert = currentCerts.Find(X509FindType.FindBySubjectDistinguishedName, certName, false);
             if (signingCert.Count == 0)
             {

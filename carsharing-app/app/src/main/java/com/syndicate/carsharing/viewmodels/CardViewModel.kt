@@ -23,7 +23,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CardViewModel @Inject constructor(
-    val userStore: UserStore
+    val userStore: UserStore,
+    val mainViewModel: MainViewModel
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CardModel())
     val uiState = _uiState.asStateFlow()
