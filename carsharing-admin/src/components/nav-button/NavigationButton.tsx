@@ -1,10 +1,15 @@
 import React from 'react';
 import './NavigationButton.css';
+import {useLocation, useNavigate } from "react-router-dom";
 
-function NavigationButton({icon, text}: any) {
+function NavigationButton({ route, icon, text }: any) {
+
+  const navigate = useNavigate();
+  const location = useLocation()
+
   return(
-    <section className="nav-button">
-      <img src={icon}/>
+    <section className={ location.pathname === route ? "nav-button selected" : "nav-button" } onClick={ () => navigate(route) }>
+      {icon}
       <p>{text}</p>
     </section>
   );

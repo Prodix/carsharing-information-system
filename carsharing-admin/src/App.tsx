@@ -1,12 +1,12 @@
 import React from 'react';
 import './styles/App.css';
-import NavigationMenu from "./components/navigation-menu/NavigationMenu";
+import Router from "./routes/Routes";
 
 function App() {
   return (
-    <div className="App">
-      <NavigationMenu />
-    </div>
+    <section className="app">
+      <Router/>
+    </section>
   );
 }
 

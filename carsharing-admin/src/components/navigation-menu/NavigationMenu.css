@@ -1,5 +1,6 @@
 .nav-menu {
     width: fit-content;
+    max-width: 300px;
     height: 100vh;
     border-right: 1px solid #4e4a4c;
     display: flex;
@@ -11,52 +12,27 @@
     box-sizing: border-box;
 }
 
-.nav-menu p, .nav-menu h1, .nav-menu .profile-section section, .nav-menu .profile-section img:last-child {
+.nav-menu p, .nav-menu h1, .nav-menu .profile-section section, .nav-menu .profile-section svg:last-child {
     display: none;
-}
-
-.nav-menu:hover p, .nav-menu:hover h1, .nav-menu:hover .profile-section section, .nav-menu:hover .profile-section img:last-child {
-    display: block;
-}
-
-.nav-menu:hover .profile-section section {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    height: 100%;
-}
-
-.nav-menu:hover p, .nav-menu:hover h1{
-    margin: 0;
-}
-
-.nav-menu .nav-button {
-    width: fit-content;
-    padding: 10px;
 }
 
 .nav-menu:hover .nav-button {
     width: 100%;
 }
 
-.nav-menu:hover {
-    width: fit-content;
-    max-width: 300px;
-    height: 100vh;
-    border-right: 1px solid #4e4a4c;
+.nav-menu:hover p, .nav-menu:hover h1, .nav-menu:hover .profile-section section, .nav-menu:hover .profile-section svg:last-child {
+    display: initial;
+}
+
+.nav-menu:hover .profile-section section {
     display: flex;
     flex-direction: column;
-    align-items: start;
-    padding: 10px;
-    gap: 40px;
-    color: #6699cc;
-    box-sizing: border-box;
+    gap: 3px;
 }
 
 .nav-menu:hover h1 {
     font-weight: 500;
     font-size: 20px;
-    margin: 0;
 }
 
 .logo {
@@ -72,8 +48,8 @@
 
 .profile-photo {
     border-radius: 100%;
-    width: 32px;
-    height: 32px;
+    width: 50px;
+    height: 50px;
     object-fit: cover;
     border: 2px solid #6699cc;
     padding: 2px;
@@ -104,6 +80,5 @@
 }
 
 .profile-section h3 {
-    margin: 0;
     font-size: 12px;
 }

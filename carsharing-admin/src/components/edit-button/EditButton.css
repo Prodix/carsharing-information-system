@@ -3,6 +3,7 @@
     border: 2px solid #6699cc;
     padding: 2px 5px;
     width: fit-content;
+    height: fit-content;
     background-color: transparent;
     cursor: pointer;
     transition: background-color .1s;
@@ -10,7 +11,7 @@
 
 .edit-button:hover {
     transition: background-color .1s;
-    background-color: rgba(102, 153, 204, 0.14);
+    background-color: rgba(102, 153, 204, 0.12);
 }
 
 .edit-button p {
