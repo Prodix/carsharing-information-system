@@ -1,6 +1,6 @@
 .edit-button {
     border-radius: 25px;
-    border: 2px solid #6699cc;
+    border: 2px solid var(--primary-100);
     padding: 2px 5px;
     width: fit-content;
     height: fit-content;

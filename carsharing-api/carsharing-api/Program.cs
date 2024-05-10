@@ -52,6 +52,8 @@ public class Program
         
         app.MapControllers();
 
+        app.UseCors(corsBuilder => corsBuilder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+        
         app.Run();
     }
 }

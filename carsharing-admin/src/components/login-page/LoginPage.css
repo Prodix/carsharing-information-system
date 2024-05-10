@@ -1,0 +1,33 @@
+.login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.login-form section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 30px;
+    background-color: var(--mixed-100);
+    border-radius: 16px;
+}
+
+.login-form h1 {
+    color: white;
+}
+
+.login-form p {
+    font-size: 14px;
+    color: #cc6666;
+}
+
+.login-form span {
+    color: var(--primary-100);
+}

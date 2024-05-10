@@ -8,11 +8,11 @@
     align-items: center;
     padding: 10px;
     gap: 40px;
-    color: #6699cc;
+    color: var(--primary-100);
     box-sizing: border-box;
 }
 
-.nav-menu p, .nav-menu h1, .nav-menu .profile-section section, .nav-menu .profile-section svg:last-child {
+.nav-menu p, .nav-menu h1, .nav-menu .profile-section section, .nav-menu .profile-section form {
     display: none;
 }
 
@@ -20,7 +20,7 @@
     width: 100%;
 }
 
-.nav-menu:hover p, .nav-menu:hover h1, .nav-menu:hover .profile-section section, .nav-menu:hover .profile-section svg:last-child {
+.nav-menu:hover p, .nav-menu:hover h1, .nav-menu:hover .profile-section section, .nav-menu:hover .profile-section form {
     display: initial;
 }
 
@@ -51,7 +51,7 @@
     width: 50px;
     height: 50px;
     object-fit: cover;
-    border: 2px solid #6699cc;
+    border: 2px solid var(--primary-100);
     padding: 2px;
 }
 
@@ -74,8 +74,15 @@
     width: 100%;
 }
 
-.profile-section > img:last-child {
+.profile-section form svg {
     width: 24px;
+    cursor: pointer;
+}
+
+.profile-section form button {
+    background: none;
+    outline: none;
+    border: none;
     cursor: pointer;
 }
 

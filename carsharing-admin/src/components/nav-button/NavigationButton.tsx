@@ -1,14 +1,14 @@
 import React from 'react';
 import './NavigationButton.css';
-import {useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
-function NavigationButton({ route, icon, text }: any) {
+function NavigationButton({ routes, icon, text }: any) {
 
   const navigate = useNavigate();
   const location = useLocation()
 
   return(
-    <section className={ location.pathname === route ? "nav-button selected" : "nav-button" } onClick={ () => navigate(route) }>
+    <section className={ routes.includes(location.pathname) ? "nav-button selected" : "nav-button" } onClick={ () => navigate(routes[0]) }>
       {icon}
       <p>{text}</p>
     </section>

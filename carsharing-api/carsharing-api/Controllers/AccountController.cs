@@ -222,6 +222,9 @@ public class AccountController : Controller
         
         var password = Request.Form["password"].ToString();
         
+        if (email.Length == 0 || password.Length == 0) 
+            return new JsonResult(new {message = "Не все поля заполнены", status_code = 409});
+        
         if (!_db.User.Any(x => x.Email == email && x.Password == password))
         {
             return new JsonResult(new { message = "Неверный пароль", status_code = 409 });

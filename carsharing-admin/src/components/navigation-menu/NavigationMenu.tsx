@@ -4,8 +4,10 @@ import Logo from '../../assets/Logo';
 import Avatar from '../../assets/avatar.png';
 import Exit from '../../assets/Exit';
 import EditButton from "../edit-button/EditButton";
+import { useFetcher } from "react-router-dom";
 
 function NavigationMenu({ children }: any) {
+  const fetcher = useFetcher();
   return(
     <nav className="nav-menu">
       <section className="logo-section">
@@ -23,7 +25,11 @@ function NavigationMenu({ children }: any) {
           <EditButton
             text="Редактировать"/>
         </section>
-        <Exit />
+        <fetcher.Form method="post" action="/logout">
+          <button type="submit">
+            <Exit />
+          </button>
+        </fetcher.Form>
       </section>
     </nav>
   );
