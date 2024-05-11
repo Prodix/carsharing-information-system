@@ -1,0 +1,92 @@
+.user-table {
+    height: 100%;
+    overflow-y: scroll;
+    padding: 0 15px 0 0;
+    width: 100%;
+}
+
+.user-table > table {
+    border-collapse: separate;
+    border-spacing: 0 5px;
+    width: 100%;
+}
+
+.user-table > table td {
+    min-width: 100px;
+    padding: 20px;
+    border: none;
+    background-color: var(--mixed-200);
+    text-align: center;
+}
+
+.user-table img {
+    border-radius: 100%;
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+}
+
+.user-table .info {
+    display: flex;
+    gap: 10px;
+    width: fit-content;
+}
+
+.user-table .info img {
+    width: 150px;
+    height: 210px;
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+.user-table .info a {
+    text-decoration: none;
+    color: #7ccc66;
+}
+
+.user-table .action {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.user-table .action > * {
+    width: 100%;
+}
+
+.user-table .penalty {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    flex-direction: column;
+}
+
+.user-table .penalty > * {
+    width: 100%;
+}
+
+.user-table .info tr td:last-child {
+    text-align: end;
+}
+
+.user-table .buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.user-table .buttons .button {
+    flex: 1 1 35%;
+}
+
+.user-table td:first-child {
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+.user-table td:last-child {
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+}

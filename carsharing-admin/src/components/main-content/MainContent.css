@@ -4,4 +4,7 @@
     box-sizing: border-box;
     color: var(--primary-100);
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }

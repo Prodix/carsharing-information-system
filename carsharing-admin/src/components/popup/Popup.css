@@ -1,0 +1,25 @@
+.popup > *:first-child {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.31);
+}
+
+.popup > *:last-child {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--dark-200);
+    width: min-content;
+    height: fit-content;
+    padding: 10px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

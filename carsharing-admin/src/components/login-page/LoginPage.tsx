@@ -43,7 +43,7 @@ export const authProvider: AuthProvider = {
     const formData = new FormData();
     formData.set('email', email);
     formData.set('password', password);
-    await fetch(process.env.REACT_APP_API_IP + "/api/account/signin", {
+    await fetch(process.env.REACT_APP_API_IP + "/api/admin/signin", {
       method: "POST",
       body: formData
     }).then(async response => {

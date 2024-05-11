@@ -181,21 +181,27 @@ public class AccountController : Controller
 
     [HttpPost]
     [Route("/api/account/signin")]
-    public IActionResult SignIn(string? code)
+    public IActionResult SignIn(string? code, bool? isAdmin = false)
     {
         if (Request.Headers.ContainsKey("Authorization"))
         {
             var oldToken = Request.Headers.Authorization.ToString()[7..];
-            return VerifyToken(oldToken) 
-                ? new JsonResult(new { token = RefreshToken(oldToken), message = "Токен обновлён", status_code = 200 }) 
+            return VerifyToken(oldToken, _db) 
+                ? new JsonResult(new { token = RefreshToken(oldToken, _db), message = "Токен обновлён", status_code = 200 }) 
                 : new JsonResult(new { message = "Неверный токен", status_code = 401 });
         }
 
         var email = Request.Form["email"].ToString();
         
+        if (!_db.User.Any(x => x.Email == email))
+        {
+            return new JsonResult(new { message = "Пользователь не существует", status_code = 409 });
+        }
+        
+        var user = _db.User.Where(x => x.Email == email).ToList()[0];
+        
         if (code is not null)
         {
-            var user = _db.User.Where(x => x.Email == email).ToList()[0];
             
             if (!_db.EmailCode.Any(x => x.UserId == user.Id && x.Code == code)) 
                 return new JsonResult(new { message = "Неверный код", status_code = 409 });
@@ -214,11 +220,6 @@ public class AccountController : Controller
             
             return new JsonResult(new { token = tokenForCode, message = "Успешный вход", status_code = 200 });
         }
-
-        if (!_db.User.Any(x => x.Email == email))
-        {
-            return new JsonResult(new { message = "Пользователь не существует", status_code = 409 });
-        }
         
         var password = Request.Form["password"].ToString();
         
@@ -229,6 +230,9 @@ public class AccountController : Controller
         {
             return new JsonResult(new { message = "Неверный пароль", status_code = 409 });
         }
+        
+        if (isAdmin == true && user.UserRole != Role.ADMIN)
+            return new JsonResult(new { message = "Недостаточно прав", status_code = 409 });
 
         var token = JwtBuilder.Create()
             .WithAlgorithm(new RS256Algorithm(
@@ -236,7 +240,7 @@ public class AccountController : Controller
                     ? new X509Certificate2("cert.pfx", "123")
                     : GetCertificate("CN=CarsharingCert")
             ))
-            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Email == email && x.Password == password).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
+            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(user), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
         
         return new JsonResult(new { token, message = "Успешный вход", status_code = 200 });
@@ -251,6 +255,24 @@ public class AccountController : Controller
         await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "selfie", selfieName));
     }
     
+    [HttpGet]
+    [Route("/api/account/get/passport")]
+    public async Task GetPassport(int id)
+    {
+        var passportName = _db.Passport.Where(x => x.Id == id).ToList()[0].Path;
+        Response.Headers.ContentDisposition = "attachment";
+        await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "passport", passportName));
+    }
+    
+    [HttpGet]
+    [Route("/api/account/get/driver_license")]
+    public async Task GetDriverLicense(int id)
+    {
+        var driverLicenseName = _db.DriverLicense.Where(x => x.Id == id).ToList()[0].Path;
+        Response.Headers.ContentDisposition = "attachment";
+        await Response.SendFileAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "driver_license", driverLicenseName));
+    }
+    
     [HttpPost]
     [Route("/api/account/upload")]
     public IActionResult UploadFile(string type)
@@ -262,7 +284,7 @@ public class AccountController : Controller
             token = Request.Headers.Authorization.ToString()[7..];
         }
         
-        if (!VerifyToken(token))
+        if (!VerifyToken(token, _db))
         {
             return StatusCode(409);
         }
@@ -355,7 +377,7 @@ public class AccountController : Controller
             }
             
             //TODO: Отправка на почту
-            if (!VerifyToken(token))
+            if (!VerifyToken(token, _db))
             {
                 return new JsonResult(new { message = "Неверный токен", status_code = 409 });
             }
@@ -397,7 +419,7 @@ public class AccountController : Controller
         
         var token = Request.Headers.Authorization.ToString()[7..];
             
-        if (!VerifyToken(token))
+        if (!VerifyToken(token, _db))
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });
             
         var user = DecryptToken(token);
@@ -411,11 +433,11 @@ public class AccountController : Controller
         };
     }
 
-    private bool VerifyToken(string token)
+    public static bool VerifyToken(string token, CarsharingDbContext dbContext)
     {
         var user = DecryptToken(token);
 
-        return _db.User.Any(x => x.Email == user.Email && x.Password == user.Password);
+        return dbContext.User.Any(x => x.Email == user.Email && x.Password == user.Password);
     }
 
     [HttpGet]
@@ -427,7 +449,7 @@ public class AccountController : Controller
 
         var token = Request.Headers.Authorization.ToString()[7..];
 
-        if (!VerifyToken(token))
+        if (!VerifyToken(token, _db))
             return new JsonResult(new { message = "Неверный токен", status_code = 401 });
 
         var user = DecryptToken(token);
@@ -441,7 +463,7 @@ public class AccountController : Controller
         };
     }
 
-    private string RefreshToken(string oldToken)
+    public static string RefreshToken(string oldToken, CarsharingDbContext dbContext)
     {
         var user = DecryptToken(oldToken);
         
@@ -451,13 +473,13 @@ public class AccountController : Controller
                     ? new X509Certificate2("cert.pfx", "123")
                     : GetCertificate("CN=CarsharingCert")
             ))
-            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(_db.User.Where(x => x.Id == user.Id).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
+            .AddClaim("user", EncryptDataWithAes(JsonConvert.SerializeObject(dbContext.User.Where(x => x.Id == user.Id).ToList()[0]), "etfpbiaI/tdXSTl36Os6Q3hufDpcSxVwXZYY7lx4Z7g=", "autI78dTryrVFHHivDxr5g=="))
             .Encode();
 
         return newToken;
     }
 
-    private User DecryptToken(string token)
+    public static User DecryptToken(string token)
     {
         var json = JwtBuilder.Create()
             .WithAlgorithm(new RS256Algorithm(
@@ -478,7 +500,7 @@ public class AccountController : Controller
         return user!;
     }
 
-    private X509Certificate2 GetCertificate(string certName)
+    public static X509Certificate2 GetCertificate(string certName)
     {
         X509Store store = new X509Store(StoreLocation.CurrentUser);
         try
@@ -500,7 +522,7 @@ public class AccountController : Controller
         }
     }
     
-    private string EncryptDataWithAes(string plainText, string keyBase64, string vectorBase64)
+    public static string EncryptDataWithAes(string plainText, string keyBase64, string vectorBase64)
     {
         using (Aes aesAlgorithm = Aes.Create())
         {

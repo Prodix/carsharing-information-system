@@ -6,6 +6,7 @@
   --primary-500: #acc5e3;
   --mixed-100: #2b2f37;
   --mixed-200: #3f434a;
+  --dark-200: #38393d;
 }
 
 * {
@@ -22,6 +23,7 @@
 html {
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
