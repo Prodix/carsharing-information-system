@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "carsharing-api", "carsharing-api\carsharing-api.csproj", "{91EB61A2-70BF-4519-8A39-C7F547BB6079}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "carsharing-api-test", "carsharing-api-test\carsharing-api-test.csproj", "{7CE649EA-8A74-47F3-9468-43DD981F7E0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{91EB61A2-70BF-4519-8A39-C7F547BB6079}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91EB61A2-70BF-4519-8A39-C7F547BB6079}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91EB61A2-70BF-4519-8A39-C7F547BB6079}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CE649EA-8A74-47F3-9468-43DD981F7E0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CE649EA-8A74-47F3-9468-43DD981F7E0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CE649EA-8A74-47F3-9468-43DD981F7E0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CE649EA-8A74-47F3-9468-43DD981F7E0C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
