@@ -90,3 +90,32 @@
     border-top-right-radius: 16px;
     border-bottom-right-radius: 16px;
 }
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 210px;
+    height: 40px;
+    background-color: var(--mixed-200);
+    border-radius: 8px;
+    outline: none;
+    border: none;
+    color: white;
+    padding: 5px;
+    font-size: 14px;
+}
+
+.action > ul {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: 130px;
+    overflow-y: scroll;
+}
+
+.action li {
+    background-color: #2b2f37;
+    padding: 10px;
+    border-radius: 16px;
+}
