@@ -1,23 +1,35 @@
 package com.syndicate.carsharing.views
 
+import android.app.AlertDialog
 import android.content.Context
 import android.location.LocationManager
 import androidx.annotation.OptIn
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
+import com.syndicate.carsharing.R
 import com.syndicate.carsharing.UserStore
+import com.syndicate.carsharing.data.Tag
 import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
+import com.syndicate.carsharing.database.models.Function
 import com.syndicate.carsharing.database.models.Rate
 import com.syndicate.carsharing.database.models.RentHistory
 import com.syndicate.carsharing.database.models.TransportLog
@@ -26,6 +38,8 @@ import com.syndicate.carsharing.viewmodels.MainViewModel
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.request
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -72,7 +86,8 @@ fun SplashScreen(
         initialize(
             mainViewModel = mainViewModel,
             userStore = userStore,
-            scope = scope
+            scope = scope,
+            context = context
         )
 
         if (user.email == "") {
@@ -97,7 +112,14 @@ fun SplashScreen(
             .background(Color.White)
             .fillMaxSize()
     ) {
-
+        Image(
+            imageVector = ImageVector.vectorResource(R.drawable.logo),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .height(100.dp)
+                .width(100.dp)
+        );
     }
 }
 
@@ -105,7 +127,8 @@ fun SplashScreen(
 suspend fun initialize(
     mainViewModel: MainViewModel,
     userStore: UserStore,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    context: Context
 ) {
     val user = mainViewModel.userStore.getUser().first()
     val token = mainViewModel.userStore.getToken().first()

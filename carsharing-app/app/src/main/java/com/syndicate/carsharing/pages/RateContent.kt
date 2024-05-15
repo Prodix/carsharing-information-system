@@ -39,6 +39,7 @@ import com.syndicate.carsharing.shared_components.AutoShareButton
 import com.syndicate.carsharing.database.HttpClient
 import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.database.models.Penalty
+import com.syndicate.carsharing.database.models.Transport
 import com.syndicate.carsharing.database.models.TransportLog
 import com.syndicate.carsharing.fromUnixMilli
 import com.syndicate.carsharing.viewmodels.MainViewModel
@@ -53,7 +54,6 @@ import kotlinx.coroutines.launch
 import org.apache.commons.net.ntp.NTPUDPClient
 import java.net.InetAddress
 
-//TODO: Подгрузка инфы из базы
 
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnrememberedMutableInteractionSource")
@@ -267,24 +267,37 @@ fun RateContent(
                 val user = mainViewModel.userStore.getUser().first()
                 val currentTime = NTPUDPClient().getTime(InetAddress.getByName("time.google.com")).returnTime
                 scope.launch inner@ {
-                    val lastActionTime = HttpClient.client.get(
+                    val actions = HttpClient.client.get(
                         "${HttpClient.url}/account/history/get"
                     ) {
                         headers["Authorization"] = "Bearer $token"
                     }.body<List<TransportLog>>().filter { x ->
                         x.userId == user.id
-                    }.maxBy { x -> x.id }.dateTime
-                    if (fromUnixMilli(currentTime).toEpochSecond() - lastActionTime.toEpochSecond() < 30 * 60) {
-                        AlertDialog.Builder(context)
-                            .setMessage("Арендовать автомобиль можно раз в 30 минут")
-                            .setPositiveButton("ok") { _, _ -> run { } }
-                            .show()
-                        return@inner
+                    }
+                    if (actions.isNotEmpty()) {
+                        val lastActionTime = actions.maxBy { x -> x.id }.dateTime
+                        if (fromUnixMilli(currentTime).toEpochSecond() - lastActionTime.toEpochSecond() < 30 * 60) {
+                            AlertDialog.Builder(context)
+                                .setMessage("Арендовать автомобиль можно раз в 30 минут")
+                                .setPositiveButton("ok") { _, _ -> run { } }
+                                .show()
+                            return@inner
+                        }
                     }
 
                     if (!mainState.user.isVerified) {
                         AlertDialog.Builder(context)
                             .setMessage("Ваш аккаунт не верифицирован")
+                            .setPositiveButton("ok") { _, _ -> run { } }
+                            .show()
+                        return@inner
+                    }
+
+                    val transportInfo = mainState.lastSelectedPlacemark?.userData as Transport
+
+                    if (mainState.user.rating <= 30 && transportInfo.transportType != "base" ) {
+                        AlertDialog.Builder(context)
+                            .setMessage("Вам не хватает рейтинга для данного транспорта")
                             .setPositiveButton("ok") { _, _ -> run { } }
                             .show()
                         return@inner

@@ -279,7 +279,8 @@ fun CodeComposable(
                     initialize(
                         mainViewModel = codeViewModel.mainViewModel,
                         userStore = userStore,
-                        scope = scope
+                        scope = scope,
+                        context = context
                     )
                     navigation.navigate("main") {
                         popUpTo(0)

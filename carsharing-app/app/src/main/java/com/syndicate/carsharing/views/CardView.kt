@@ -183,7 +183,7 @@ fun CardView(
             verticalAlignment = Alignment.Top,
             beyondBoundsPageCount = 1
         ) {
-            if (it == 1) {
+            if (it == 1 || cardPagerState.pageCount == 1) {
                 AddCardContent(
                     cardPager = cardPagerState,
                     textFieldPager = textFieldPagerState,

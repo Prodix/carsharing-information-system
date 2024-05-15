@@ -224,7 +224,8 @@ fun SignIn(
                             initialize(
                                 mainViewModel = signInViewModel.mainViewModel,
                                 userStore = signInViewModel.userStore,
-                                scope = scope
+                                scope = scope,
+                                context = context
                             )
                             navigation.navigate("main") {
                                 popUpTo(0)

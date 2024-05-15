@@ -19,11 +19,8 @@ function NavigationMenu({ children }: any) {
       </section>
       <div className="divider"/>
       <section className="profile-section">
-        <img alt="Аватарка" className="profile-photo" src={Avatar}/>
         <section>
-          <h3 className="profile-email">admin@gmail.com</h3>
-          <EditButton
-            text="Редактировать"/>
+          <h3 className="profile-email">{localStorage.getItem("email")}</h3>
         </section>
         <fetcher.Form method="post" action="/logout">
           <button type="submit">

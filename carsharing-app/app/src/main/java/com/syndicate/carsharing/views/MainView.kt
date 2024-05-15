@@ -51,6 +51,8 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.syndicate.carsharing.MainActivity
 import com.syndicate.carsharing.R
+import com.syndicate.carsharing.database.HttpClient
+import com.syndicate.carsharing.database.models.DefaultResponse
 import com.syndicate.carsharing.views.components.BalanceMenu
 import com.syndicate.carsharing.views.components.BottomSheetWithPages
 import com.syndicate.carsharing.pages.CarContent
@@ -77,8 +79,12 @@ import com.yandex.mapkit.map.PlacemarkMapObject
 import com.yandex.mapkit.mapview.MapView
 import com.yandex.mapkit.transport.TransportFactory
 import com.yandex.runtime.image.ImageProvider
+import io.ktor.client.call.body
+import io.ktor.client.request.request
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import java.lang.Exception
@@ -102,6 +108,7 @@ fun Main(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val location = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
 
     val locationListener = LocationListener {
         scope.launch {
@@ -248,6 +255,18 @@ fun Main(
             }
         }
         activityResultLauncher.launch(locationPermissions)
+        val response = HttpClient.client.request(
+            "${HttpClient.url}/account/message/get?id=${mainViewModel.userStore.getUser().first().id}"
+        ) {
+            method = HttpMethod.Get
+        }.body<DefaultResponse>()
+
+        if (response.status_code == 200) {
+            AlertDialog.Builder(context)
+                .setMessage(response.message)
+                .setPositiveButton("ok") { _, _ -> run { } }
+                .show()
+        }
     }
     
     LaunchedEffect(key1 = Unit) {
@@ -310,7 +329,9 @@ fun Main(
 
             delay(1000)
         }
+
     }
+
 
     Box(
         modifier = Modifier

@@ -14,5 +14,5 @@ public class TransportLog
     [JsonConverter(typeof(StringEnumConverter))]
     public Action Action { get; set; }
     public DateTime DateTime { get; set; }
-    public int RateId { get; set; }
+    public int? RateId { get; set; }
 }

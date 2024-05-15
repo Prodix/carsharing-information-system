@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Mail;
 using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.RegularExpressions;
 using carsharing_api.Context;
 using carsharing_api.Entities;
@@ -156,12 +158,13 @@ public class AccountController : Controller
             return new JsonResult(new { message = "Пользователь уже существует", status_code = 409 });
         }
         
-        var password = Request.Form["password"].ToString();
+        var password = Convert.ToBase64String(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Request.Form["password"].ToString()))).ToLower();
         
         var user = new User()
         {
             Email = email,
-            Password = password
+            Password = password,
+            Rating = 30
         };
 
         _db.User.Add(user);
@@ -221,7 +224,7 @@ public class AccountController : Controller
             return new JsonResult(new { token = tokenForCode, message = "Успешный вход", status_code = 200 });
         }
         
-        var password = Request.Form["password"].ToString();
+        var password = MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Request.Form["password"].ToString())).ToString().ToLower();
         
         if (email.Length == 0 || password.Length == 0) 
             return new JsonResult(new {message = "Не все поля заполнены", status_code = 409});
@@ -363,6 +366,21 @@ public class AccountController : Controller
         return StatusCode(200);
     }
 
+    [HttpGet]
+    [Route("/api/account/message/get")]
+    public IActionResult GetMessage(int id)
+    {
+        var message = _db.Message.FirstOrDefault(x => x.UserId == id && !x.IsRead);
+        
+        if (message == null)
+            return new JsonResult(new { message = "Нет непрочитанных сообщений", status_code = 409 });
+        
+        message.IsRead = true;
+        _db.Message.Update(message);
+        _db.SaveChanges();
+        return new JsonResult(new { message = message.Message, status_code = 200 });
+    }
+
     [HttpPost]
     [Route("/api/account/generate_code")]
     public IActionResult GenerateCode(string? email)
@@ -376,7 +394,6 @@ public class AccountController : Controller
                 token = Request.Headers.Authorization.ToString()[7..];
             }
             
-            //TODO: Отправка на почту
             if (!VerifyToken(token, _db))
             {
                 return new JsonResult(new { message = "Неверный токен", status_code = 409 });
@@ -399,10 +416,37 @@ public class AccountController : Controller
 
             _db.EmailCode.Remove(record);
         }
+
+        var code = new Random().Next(99999).ToString().PadLeft(5, '0');
+        
+        string fromAddress = "flgodd@yandex.ru";
+        string password = "password";
+
+        string toAddress = email;
+
+        MailMessage mail = new MailMessage(fromAddress, toAddress);
+        
+        mail.Subject = "Код для входа в аккаунт AutoShare";
+
+        mail.Body = $"Автопрокат AutoShare\n\nКод подтверждения: {code}\n\nПриветствуем вас! Для подтверждения входа в систему, используйте приведенный выше код подтверждения. Пожалуйста, введите его в соответствующее поле в нашем приложении.\n\nСпасибо за выбор AutoShare!";
+
+        SmtpClient smtpClient = new SmtpClient("smtp.yandex.ru", 587);
+        smtpClient.EnableSsl = true;
+        smtpClient.Credentials = new NetworkCredential(fromAddress, password);
+
+        try
+        {
+            smtpClient.Send(mail);
+            Console.WriteLine("Письмо успешно отправлено!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Ошибка при отправке письма: " + ex.Message);
+        }
         
         _db.EmailCode.Add(new EmailCode()
         {
-            Code = new Random().Next(99999).ToString().PadLeft(5, '0'),
+            Code = code,
             DateTime = DateTime.UtcNow,
             UserId = user.Id
         });

@@ -37,6 +37,7 @@ function UsersList() {
           setUsers(initialUsers);
         }
       }}/>
+      <a target="_blank" href={process.env.REACT_APP_API_IP + '/api/admin/users/get/document'} style={{ textDecoration: "none", color: "black", width: "fit-content", cursor: "pointer", padding: 10, borderRadius: 16, backgroundColor: "#6699cc" }}>Выгрузка</a>
       <section className="user-table">
         <table>
           <tr>
@@ -212,7 +213,7 @@ function UsersList() {
                       const ratingPenalty = (document.querySelector('input[name="rating_penalty"]') as HTMLInputElement).value;
                       const description = (document.querySelector('input[name="description"]') as HTMLInputElement).value;
                       const select = (document.querySelector(".custom-select") as HTMLInputElement).value;
-                      if (/^\d+\.?\d+$/gi.test(price) && /^\d+$/gi.test(ratingPenalty) && description.length > 0 && select.length > 0) {
+                      if (/^\d+\.?\d*$/gi.test(price) && /^\d+$/gi.test(ratingPenalty) && description.length > 0 && select.length > 0) {
                         const response = await fetch(process.env.REACT_APP_API_IP + '/api/admin/users/give_penalty', {
                           method: "POST",
                           headers: {

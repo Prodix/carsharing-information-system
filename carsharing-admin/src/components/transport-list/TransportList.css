@@ -1,17 +1,17 @@
-.user-table {
+.transport-table {
     height: 100%;
     overflow-y: scroll;
     padding: 0 15px 0 0;
     width: 100%;
 }
 
-.user-table > table {
+.transport-table table {
     border-collapse: separate;
     border-spacing: 0 5px;
     width: 100%;
 }
 
-.user-table > table td {
+.transport-table > table td {
     min-width: 100px;
     padding: 20px;
     border: none;
@@ -19,103 +19,87 @@
     text-align: center;
 }
 
-.user-table img {
+.transport-table img {
     border-radius: 100%;
     width: 48px;
     height: 48px;
     object-fit: cover;
 }
 
-.user-table .info {
+.transport-table .info {
     display: flex;
     gap: 10px;
     width: fit-content;
 }
 
-.user-table .info img {
-    width: 150px;
+.transport-table .car-info img {
+    width: 400px;
     height: 210px;
     border-radius: 16px;
-    object-fit: cover;
+    object-fit: contain;
 }
 
-.user-table .info a {
+.transport-table .car-info {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+}
+
+.transport-table .car-info a {
     text-decoration: none;
     color: #7ccc66;
 }
 
-.user-table .action {
+.transport-table .action {
     margin-top: 10px;
     display: flex;
-    gap: 10px;
-    width: 100%;
-}
-
-.user-table .action > * {
-    width: 100%;
-}
-
-.user-table .penalty {
-    display: flex;
-    gap: 10px;
-    width: 100%;
     flex-direction: column;
-}
-
-.user-table .penalty > * {
+    gap: 10px;
     width: 100%;
 }
 
-.user-table .info tr td:last-child {
+.transport-table .action > * {
+    width: 100%;
+}
+
+.transport-table .car-info tr td:last-child {
     text-align: end;
 }
 
-.user-table .buttons {
+.transport-table .buttons {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
     width: 100%;
 }
 
-.user-table .buttons .button {
+.transport-table .buttons .button {
     flex: 1 1 35%;
 }
 
-.user-table td:first-child {
+.transport-table td:first-child {
     border-top-left-radius: 16px;
     border-bottom-left-radius: 16px;
 }
 
-.user-table td:last-child {
+.transport-table td:last-child {
     border-top-right-radius: 16px;
     border-bottom-right-radius: 16px;
 }
 
-select {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 210px;
-    height: 40px;
-    background-color: var(--mixed-200);
-    border-radius: 8px;
-    outline: none;
-    border: none;
-    color: white;
-    padding: 5px;
-    font-size: 14px;
-}
-
-.user-table .action > ul {
+.transport-table .action > ul {
     list-style-type: none;
     display: flex;
-    flex-direction: column;
     gap: 10px;
-    height: 130px;
-    overflow-y: scroll;
+    overflow-x: scroll;
+    width: 840px;
 }
 
-.user-table .action li {
+.transport-table .action li {
     background-color: #2b2f37;
     padding: 10px;
     border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }

@@ -70,12 +70,14 @@
 .profile-section {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     width: 100%;
 }
 
 .profile-section form svg {
     width: 24px;
+    height: 24px;
     cursor: pointer;
 }
 

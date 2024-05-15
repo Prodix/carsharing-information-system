@@ -21,46 +21,50 @@ const router = createBrowserRouter([
     loader: protectedLoader,
     element: <>
       <NavigationMenu>
+        {/*<NavigationButton*/}
+        {/*  routes={["/dashboard", "/"]}*/}
+        {/*  icon={<Dashboard/>}*/}
+        {/*  text="Дашборд"/>*/}
         <NavigationButton
-          routes={["/dashboard", "/"]}
-          icon={<Dashboard/>}
-          text="Дашборд"/>
-        <NavigationButton
-          routes={["/transport"]}
+          routes={["/transport", "/"]}
           icon={<Car/>}
           text="Транспорт"/>
         <NavigationButton
           routes={["/users"]}
           icon={<User/>}
           text="Пользователи"/>
-        <NavigationButton
-          routes={["/reports"]}
-          icon={<Report/>}
-          text="Отчёты"/>
+        {/*<NavigationButton*/}
+        {/*  routes={["/reports"]}*/}
+        {/*  icon={<Report/>}*/}
+        {/*  text="Отчёты"/>*/}
       </NavigationMenu>
       <Outlet/>
     </>,
     children: [
-      {
-        path: '/',
-        element: <MainContent header="Дашборд" />
-      },
-      {
-        path: '/dashboard',
-        element: <MainContent header="Дашборд" />
-      },
+      // {
+      //   path: '/',
+      //   element: <MainContent header="Дашборд" />
+      // },
+      // {
+      //   path: '/dashboard',
+      //   element: <MainContent header="Дашборд" />
+      // },
       {
         path: '/transport',
+        element: <MainContent header="Транспорт" />
+      },
+      {
+        path: '/',
         element: <MainContent header="Транспорт" />
       },
       {
         path: '/users',
         element: <MainContent header="Пользователи" />
       },
-      {
-        path: '/reports',
-        element: <MainContent header="Отчёты" />
-      }
+      // {
+      //   path: '/reports',
+      //   element: <MainContent header="Отчёты" />
+      // }
     ],
   },
   {
@@ -102,6 +106,8 @@ async function loginAction({ request }: LoaderFunctionArgs) {
       };
     }
   }
+
+  localStorage.setItem("email", email);
 
   return redirect("/");
 }

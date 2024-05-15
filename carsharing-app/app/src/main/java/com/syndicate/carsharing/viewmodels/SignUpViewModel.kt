@@ -20,9 +20,9 @@ class SignUpViewModel @Inject constructor(val userStore: UserStore): ViewModel()
     private val regexUpperChars = Regex("""[A-Z]""")
     private val regexNumbers = Regex("""\d""")
     private val regexCyrillic = Regex("""[А-Яа-я]""")
-    private val regexEmail = Regex("""^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""")
+    private val regexEmail = Regex("""^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""")
 
-    fun changeEmail(email: String) {
+   fun changeEmail(email: String) {
 
         if (email.isEmpty()) {
             _uiState.value = SignUpModel("", _uiState.value.password, "", _uiState.value.passwordNote)
