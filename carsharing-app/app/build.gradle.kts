@@ -80,7 +80,7 @@ dependencies {
     implementation("commons-net:commons-net:3.10.0")
 
     implementation("com.google.dagger:hilt-android:2.44")
-    kapt("com.google.dagger:hilt-android-compiler:2.44")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
 
     implementation("com.airbnb.android:lottie-compose:6.4.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
